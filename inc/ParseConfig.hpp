@@ -7,6 +7,8 @@ class ParseConfig
 {
 	private:
 		std::vector<InitConfig> servers;
+		std::vector<std::string> blocks;
+		int blockNB;
 
 	public:
 	ParseConfig();
@@ -20,5 +22,7 @@ class ParseConfig
 
 	void removeComments(std::string &content);
 	void trimWhitespaces(std::string &content);
+	void extractServerBlocks(const std::string &content);
+	bool isServerBlockEmpty(const std::string &block) const;
 
 };

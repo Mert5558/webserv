@@ -2,7 +2,9 @@
 #include "../inc/ParseConfig.hpp"
 
 ParseConfig::ParseConfig()
-{}
+{
+	this->blockNB = 0;
+}
 
 ParseConfig::~ParseConfig()
 {}
@@ -35,10 +37,38 @@ int ParseConfig::parseFile(std::string configfile)
 	removeComments(content);
 	trimWhitespaces(content);
 	std::cout << content << std::endl;
+	extractServerBlocks(content);
 
 	return (0);
 }
 
+bool ParseConfig::isFileReadable(const std::string &filename)
+{
+	std::ifstream file(filename.c_str());
+	return (file.is_open());
+}
+
+bool ParseConfig::isRegularFile(const std::string &filename)
+{
+	std::ifstream file(filename.c_str());
+	if (!file.is_open())
+		return (false);
+
+	char c;
+	file.get(c);
+	return (true);
+}
+
+bool ParseConfig::isFileEmpty(const std::string &filename)
+{
+	std::ifstream file(filename.c_str());
+	if (!file.is_open())
+		return (true);
+
+	char c;
+	file.get(c);
+	return (file.eof());
+}
 void ParseConfig::removeComments(std::string &content)
 {
 	size_t pos = 0;
@@ -69,30 +99,55 @@ void ParseConfig::trimWhitespaces(std::string &content)
 	content = oss.str();
 }
 
-bool ParseConfig::isFileReadable(const std::string &filename)
+bool ParseConfig::isServerBlockEmpty(const std::string &block) const
 {
-	std::ifstream file(filename.c_str());
-	return (file.is_open());
-}
-
-bool ParseConfig::isRegularFile(const std::string &filename)
-{
-	std::ifstream file(filename.c_str());
-	if (!file.is_open())
-		return (false);
-
-	char c;
-	file.get(c);
+	size_t open = block.find('{');
+	size_t close = block.rfind('}');
+	if (open == std::string::npos || close == std::string::npos || close <= open)
+		return (true);
+	
+	std::string body = block.substr(open + 1, close - open -1);
+	for (size_t i = 0; i < body.size(); ++i)
+	{
+		if (!isspace(static_cast<unsigned char>(body[i])))
+			return (false);
+	}
 	return (true);
 }
 
-bool ParseConfig::isFileEmpty(const std::string &filename)
+void ParseConfig::extractServerBlocks(const std::string &content)
 {
-	std::ifstream file(filename.c_str());
-	if (!file.is_open())
-		return (true);
+	size_t searchPos = 0;
 
-	char c;
-	file.get(c);
-	return (file.eof());
+	while (true)
+	{
+		size_t serverPos = content.find("server", searchPos);
+		if (serverPos == std::string::npos)
+			break;
+		
+		size_t openBrace = content.find("{", serverPos);
+		if (openBrace == std::string::npos)
+			std::cout << "Malformed config: missing '{' after server" << std::endl;
+		
+		int braceCount = 1;
+		size_t closedBrace = openBrace + 1;
+		while (closedBrace < content.size() && braceCount > 0)
+		{
+			if (content[closedBrace] == '{')
+				braceCount++;
+			else if (content[closedBrace] == '}')
+				braceCount--;
+			closedBrace++;
+		}
+		if (braceCount != 0)
+			std::cout << "Malformed config: unmatched braces in server block" << std::endl;
+		this->blocks.push_back(content.substr(serverPos, closedBrace - serverPos));
+
+		if (isServerBlockEmpty(this->blocks.back()))
+			std::cout << "Error config: server block is empty!" << std::endl;
+
+		searchPos = closedBrace;
+	}
+	if (this->blocks.empty())
+		std::cout << "No server blocks found in config!" << std::endl;
 }
