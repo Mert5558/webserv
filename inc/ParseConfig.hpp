@@ -24,5 +24,7 @@ class ParseConfig
 	void trimWhitespaces(std::string &content);
 	void extractServerBlocks(const std::string &content);
 	bool isServerBlockEmpty(const std::string &block) const;
+	std::vector<std::string> splitIntoLines(const std::string &content);
+	void parseServerSettings(const std::vector<std::string> &lines, InitConfig &config);
 
 };

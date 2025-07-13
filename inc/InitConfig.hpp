@@ -23,4 +23,15 @@ class InitConfig
 		InitConfig(const InitConfig &copy);
 		InitConfig &operator=(const InitConfig &copy);
 		~InitConfig();
+
+		void setPort(std::string port);
+		void setHost(std::string host);
+		void setServerName(std::string serverName);
+		void setRoot(std::string root);
+		void setIndex(std::string index);
+		void setAutoindex(std::string autoindex);
+		void setClientMaxBodsize(std::string cmbs);
+		bool setErrorPage(std::string errorpage);
+		void print() const;
+
 };
