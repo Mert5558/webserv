@@ -33,5 +33,7 @@ class InitConfig
 		void setClientMaxBodsize(std::string cmbs);
 		bool setErrorPage(std::string errorpage);
 		void print() const;
+		void parseLocation(std::vector<std::string> location_lines, Location loc);
+		void addLocation(Location &loc);
 
 };
