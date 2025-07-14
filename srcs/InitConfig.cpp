@@ -51,6 +51,143 @@ InitConfig &InitConfig::operator=(const InitConfig &copy)
 	return (*this);
 }
 
+void InitConfig::parseLocation(std::vector<std::string> location_lines, Location loc)
+{
+	bool root_set = false, index_set = false, autoindex_set = false, client_max_body_size_set = false;
+	bool allow_methods_set = false, return_set = false, alias_set = false, cgi_path_set = false, cgi_ext_set = false;
+
+	std::set<short> error_codes_set;
+
+	int depth = 0;
+	for (size_t i = 0; i < location_lines.size(); i++)
+	{
+		const std::string &line = location_lines[i];
+
+		if (i == 0)
+		{
+			std::istringstream iss(line);
+			std::string key;
+			std::string path;
+			iss >> key >> path;
+			loc.setPath(path);
+			if (line.find("{") != std::string::npos)
+				depth++;
+			continue;
+		}
+		if (line == "{")
+		{
+			depth++;
+			continue;
+		}
+		if (line == "}")
+		{
+			depth--;
+			if (depth <= 0)
+				break;
+			continue;
+		}
+		if (line.empty())
+			continue;
+		
+		std::istringstream iss(line);
+		std::string key;
+		std::string value;
+		iss >> key;
+		std::getline(iss, value);
+		size_t value_start = value.find_first_not_of(" \t\r");
+
+		if(value_start != std::string::npos)
+			value = value.substr(value_start);
+		else
+			value = "";
+		
+		if (key == "root")
+		{
+			if (root_set)
+				std::cout << "Error: 'root' duplivated in location!" << std::endl;
+			loc.setRoot(value);
+			root_set = true;
+		}
+		else if (key == "index")
+		{
+			if (index_set)
+				std::cout << "Error: 'index' duplivated in location!" << std::endl;
+			loc.setIndex(value);
+			index_set = true;
+		}
+		else if (key == "autoindex")
+		{
+			if (autoindex_set)
+				std::cout << "Error: 'autoindex' duplivated in location!" << std::endl;
+			loc.setAutoindex(value);
+			autoindex_set = true;
+		}
+		else if (key == "client_max_body_size")
+		{
+			if (client_max_body_size_set)
+				std::cout << "Error: 'client_max_body_size' duplivated in location!" << std::endl;
+			loc.setClientMaxBodySize(value);
+			client_max_body_size_set = true;
+		}
+		else if (key == "allow_methods")
+		{
+			if (allow_methods_set)
+				std::cout << "Error: 'allow_methods' duplivated in location!" << std::endl;
+			std::istringstream methodss(value);
+			std::vector<std::string> methods_vec;
+			std::string method;
+			while (methodss >> method)
+				methods_vec.push_back(method);
+			loc.setMethods(methods_vec);
+			allow_methods_set = true;
+		}
+		else if (key == "return")
+		{
+			if (return_set)
+				std::cout << "Error: 'return' duplivated in location!" << std::endl;
+			loc.setReturn(value);
+			return_set = true;
+		}
+		else if (key == "alias")
+		{
+			if (alias_set)
+				std::cout << "Error: 'alias' duplivated in location!" << std::endl;
+			loc.setAlias(value);
+			alias_set = true;
+		}
+		else if (key == "cgi_path")
+		{
+			if (cgi_path_set)
+				std::cout << "Error: 'cgi_path' duplivated in location!" << std::endl;
+			loc.setCgiPath(value);
+			cgi_path_set = true;
+		}
+		else if (key == "cgi_ext_set")
+		{
+			if (cgi_ext_set)
+				std::cout << "Error: 'cgi_ext' duplivated in location!" << std::endl;
+			loc.setCgiExt(value);
+			cgi_ext_set = true;
+		}
+		// else if (key == "error_page")
+		// {
+		// 	std::istringstream valstream(value);
+		// 	short code;
+		// 	std::string path;
+		// 	valstream >> code >> path;
+		// 	if (error_codes_set.count(code))
+		// 	{
+		// 		std::cout << "Error: 'error_page' duplicated in location block!" << std::endl;
+		// 		continue;
+		// 	}
+		// 	loc.setErrorPage(code, path);
+		// 	error_codes_set.insert(code);
+		// }
+		else
+			std::cout << "Error: Unknown setting in location block" << std::endl;
+	}
+}
+
 void InitConfig::setPort(std::string port)
 {
 	this->port = static_cast<uint16_t>(std::atoi(port.c_str()));
@@ -102,6 +239,11 @@ bool InitConfig::setErrorPage(std::string errorpage)
 	return (true);
 }
 
+void InitConfig::addLocation(Location &loc)
+{
+	this->locations.push_back(loc);
+}
+
 void InitConfig::print() const
 {
 	std::cout << "---- Server Config ----" << std::endl;
@@ -113,17 +255,19 @@ void InitConfig::print() const
 	std::cout << "Autoindex: " << (autoindex ? "on" : "off") << std::endl;
 	std::cout << "Client Max Body Size: " << client_max_body_size << std::endl;
 
-	// Print error pages
-	std::cout << "Error Pages: ";
+	std::cout << "Error Pages:\n";
 	if (error_pages.empty())
-		std::cout << "none" << std::endl;
+		std::cout << "  (none)\n";
 	else
 	{
-		std::cout << std::endl;
 		for (std::map<short, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it)
 			std::cout << "  " << it->first << " -> " << it->second << std::endl;
 	}
 
-	// Print locations (for later, after you parse them)
 	std::cout << "Locations: " << locations.size() << std::endl;
+	for (size_t i = 0; i < locations.size(); ++i)
+	{
+		std::cout << "  --- Location #" << (i+1) << " ---" << std::endl;
+		locations[i].print(); // Assumes you have a print() function in Location
+	}
 }

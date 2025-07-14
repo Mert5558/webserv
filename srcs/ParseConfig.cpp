@@ -1,5 +1,6 @@
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
+#include "../inc/InitConfig.hpp"
 
 ParseConfig::ParseConfig()
 {
@@ -8,8 +9,6 @@ ParseConfig::ParseConfig()
 
 ParseConfig::~ParseConfig()
 {}
-
-#include <iostream>
 
 int ParseConfig::parseFile(std::string configfile)
 {
@@ -38,9 +37,7 @@ int ParseConfig::parseFile(std::string configfile)
 	
 	removeComments(content);
 	trimWhitespaces(content);
-	std::cout << content << std::endl;
 	extractServerBlocks(content);
-	std::cout << this->blocks[0] << std::endl;
 	for (int i = 0; i < this->blockNB; i++)
 	{
 		std::vector<std::string> lines = splitIntoLines(blocks[i]);
@@ -188,7 +185,29 @@ void ParseConfig::parseServerSettings(const std::vector<std::string> &lines, Ini
 		if (line == "{" || line == "}")
 			continue;
 		if (line.find("location") == 0)
-			continue; // will handle later -------------------------------
+		{
+			std::vector<std::string> location_lines;
+			location_lines.push_back(line);
+
+			int depth = 0;
+			if (line.find("{") != std::string::npos)
+				depth = 1;
+
+			while (++i < lines.size())
+			{
+				const std::string &loc_line = lines[i];
+				location_lines.push_back(loc_line);
+				if (loc_line.find("{") != std::string::npos)
+					depth++;
+				if (loc_line.find("}") != std::string::npos)
+					depth--;
+				if (depth == 0)
+					break;
+			}
+			Location loc;
+			config.parseLocation(location_lines, loc);
+			config.addLocation(loc);
+		}
 
 		std::istringstream iss(line);
 		std::string key;
