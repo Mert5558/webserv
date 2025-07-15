@@ -10,7 +10,7 @@ Location::Location()
 	this->alias = "";
 	this->client_max_body_size = 1000000;
 	this->methods.push_back(0); //GET
-	this->methods.push_back(1); //POST          methods verbessern
+	this->methods.push_back(1); //POST
 	this->methods.push_back(2); //DELETE
 }
 
@@ -66,7 +66,8 @@ void Location::setIndex(std::string index)
 
 void Location::setAutoindex(std::string autoindex)
 {
-	if (autoindex == "on" || autoindex == "true" || autoindex == "1")
+	if (autoindex == "on" || autoindex == "true" || autoindex == "1"
+		|| autoindex == "on;" || autoindex == "true;" || autoindex == "1;")
 		this->autoindex = true;
 	else
 		this->autoindex = false;
@@ -82,11 +83,15 @@ void Location::setMethods(std::vector<std::string> methods_vec)
 	methods.clear();
 	for (size_t i = 0; i < methods_vec.size(); i++)
 	{
-		if (methods_vec[i] == "GET")
+		std::string met = methods_vec[i];
+		if (!met.empty() && met[met.size()-1] == ';')
+			met = met.substr(0, met.size()-1);
+
+		if (met == "GET")
 			methods.push_back(0);
-		if (methods_vec[i] == "POST")
+		else if (met == "POST")
 			methods.push_back(1);
-		if (methods_vec[i] == "DELETE")
+		else if (met == "DELETE")
 			methods.push_back(2);
 		else
 			methods.push_back(-1);

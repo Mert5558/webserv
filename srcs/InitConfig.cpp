@@ -51,7 +51,7 @@ InitConfig &InitConfig::operator=(const InitConfig &copy)
 	return (*this);
 }
 
-void InitConfig::parseLocation(std::vector<std::string> location_lines, Location loc)
+void InitConfig::parseLocation(std::vector<std::string> &location_lines, Location &loc)
 {
 	bool root_set = false, index_set = false, autoindex_set = false, client_max_body_size_set = false;
 	bool allow_methods_set = false, return_set = false, alias_set = false, cgi_path_set = false, cgi_ext_set = false;
@@ -162,7 +162,7 @@ void InitConfig::parseLocation(std::vector<std::string> location_lines, Location
 			loc.setCgiPath(value);
 			cgi_path_set = true;
 		}
-		else if (key == "cgi_ext_set")
+		else if (key == "cgi_ext")
 		{
 			if (cgi_ext_set)
 				std::cout << "Error: 'cgi_ext' duplivated in location!" << std::endl;
@@ -184,7 +184,7 @@ void InitConfig::parseLocation(std::vector<std::string> location_lines, Location
 		// 	error_codes_set.insert(code);
 		// }
 		else
-			std::cout << "Error: Unknown setting in location block" << std::endl;
+			std::cout << "Error: Unknown setting " << key << " in location block" << std::endl;
 	}
 }
 
