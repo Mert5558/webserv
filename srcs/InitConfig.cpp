@@ -104,35 +104,35 @@ void InitConfig::parseLocation(std::vector<std::string> &location_lines, Locatio
 		if (key == "root")
 		{
 			if (root_set)
-				std::cout << "Error: 'root' duplivated in location!" << std::endl;
+				throw ConfigError("Error: 'root' duplicated in location!");
 			loc.setRoot(value);
 			root_set = true;
 		}
 		else if (key == "index")
 		{
 			if (index_set)
-				std::cout << "Error: 'index' duplivated in location!" << std::endl;
+				throw ConfigError("Error: 'index' duplicated in location!");
 			loc.setIndex(value);
 			index_set = true;
 		}
 		else if (key == "autoindex")
 		{
 			if (autoindex_set)
-				std::cout << "Error: 'autoindex' duplivated in location!" << std::endl;
+				throw ("Error: 'autoindex' duplicated in location!" );
 			loc.setAutoindex(value);
 			autoindex_set = true;
 		}
 		else if (key == "client_max_body_size")
 		{
 			if (client_max_body_size_set)
-				std::cout << "Error: 'client_max_body_size' duplivated in location!" << std::endl;
+				throw ConfigError("Error: 'client_max_body_size' duplicated in location!");
 			loc.setClientMaxBodySize(value);
 			client_max_body_size_set = true;
 		}
 		else if (key == "allow_methods")
 		{
 			if (allow_methods_set)
-				std::cout << "Error: 'allow_methods' duplivated in location!" << std::endl;
+				throw ConfigError("Error: 'allow_methods' duplicated in location!");
 			std::istringstream methodss(value);
 			std::vector<std::string> methods_vec;
 			std::string method;
@@ -144,33 +144,33 @@ void InitConfig::parseLocation(std::vector<std::string> &location_lines, Locatio
 		else if (key == "return")
 		{
 			if (return_set)
-				std::cout << "Error: 'return' duplivated in location!" << std::endl;
+				throw ConfigError("Error: 'return' duplicated in location!");
 			loc.setReturn(value);
 			return_set = true;
 		}
 		else if (key == "alias")
 		{
 			if (alias_set)
-				std::cout << "Error: 'alias' duplivated in location!" << std::endl;
+				throw ConfigError("Error: 'alias' duplicated in location!");
 			loc.setAlias(value);
 			alias_set = true;
 		}
 		else if (key == "cgi_path")
 		{
 			if (cgi_path_set)
-				std::cout << "Error: 'cgi_path' duplivated in location!" << std::endl;
+				throw ConfigError("Error: 'cgi_path' duplicated in location!");
 			loc.setCgiPath(value);
 			cgi_path_set = true;
 		}
 		else if (key == "cgi_ext")
 		{
 			if (cgi_ext_set)
-				std::cout << "Error: 'cgi_ext' duplivated in location!" << std::endl;
+				throw ConfigError("Error: 'cgi_ext' duplicated in location!");
 			loc.setCgiExt(value);
 			cgi_ext_set = true;
 		}
 		else
-			std::cout << "Error: Unknown setting " << key << " in location block" << std::endl;
+			throw ConfigError("Error: Unknown setting in location block");
 	}
 }
 

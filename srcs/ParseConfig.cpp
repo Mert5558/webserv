@@ -15,18 +15,15 @@ int ParseConfig::parseFile(std::string configfile)
 	std::cout << configfile << std::endl;
 	if (!isRegularFile(configfile))
 	{
-		std::cerr << "Error: '" << configfile << "' is not a regular file or it does not exist!" << std::endl;
-		return (1);
+		throw ConfigError("Error: not a regular file or it does not exist!");
 	}
 	if (!isFileReadable(configfile))
 	{
-		std::cerr << "Error: cannot read config file! '" << configfile <<"'." << std::endl;
-		return (1);
+		throw ConfigError("Error: cannot read config file!");
 	}
 	if (isFileEmpty(configfile))
 	{
-		std::cerr << "Error: Config file is empty!" << std::endl;
-		return (1);
+		throw ConfigError("Error: Config file is empty!");
 	}
 	
 	std::ifstream infile(configfile.c_str());
@@ -84,9 +81,9 @@ void ParseConfig::removeComments(std::string &content)
 	{
 		size_t end = content.find('\n', pos);
 		if (end == std::string::npos)
-		content.erase(pos);
+			content.erase(pos);
 		else
-		content.erase(pos, end - pos);
+			content.erase(pos, end - pos);
 	}
 }
 
@@ -131,34 +128,34 @@ void ParseConfig::extractServerBlocks(const std::string &content)
 	{
 		size_t serverPos = content.find("server", searchPos);
 		if (serverPos == std::string::npos)
-		break;
+			break;
 		
 		size_t openBrace = content.find("{", serverPos);
 		if (openBrace == std::string::npos)
-		std::cout << "Malformed config: missing '{' after server" << std::endl;
+			throw ConfigError("Malformed config: missing '{' after server");
 		
 		int braceCount = 1;
 		size_t closedBrace = openBrace + 1;
 		while (closedBrace < content.size() && braceCount > 0)
 		{
 			if (content[closedBrace] == '{')
-			braceCount++;
+				braceCount++;
 			else if (content[closedBrace] == '}')
-			braceCount--;
+				braceCount--;
 			closedBrace++;
 		}
 		if (braceCount != 0)
-		std::cout << "Malformed config: unmatched braces in server block" << std::endl;
+			throw ConfigError("Malformed config: unmatched braces in server block");
 		this->blocks.push_back(content.substr(serverPos, closedBrace - serverPos));
 		this->blockNB++;
 		
 		if (isServerBlockEmpty(this->blocks.back()))
-		std::cout << "Error config: server block is empty!" << std::endl;
+			throw ConfigError("Error config: server block is empty!");
 		
 		searchPos = closedBrace;
 	}
 	if (this->blocks.empty())
-	std::cout << "No server blocks found in config!" << std::endl;
+		throw ConfigError("No server blocks found in config!");
 }
 
 std::vector<std::string> ParseConfig::splitIntoLines(const std::string &oneBlock)
@@ -248,56 +245,56 @@ void ParseConfig::parseServerSettings(const std::vector<std::string> &lines, Ini
 		if (key == "listen" || key == "port")
 		{
 			if (port_set)
-				std::cout << "Error: 'port' is listed multiple times in this server block!" << std::endl;
+				throw ConfigError("Error: 'port' is listed multiple times in this server block!");
 			config.setPort(value);
 			port_set = true;
 		}
 		else if (key == "server_name")
 		{
 			if (server_name_set)
-				std::cout << "Error: 'server_name' is listed multiple times in this server block!" << std::endl;
+				throw ConfigError("Error: 'server_name' is listed multiple times in this server block!");
 			config.setServerName(value);
 			server_name_set = true;
 		}
 		else if (key == "root")
 		{
 			if (root_set)
-				std::cout << "Error: 'root' is listed multiple times in this server block!" << std::endl;
+				throw ConfigError("Error: 'root' is listed multiple times in this server block!");
 			config.setRoot(value);
 			root_set = true;
 		}
 		else if (key == "index")
 		{
 			if (index_set)
-				std::cout << "Error: 'index' is listed multiple times in this server block!" << std::endl;
+				throw ConfigError("Error: 'index' is listed multiple times in this server block!");
 			config.setIndex(value);
 			index_set = true;	
 		}
 		else if (key == "autoindex")
 		{
 			if (autoindex_set)
-				std::cout << "Error: 'autoindex' is listed multiple times in this server block!" << std::endl;
+				throw ConfigError("Error: 'autoindex' is listed multiple times in this server block!");
 			config.setAutoindex(value);
 			autoindex_set = true;
 		}
 		else if (key == "client_max_body_size")
 		{
 			if (client_max_body_size_set)
-				std::cout << "Error: 'client_max_body_size' is listed multiple times in this server block!" << std::endl;
+				throw ConfigError("Error: 'client_max_body_size' is listed multiple times in this server block!");
 			config.setClientMaxBodsize(value);
 			client_max_body_size_set = true;
 		}
 		else if (key == "host")
 		{
 			if (host_set)
-				std::cout << "Error: 'host' is listed multiple times in this server block!" << std::endl;
+				throw ConfigError("Error: 'host' is listed multiple times in this server block!");
 			config.setHost(value);
 			host_set = true;
 		}
 		else if (key == "error_page")
 		{
 			if (!config.setErrorPage(value))
-				std::cout << "Error: 'error_page' is listed multiple times in this server block!" << std::endl;
+				throw ConfigError("Error: 'error_page' is listed multiple times in this server block!");
 		}
 	}
 }

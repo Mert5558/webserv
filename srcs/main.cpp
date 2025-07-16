@@ -6,7 +6,7 @@
 /*   By: merdal <merdal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/07/10 15:55:27 by merdal           ###   ########.fr       */
+/*   Updated: 2025/07/16 14:01:42 by merdal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,9 +26,15 @@ int main(int argc, char **argv)
 			configName = "conf/default.conf";
 		else
 			configName = argv[1];
-
-		parse.parseFile(configName);
-		
+		try
+		{
+			parse.parseFile(configName);
+		}
+		catch (const ConfigError &e)
+		{
+			std::cerr << e.what() << std::endl;
+			return (1);
+		}
 	}
 	else
 	{
