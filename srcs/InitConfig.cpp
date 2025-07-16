@@ -169,20 +169,6 @@ void InitConfig::parseLocation(std::vector<std::string> &location_lines, Locatio
 			loc.setCgiExt(value);
 			cgi_ext_set = true;
 		}
-		// else if (key == "error_page")
-		// {
-		// 	std::istringstream valstream(value);
-		// 	short code;
-		// 	std::string path;
-		// 	valstream >> code >> path;
-		// 	if (error_codes_set.count(code))
-		// 	{
-		// 		std::cout << "Error: 'error_page' duplicated in location block!" << std::endl;
-		// 		continue;
-		// 	}
-		// 	loc.setErrorPage(code, path);
-		// 	error_codes_set.insert(code);
-		// }
 		else
 			std::cout << "Error: Unknown setting " << key << " in location block" << std::endl;
 	}

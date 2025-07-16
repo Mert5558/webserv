@@ -163,11 +163,35 @@ void ParseConfig::extractServerBlocks(const std::string &content)
 
 std::vector<std::string> ParseConfig::splitIntoLines(const std::string &oneBlock)
 {
+	
 	std::vector<std::string> lines;
-	std::stringstream iss(oneBlock);
-	std::string line;
-	while (std::getline(iss, line))
-		lines.push_back(line);
+	std::string current;
+
+	for (size_t i = 0; i < oneBlock.size(); i++)
+	{
+		char c = oneBlock[i];
+		if (c == ';' || c == '\n')
+		{
+			size_t start = current.find_first_not_of(" \t\r");
+			size_t end = current.find_last_not_of(" \t\r");
+			if (start != std::string::npos && end != std::string::npos)
+				lines.push_back(current.substr(start, end - start + 1));
+			else if (!current.empty())
+				lines.push_back(current);
+			current.clear();
+		}
+		else
+			current += c;
+	}
+	if (!current.empty())
+	{
+		size_t start = current.find_first_not_of(" \t\r");
+		size_t end = current.find_last_not_of(" \t\r");
+		if (start != std::string::npos && end != std::string::npos)
+			lines.push_back(current.substr(start, end - start + 1));
+		else
+			lines.push_back(current);
+	}
 	return (lines);
 }
 
@@ -220,7 +244,7 @@ void ParseConfig::parseServerSettings(const std::vector<std::string> &lines, Ini
 			value = value.substr(value_start);
 		else
 			value = "";
-		
+
 		if (key == "listen" || key == "port")
 		{
 			if (port_set)
