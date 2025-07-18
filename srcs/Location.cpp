@@ -1,3 +1,4 @@
+#include "../inc/Webserv.hpp"
 #include "../inc/Location.hpp"
 
 Location::Location()
@@ -94,7 +95,7 @@ void Location::setMethods(std::vector<std::string> methods_vec)
 		else if (met == "DELETE")
 			methods.push_back(2);
 		else
-			methods.push_back(-1);
+			throw ConfigError("Method not allowed!");
 	}
 }
 
@@ -124,6 +125,56 @@ void Location::setCgiExt(std::string cgiExt)
 	std::string ext;
 	while (iss >> ext)
 		this->cgi_ext.push_back(ext);
+}
+
+std::string Location::getPath()
+{
+	return (path);
+}
+
+std::string Location::getRoot()
+{
+	return (root);
+}
+
+std::string Location::getIndex()
+{
+	return (index);
+}
+
+bool Location::getAutoindex()
+{
+	return (autoindex);
+}
+
+unsigned long Location::getClientMaxBodySize()
+{
+	return (client_max_body_size);
+}
+
+std::vector<short> Location::getMethods()
+{
+	return (methods);
+}
+
+std::string Location::getReturn()
+{
+	return (_return);
+}
+
+std::string Location::getAlias()
+{
+	return (alias);
+}
+
+std::vector<std::string> Location::getCgiPath()
+{
+	return (cgi_path);
+}
+
+std::vector<std::string> Location::getCgiExt()
+{
+	return (cgi_ext);
 }
 
 void Location::print() const

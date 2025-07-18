@@ -24,6 +24,17 @@ class InitConfig
 		InitConfig &operator=(const InitConfig &copy);
 		~InitConfig();
 
+		uint16_t getPort();
+		std::string getHost();
+		std::string getServerName();
+		std::string getRoot();
+		std::string getIndex();
+		bool getAutoindex();
+		unsigned long getClientMaxBodySize();
+		std::map<short, std::string> getErrorPages();
+		std::vector<Location> getLocations();
+
+
 		void setPort(std::string port);
 		void setHost(std::string host);
 		void setServerName(std::string serverName);

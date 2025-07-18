@@ -43,6 +43,8 @@ int ParseConfig::parseFile(std::string configfile)
 		servers.push_back(config);
 	}
 	servers[0].print();
+	this->validatePaths();
+
 	
 	return (0);
 }
@@ -294,7 +296,54 @@ void ParseConfig::parseServerSettings(const std::vector<std::string> &lines, Ini
 		else if (key == "error_page")
 		{
 			if (!config.setErrorPage(value))
-				throw ConfigError("Error: 'error_page' is listed multiple times in this server block!");
+				throw ConfigError("Error: 'error_page' is duplicated or not valid!");
+		}
+	}
+}
+
+bool pathExistsAndReadable(const std::string &path)
+{
+	return(access(path.c_str(), R_OK) == 0);
+}
+
+void ParseConfig::validatePaths()
+{
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		InitConfig config = servers[i];
+
+		if (!pathExistsAndReadable(config.getRoot()))
+			throw ConfigError("Root path does not exist or is not readable!" + config.getRoot());
+		
+		std::string index_path = config.getRoot() + "/" + config.getIndex();
+		if (!pathExistsAndReadable(index_path))
+			throw ConfigError("Error: index does not exist or is not readable!" + index_path);
+		
+		const std::map<short, std::string> errPages = config.getErrorPages();
+		for (std::map<short, std::string>::const_iterator it = errPages.begin(); it != errPages.end(); ++it)
+		{
+			if (!it->second.empty() && !pathExistsAndReadable(it->second))
+				throw ConfigError("Error page does not exist or is not readable!" + it->second);
+		}
+
+		const std::vector<Location> locs = config.getLocations();
+		for (size_t j = 0; j < locs.size(); j++)
+		{
+			Location loc = locs[j];
+			std::string loc_root = loc.getRoot().empty() ? config.getRoot() : loc.getRoot();
+			std::string loc_index = loc_root + "/" + loc.getIndex();
+			if (!pathExistsAndReadable(loc_index))
+				throw ConfigError("Location indexx file missing or not readable" + loc_index);
+			
+			if (!loc.getAlias().empty() && !pathExistsAndReadable(loc.getAlias()))
+				throw ConfigError("Alias is not readable" + loc.getAlias());
+			
+			const std::vector<std::string> cgi_paths = loc.getCgiPath();
+			for (size_t x = 0; x < cgi_paths.size(); x++)
+			{
+				if (!pathExistsAndReadable(cgi_paths[x]))
+					throw ConfigError("CGI interpreter not found or not readable: " + cgi_paths[x]);
+			}
 		}
 	}
 }

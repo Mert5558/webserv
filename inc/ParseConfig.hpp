@@ -26,5 +26,6 @@ class ParseConfig
 	bool isServerBlockEmpty(const std::string &block) const;
 	std::vector<std::string> splitIntoLines(const std::string &content);
 	void parseServerSettings(const std::vector<std::string> &lines, InitConfig &config);
+	void validatePaths();
 
 };

@@ -212,6 +212,18 @@ void InitConfig::setClientMaxBodsize(std::string cmbs)
 	this->client_max_body_size = std::strtoul(cmbs.c_str(), NULL, 10);
 }
 
+bool isValidErrorCode(short code)
+{
+	const short validErrorCodes[] = {400, 401, 403, 404, 405, 413, 500, 501, 502, 504};
+
+	for (size_t i = 0; i < sizeof(validErrorCodes)/sizeof(validErrorCodes[0]); i++)
+	{
+		if (code == validErrorCodes[i])
+			return (true);
+		}
+		return (false);
+	}
+
 bool InitConfig::setErrorPage(std::string errorpage)
 {
 	std::istringstream iss(errorpage);
@@ -219,6 +231,8 @@ bool InitConfig::setErrorPage(std::string errorpage)
 	std::string path;
 	iss >> code >> path;
 	if (error_pages.count(code))
+		return (false);
+	if (!isValidErrorCode(code))
 		return (false);
 	if (!path.empty())
 		this->error_pages[code] = path;
@@ -229,6 +243,53 @@ void InitConfig::addLocation(Location &loc)
 {
 	this->locations.push_back(loc);
 }
+
+uint16_t InitConfig::getPort()
+{
+	return (port);
+}
+
+std::string InitConfig::getHost()
+{
+	return (host);
+}
+
+std::string InitConfig::getServerName()
+{
+	return (server_name);
+}
+
+std::string InitConfig::getRoot()
+{
+	return (root);
+}
+
+std::string InitConfig::getIndex()
+{
+	return (index);
+}
+
+bool InitConfig::getAutoindex()
+{
+	return (autoindex);
+}
+
+unsigned long InitConfig::getClientMaxBodySize()
+{
+	return (client_max_body_size);
+}
+
+std::map<short, std::string> InitConfig::getErrorPages()
+{
+	return (error_pages);
+}
+
+std::vector<Location> InitConfig::getLocations()
+{
+	return (locations);
+}
+
+
 
 void InitConfig::print() const
 {

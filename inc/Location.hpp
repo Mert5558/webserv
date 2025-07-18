@@ -33,5 +33,16 @@ class Location
 		void setCgiPath(std::string cgiPath);
 		void setCgiExt(std::string cgiExt);
 		void print() const;
+
+		std::string getPath();
+		std::string getRoot();
+		std::string getIndex();
+		bool getAutoindex();
+		unsigned long getClientMaxBodySize();
+		std::vector<short> getMethods();
+		std::string getReturn();
+		std::string getAlias();
+		std::vector<std::string> getCgiPath();
+		std::vector<std::string> getCgiExt();
 	
 };
