@@ -306,11 +306,38 @@ bool pathExistsAndReadable(const std::string &path)
 	return(access(path.c_str(), R_OK) == 0);
 }
 
+bool isValidHost(const std::string host)
+{
+	if (host == "localhost")
+		return (true);
+
+	struct in_addr addr;
+	if (inet_pton(AF_INET, host.c_str(), &addr) == 1)
+		return (true);
+	return (false);
+}
+
+bool isValidCgiExt(const std::string ext)
+{
+	if (ext.empty())
+		return (false);
+	if (ext[0] != '.')
+		return (false);
+	if (ext.size() == 1)
+		return (false);
+	if (ext.find('/') != std::string::npos)
+		return (false);
+	return (true);
+}
+
 void ParseConfig::validatePaths()
 {
 	for (size_t i = 0; i < servers.size(); i++)
 	{
 		InitConfig config = servers[i];
+
+		if (!config.getPort() || config.getServerName().empty() || isValidHost(config.getHost()) == false)
+			throw ConfigError("Mandatory settings are not set or is wrong!");
 
 		if (!pathExistsAndReadable(config.getRoot()))
 			throw ConfigError("Root path does not exist or is not readable!" + config.getRoot());
@@ -336,13 +363,20 @@ void ParseConfig::validatePaths()
 				throw ConfigError("Location indexx file missing or not readable" + loc_index);
 			
 			if (!loc.getAlias().empty() && !pathExistsAndReadable(loc.getAlias()))
-				throw ConfigError("Alias is not readable" + loc.getAlias());
+				throw ConfigError("Alias is not readable " + loc.getAlias());
 			
 			const std::vector<std::string> cgi_paths = loc.getCgiPath();
 			for (size_t x = 0; x < cgi_paths.size(); x++)
 			{
 				if (!pathExistsAndReadable(cgi_paths[x]))
 					throw ConfigError("CGI interpreter not found or not readable: " + cgi_paths[x]);
+			}
+			const std::vector<std::string> exts = loc.getCgiExt();
+			for (size_t c = 0; c < exts.size(); c++)
+			{
+				if (!isValidCgiExt(exts[c]))
+					throw ConfigError("Invalid CGI extension!");
+
 			}
 		}
 	}
