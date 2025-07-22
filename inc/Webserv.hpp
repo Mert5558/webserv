@@ -12,6 +12,7 @@
 #include <vector>
 #include <algorithm>
 #include <set>
+#include <arpa/inet.h>
 
 
 class ConfigError: public std::exception

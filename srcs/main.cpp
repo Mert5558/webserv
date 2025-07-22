@@ -6,7 +6,7 @@
 /*   By: merdal <merdal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/07/22 17:09:48 by merdal           ###   ########.fr       */
+/*   Updated: 2025/07/22 17:16:05 by merdal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ int main(int argc, char **argv)
 		try
 		{
 			parse.parseFile(configName);
+			// networking()
 		}
 		catch (const ConfigError &e)
 		{
