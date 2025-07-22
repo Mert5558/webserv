@@ -6,12 +6,11 @@
 /*   By: merdal <merdal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/07/16 14:01:42 by merdal           ###   ########.fr       */
+/*   Updated: 2025/07/22 14:45:55 by merdal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../inc/Webserv.hpp"
-#include "../inc/Server.hpp"
 #include "../inc/ParseConfig.hpp"
 
 int main(int argc, char **argv)
@@ -29,6 +28,7 @@ int main(int argc, char **argv)
 		try
 		{
 			parse.parseFile(configName);
+			// networking()
 		}
 		catch (const ConfigError &e)
 		{

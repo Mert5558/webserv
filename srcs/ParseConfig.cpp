@@ -330,7 +330,7 @@ bool isValidCgiExt(const std::string ext)
 	return (true);
 }
 
-void ParseConfig::validatePaths()
+void ParseConfig::validatePaths()				// change name
 {
 	for (size_t i = 0; i < servers.size(); i++)
 	{
@@ -354,11 +354,19 @@ void ParseConfig::validatePaths()
 		}
 
 		const std::vector<Location> locs = config.getLocations();
+		std::set<std::string> seen_paths;
 		for (size_t j = 0; j < locs.size(); j++)
 		{
 			Location loc = locs[j];
+
+			std::string path = loc.getPath();
+			if (seen_paths.count(path))
+				throw ConfigError("Duplicate location path!: " + path);
+			seen_paths.insert(path);
+
 			std::string loc_root = loc.getRoot().empty() ? config.getRoot() : loc.getRoot();
 			std::string loc_index = loc_root + "/" + loc.getIndex();
+
 			if (!pathExistsAndReadable(loc_index))
 				throw ConfigError("Location indexx file missing or not readable" + loc_index);
 			
@@ -376,7 +384,6 @@ void ParseConfig::validatePaths()
 			{
 				if (!isValidCgiExt(exts[c]))
 					throw ConfigError("Invalid CGI extension!");
-
 			}
 		}
 	}
