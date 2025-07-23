@@ -44,6 +44,7 @@ int ParseConfig::parseFile(std::string configfile)
 	}
 	servers[0].print();
 	this->validatePaths();
+	this->checkDupServers();
 
 	
 	return (0);
@@ -379,5 +380,20 @@ void ParseConfig::validatePaths()
 
 			}
 		}
+	}
+}
+
+void ParseConfig::checkDupServers()
+{
+	std::set<std::string> seen;
+	
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		InitConfig conf = servers[i];
+		std::string key = conf.getHost() + ":" + std::to_string(conf.getPort()) + ":" + conf.getServerName();
+
+		if (seen.count(key))
+			throw ConfigError("Error: Duplicate server block!");
+		seen.insert(key);
 	}
 }
