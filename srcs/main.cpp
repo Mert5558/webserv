@@ -6,18 +6,20 @@
 /*   By: merdal <merdal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/07/23 11:17:42 by merdal           ###   ########.fr       */
+/*   Updated: 2025/07/27 13:23:20 by merdal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
+#include "../inc/Server.hpp"
 
 int main(int argc, char **argv)
 {
 	if (argc == 1 || argc == 2)
 	{
 		ParseConfig	parse;
+		Server		server;
 		std::string configName;
 		std::cout << "Webserv is starting..." << std::endl;
 
@@ -25,10 +27,11 @@ int main(int argc, char **argv)
 			configName = "conf/default.conf";
 		else
 			configName = argv[1];
+
 		try
 		{
 			parse.parseFile(configName);
-			// networking()
+			server.startServer(parse);
 		}
 		catch (const ConfigError &e)
 		{
