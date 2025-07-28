@@ -6,12 +6,13 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/07/28 15:39:47 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/07/28 22:51:22 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
+#include "../inc/ParseHttp.hpp"
 
 
 // Function to read the contents of a file into a string
