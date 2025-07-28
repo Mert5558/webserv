@@ -12,11 +12,13 @@ void Server::startServer(ParseConfig parse)
 	//stuff
 
 	serverSetup(parse.getServers());
+	// while (true)
+	// 	sleep(1);
 }
 
 void Server::serverSetup(std::vector<InitConfig> servers)
 {
-	std::cout << "server being initialized..." << std::endl;     //logger
+	std::cout << "servers being initialized..." << std::endl;     //logger
 
 	for (size_t i = 0; i < servers.size(); i++)
 	{
@@ -35,11 +37,10 @@ void Server::serverSetup(std::vector<InitConfig> servers)
 
 		if (!duplicate)
 		{
+			std::cout << "-----------------------------------------------" << std::endl;
 			if (!servers[i].createAndBindSocket())
 				throw ConfigError("Failed to setup server socket!");
-			std::cout << "Server created 'host: ... ', port: '...'" << std::endl;     //logger
 		}
-		else
-			std::cout << "Duplicate server!" << std::endl;    // logger
+		std::cout << "Server created 'host: ... ', port: '...'" << std::endl;     //logger
 	}
 }

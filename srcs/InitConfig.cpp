@@ -339,6 +339,12 @@ bool InitConfig::createAndBindSocket()
 		return (false);
 	}
 
+	// if (listen(listen_fd, SOMAXCONN) == -1) {
+	// 	std::cerr << "listen() failed: " << strerror(errno) << std::endl;
+	// 	close(listen_fd);
+	// 	return false;
+	// }
+
 	return (true);
 }
 
