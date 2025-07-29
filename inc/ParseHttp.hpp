@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/07/29 16:52:42 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/07/29 17:21:34 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ class	HttpRequest
 		std::string										path;		// The requested resource path (e.g., "/index.html" or "/api/data").
 		std::string										version;	// The HTTP version used in the request (e.g., "HTTP/1.1").
 		std::string										body;		// The body of the HTTP request, typically used for POST or PUT requests.
-		std::unordered_map<std::string, std::string>	headers;	// A collection of HTTP headers as key-value pairs (e.g., "Content-Type: application/json").	
+		std::vector<std::pair<std::string, std::string>> headers;	// A collection of HTTP headers as key-value pairs (e.g., "Content-Type: application/json").	
 
 	public:
 		HttpRequest();
@@ -54,20 +54,20 @@ class	HttpRequest
 		void setPath(const std::string &path);
 		void setVersion(const std::string &version);
 		void setBody(const std::string &body);
-		void setHeaders(const std::unordered_map<std::string, std::string> &headers);
+		void setHeaders(const std::vector<std::pair<std::string, std::string>> &headers);
 
 		std::string	getMethod() const;
 		std::string	getPath() const;
 		std::string getVersion() const;
 		std::string	getBody() const;
-		std::unordered_map<std::string, std::string> getHeaders() const;     // <---- const std::unordered_map<std::string, std::string> &getHeaders() const; [if i want to avoid copying the map (especially if the map is large)]
+		std::vector<std::pair<std::string, std::string>> getHeaders() const;
 																			
 		bool parseRequest(const std::string &rawRequest);
 		bool isValidMethod(const std::string &method);
 		bool isValidVersion(const std::string &version);
 
 		std::string receiveRequest(int client_fd);
-		void log_headers(const std::unordered_map<std::string, std::string> &headers);
+		void log_headers(const std::vector<std::pair<std::string, std::string>> &headers);
 		void log_first_line();
 };
 

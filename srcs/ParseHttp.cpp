@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/07/29 17:15:02 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/07/29 17:23:06 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,7 @@ void HttpRequest::setBody(const std::string &body)
 	this->body = body;
 }
 
-void HttpRequest::setHeaders(const std::unordered_map<std::string, std::string> &headers)
+void HttpRequest::setHeaders(const std::vector<std::pair<std::string, std::string>> &headers)
 {
     this->headers = headers;
 }
@@ -101,7 +101,7 @@ std::string HttpRequest::getBody() const
     return (body);
 }
 
-std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
+std::vector<std::pair<std::string, std::string>> HttpRequest::getHeaders() const
 {
     return (headers);
 }
@@ -125,7 +125,7 @@ std::string HttpRequest::receiveRequest(int client_fd)
             break;
         }
     }
-    std::cout << "~~~~~~~~~~~~~~~Real Buffer: " << buffer << std::endl;
+    // std::cout << "~~~~~~~~~~~~~~~Real Buffer: " << buffer << std::endl;
     return buffer;
 }
 
@@ -144,14 +144,14 @@ bool    HttpRequest::parseRequest(const std::string &rawRequest)
     log_first_line();
 
     // Parse headers
-    while (std::getline(raw, line) && !line.empty())
+    while (std::getline(raw, line) && !line.empty() && line != "\r")
     {
         size_t delimiterPos = line.find(':');
         if (delimiterPos != std::string::npos)
         {
             std::string key = line.substr(0, delimiterPos);
             std::string value = line.substr(delimiterPos + 1);
-            headers[key] = value;
+            headers.emplace_back(key, value);
         }
     }
     
@@ -169,27 +169,16 @@ bool    HttpRequest::parseRequest(const std::string &rawRequest)
 }
 
 
-void    HttpRequest::log_headers(const std::unordered_map<std::string, std::string> &headers)
+
+
+void    HttpRequest::log_headers(const std::vector<std::pair<std::string, std::string>> &headers)
 {
-    // Copy headers into a vector
-    std::vector<std::pair<std::string, std::string>> headerVector(headers.begin(), headers.end());
     
-    // Reverse iterate over the vector
-    for (auto it = headerVector.rbegin(); it != headerVector.rend(); ++it)
+    for (auto it = headers.begin(); it != headers.end(); ++it)
     {
         std::cout << it->first << ":" << it->second << "\n";
     }
 }
-
-// void    HttpRequest::log_headers(const std::unordered_map<std::string, std::string> &headers)
-// {
-    
-//     // Reverse iterate over the vector
-//     for (auto it = headers.begin(); it != headers.end(); ++it)
-//     {
-//         std::cout << it->first << ":" << it->second << "\n";
-//     }
-// }
 
 void    HttpRequest::log_first_line()
 {
