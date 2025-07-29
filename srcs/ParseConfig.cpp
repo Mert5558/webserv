@@ -404,3 +404,8 @@ void ParseConfig::checkDupServers()
 		seen.insert(key);
 	}
 }
+
+std::vector<InitConfig> ParseConfig::getServers()
+{
+	return (this->servers);
+}

@@ -28,5 +28,6 @@ class ParseConfig
 	void parseServerSettings(const std::vector<std::string> &lines, InitConfig &config);
 	void validatePaths();
 	void checkDupServers();
+	std::vector<InitConfig> getServers();
 
 };

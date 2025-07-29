@@ -28,7 +28,7 @@ InitConfig::InitConfig(const InitConfig &copy)
 	client_max_body_size = copy.client_max_body_size;
 	error_pages = copy.error_pages;
 	locations = copy.locations;
-	server_address = copy.server_address;
+	socket_address = copy.socket_address;
 	listen_fd = copy.listen_fd;
 }
 
@@ -45,7 +45,7 @@ InitConfig &InitConfig::operator=(const InitConfig &copy)
 		client_max_body_size = copy.client_max_body_size;
 		error_pages = copy.error_pages;
 		locations = copy.locations;
-		server_address = copy.server_address;
+		socket_address = copy.socket_address;
 		listen_fd = copy.listen_fd;
 	}
 	return (*this);
@@ -239,6 +239,11 @@ bool InitConfig::setErrorPage(std::string errorpage)
 	return (true);
 }
 
+void InitConfig::setFd(int fd)
+{
+	this->listen_fd = fd;
+}
+
 void InitConfig::addLocation(Location &loc)
 {
 	this->locations.push_back(loc);
@@ -289,6 +294,59 @@ std::vector<Location> InitConfig::getLocations()
 	return (locations);
 }
 
+int InitConfig::getFd()
+{
+	return (listen_fd);
+}
+
+bool InitConfig::createAndBindSocket()
+{
+	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (listen_fd == -1)
+	{
+		std::cout << "Error: socket() failed" << std::endl;         //logger
+		return (false);
+	}
+
+	int opt = 1;
+	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+	{
+		std::cout << "Error: setsocketopt() failed" << std::endl;     //logger
+		close(listen_fd);
+		return (false);
+	}
+
+	memset(&socket_address, 0, sizeof(socket_address));
+	socket_address.sin_family = AF_INET;
+	socket_address.sin_port = htons(port);
+
+	if (host.empty() || host == "0.0.0.0")
+		socket_address.sin_addr.s_addr = INADDR_ANY;
+	else
+		socket_address.sin_addr.s_addr = inet_addr(host.c_str());
+	
+	if (socket_address.sin_addr.s_addr == INADDR_NONE)
+	{
+		std::cout << "Error: invalid IP" << std::endl;
+		close(listen_fd);
+		return (false);
+	}
+
+	if (bind(listen_fd, (struct sockaddr *) &socket_address, sizeof(socket_address)) == -1)
+	{
+		std::cout << "Error: bind() failed" << std::endl;
+		close(listen_fd);
+		return (false);
+	}
+
+	// if (listen(listen_fd, SOMAXCONN) == -1) {
+	// 	std::cerr << "listen() failed: " << strerror(errno) << std::endl;
+	// 	close(listen_fd);
+	// 	return false;
+	// }
+
+	return (true);
+}
 
 
 void InitConfig::print() const

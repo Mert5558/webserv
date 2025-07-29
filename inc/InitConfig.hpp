@@ -15,7 +15,7 @@ class InitConfig
 		unsigned long					client_max_body_size;
 		std::map<short, std::string>	error_pages;
 		std::vector<Location>			locations;
-		struct sockaddr_in				server_address;
+		struct sockaddr_in				socket_address;
 		int								listen_fd;
 
 	public:
@@ -29,6 +29,7 @@ class InitConfig
 		std::string getServerName();
 		std::string getRoot();
 		std::string getIndex();
+		int getFd();
 		bool getAutoindex();
 		unsigned long getClientMaxBodySize();
 		std::map<short, std::string> getErrorPages();
@@ -43,8 +44,10 @@ class InitConfig
 		void setAutoindex(std::string autoindex);
 		void setClientMaxBodsize(std::string cmbs);
 		bool setErrorPage(std::string errorpage);
+		void setFd(int fd);
 		void print() const;
 		void parseLocation(std::vector<std::string> &location_lines, Location &loc);
 		void addLocation(Location &loc);
+		bool createAndBindSocket();
 
 };
