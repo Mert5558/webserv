@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/07/28 22:51:22 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/07/29 15:58:25 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ int main(int argc, char **argv)
 {
 	if (argc == 1 || argc == 2)
 	{
+		HttpRequest	request;
 		ParseConfig	parse;
 		std::string configName;
 		std::cout << "Webserv is starting..." << std::endl;
@@ -110,36 +111,20 @@ int main(int argc, char **argv)
 					std::cout << "\n" << "Client connected: " << inet_ntoa(client_addr.sin_addr) << std::endl;
 
 					// Handle multiple requests from the same client
-					while (true)
-					{
-						// 7. Read the client's request
-						char buffer[1024] = {0};																	//* Should replace the this part of code!!
-						int bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-						if (bytes_read <= 0)																		
-						{
-							std::cout << "Client disconnected or error occurred." << std::endl;
-							break;
-						}
-							std::cout << "Received request:\n" << buffer << std::endl;								//* -------> replace until this line
+					// while (true)
+					// {
+						std::string buffer = request.receiveRequest(client_fd);
+						request.parseRequest(buffer);
+
 						
-
-						//! Here in this place should handle the parsing of HTTP requests, i should add a dedicated function
-						//! or a class to parse the incoming HTTP request data.
-						//! Steps to Add HTTP Request Parsing
-						
-						//! 1) Create a function or class to parse HTTP requests. This function should extract the HTTP method, path, headers, and body from the raw request.
-
-						//! 2)Call the parsing function after receiving the request. Use the parsed data to determine how to handle the request (e.g., GET, POST, DELETE).
-
-						//! 3)Modify the response generation logic to use the parsed data.
-	  
 						// 8. Send a basic HTTP response with keep-alive
-						std::string body = readFile("./www/index.html");
+						std::string body = readFile("./www/index2.html");
 						std::string response =
 							"HTTP/1.1 200 OK\r\n"
 							"Content-Type: text/html\r\n"
 							"Content-Length:" + std::to_string(body.size()) + "\r\n"
-							"Connection: keep-alive\r\n"  // Keep the connection alive
+							// "Connection: keep-alive\r\n"  // Keep the connection alive
+							"Connection: close\r\n"  // Close the connection after the response
 							"\r\n" +
 							body;
 
@@ -151,7 +136,7 @@ int main(int argc, char **argv)
 						}
 
 						std::cout << "Response sent (" << bytes_sent << " bytes)." << std::endl;
-					}
+					// }
 					close(client_fd); // Close the connection when the client disconnects
 				}
 				close(server_fd);

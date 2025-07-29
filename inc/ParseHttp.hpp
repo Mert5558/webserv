@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/07/28 22:47:08 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/07/29 16:52:42 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,10 @@ class	HttpRequest
 		bool parseRequest(const std::string &rawRequest);
 		bool isValidMethod(const std::string &method);
 		bool isValidVersion(const std::string &version);
-		
+
+		std::string receiveRequest(int client_fd);
+		void log_headers(const std::unordered_map<std::string, std::string> &headers);
+		void log_first_line();
 };
 
 std::ostream &operator<<(std::ostream &os, const HttpRequest &request);
