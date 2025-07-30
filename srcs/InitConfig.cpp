@@ -174,32 +174,32 @@ void InitConfig::parseLocation(std::vector<std::string> &location_lines, Locatio
 	}
 }
 
-void InitConfig::setPort(std::string port)
+void InitConfig::setPort(const std::string &port)
 {
 	this->port = static_cast<uint16_t>(std::atoi(port.c_str()));
 }
 
-void InitConfig::setHost(std::string host)
+void InitConfig::setHost(const std::string &host)
 {
 	this->host = host;
 }
 
-void InitConfig::setServerName(std::string serverName)
+void InitConfig::setServerName(const std::string &serverName)
 {
 	this->server_name = serverName;
 }
 
-void InitConfig::setRoot(std::string root)
+void InitConfig::setRoot(const std::string &root)
 {
 	this->root = root;
 }
 
-void InitConfig::setIndex(std::string index)
+void InitConfig::setIndex(const std::string &index)
 {
 	this->index = index;
 }
 
-void InitConfig::setAutoindex(std::string autoindex)
+void InitConfig::setAutoindex(const std::string &autoindex)
 {
 	if (autoindex == "on" || autoindex == "true" || autoindex == "1")
 		this->autoindex = true;
@@ -207,7 +207,7 @@ void InitConfig::setAutoindex(std::string autoindex)
 		this->autoindex = false;
 }
 
-void InitConfig::setClientMaxBodsize(std::string cmbs)
+void InitConfig::setClientMaxBodsize(const std::string &cmbs)
 {
 	this->client_max_body_size = std::strtoul(cmbs.c_str(), NULL, 10);
 }
@@ -224,7 +224,7 @@ bool isValidErrorCode(short code)
 		return (false);
 	}
 
-bool InitConfig::setErrorPage(std::string errorpage)
+bool InitConfig::setErrorPage(const std::string &errorpage)
 {
 	std::istringstream iss(errorpage);
 	short code;
@@ -254,22 +254,22 @@ uint16_t InitConfig::getPort()
 	return (port);
 }
 
-std::string InitConfig::getHost()
+const std::string &InitConfig::getHost()
 {
 	return (host);
 }
 
-std::string InitConfig::getServerName()
+const std::string &InitConfig::getServerName()
 {
 	return (server_name);
 }
 
-std::string InitConfig::getRoot()
+const std::string &InitConfig::getRoot()
 {
 	return (root);
 }
 
-std::string InitConfig::getIndex()
+const std::string &InitConfig::getIndex()
 {
 	return (index);
 }
@@ -284,12 +284,12 @@ unsigned long InitConfig::getClientMaxBodySize()
 	return (client_max_body_size);
 }
 
-std::map<short, std::string> InitConfig::getErrorPages()
+const std::map<short, std::string> &InitConfig::getErrorPages()
 {
 	return (error_pages);
 }
 
-std::vector<Location> InitConfig::getLocations()
+const std::vector<Location> &InitConfig::getLocations()
 {
 	return (locations);
 }
@@ -339,12 +339,11 @@ bool InitConfig::createAndBindSocket()
 		return (false);
 	}
 
-	// if (listen(listen_fd, SOMAXCONN) == -1) {
-	// 	std::cerr << "listen() failed: " << strerror(errno) << std::endl;
-	// 	close(listen_fd);
-	// 	return false;
-	// }
-
+	if (listen(listen_fd, SOMAXCONN) == -1) {
+		std::cerr << "listen() failed: " << strerror(errno) << std::endl;
+		close(listen_fd);
+		return false;
+	}
 	return (true);
 }
 

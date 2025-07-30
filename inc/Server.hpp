@@ -2,6 +2,7 @@
 
 #include "Webserv.hpp"
 #include "ParseConfig.hpp"
+#include "ParseHttp.hpp"
 
 class Server
 {
@@ -11,6 +12,7 @@ class Server
 		Server();
 		~Server();
 		void startServer(ParseConfig parse);
-		void serverSetup(std::vector<InitConfig> servers);
+		void serverSetup(std::vector<InitConfig> &servers);
+		void parseHttp(std::vector<InitConfig> &servers, HttpRequest &request);
 
 };

@@ -22,27 +22,27 @@ class Location
 		Location &operator=(const Location &copy);
 		~Location();
 	
-		void setPath(std::string path);
-		void setRoot(std::string root);
-		void setIndex(std::string index);
-		void setAutoindex(std::string autoindex);
-		void setClientMaxBodySize(std::string cmbs);
-		void setMethods(std::vector<std::string> methods_vec);
-		void setReturn(std::string retrunStr);
-		void setAlias(std::string alias);
-		void setCgiPath(std::string cgiPath);
-		void setCgiExt(std::string cgiExt);
+		void setPath(const std::string &path);
+		void setRoot(const std::string &root);
+		void setIndex(const std::string &index);
+		void setAutoindex(const std::string &autoindex);
+		void setClientMaxBodySize(const std::string &cmbs);
+		void setMethods(const std::vector<std::string> &methods_vec);
+		void setReturn(const std::string &retrunStr);
+		void setAlias(const std::string &alias);
+		void setCgiPath(const std::string &cgiPath);
+		void setCgiExt(const std::string &cgiExt);
 		void print() const;
 
-		std::string getPath();
-		std::string getRoot();
-		std::string getIndex();
+		const std::string &getPath();
+		const std::string &getRoot();
+		const std::string &getIndex();
 		bool getAutoindex();
 		unsigned long getClientMaxBodySize();
-		std::vector<short> getMethods();
-		std::string getReturn();
-		std::string getAlias();
-		std::vector<std::string> getCgiPath();
-		std::vector<std::string> getCgiExt();
+		const std::vector<short> &getMethods();
+		const std::string &getReturn();
+		const std::string &getAlias();
+		const std::vector<std::string> &getCgiPath();
+		const std::vector<std::string> &getCgiExt();
 	
 };

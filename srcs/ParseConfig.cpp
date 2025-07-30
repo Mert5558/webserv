@@ -42,7 +42,7 @@ int ParseConfig::parseFile(std::string configfile)
 		parseServerSettings(lines, config);
 		servers.push_back(config);
 	}
-	servers[0].print();
+	//servers[0].print();
 	this->validatePaths();
 	this->checkDupServers();
 
@@ -405,7 +405,7 @@ void ParseConfig::checkDupServers()
 	}
 }
 
-std::vector<InitConfig> ParseConfig::getServers()
+std::vector<InitConfig> &ParseConfig::getServers()
 {
 	return (this->servers);
 }

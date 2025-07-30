@@ -50,22 +50,22 @@ Location &Location::operator=(const Location &copy)
 Location::~Location()
 {}
 
-void Location::setPath(std::string path)
+void Location::setPath(const std::string &path)
 {
 	this->path = path;
 }
 
-void Location::setRoot(std::string root)
+void Location::setRoot(const std::string &root)
 {
 	this->root = root;
 }
 
-void Location::setIndex(std::string index)
+void Location::setIndex(const std::string &index)
 {
 	this->index = index;
 }
 
-void Location::setAutoindex(std::string autoindex)
+void Location::setAutoindex(const std::string &autoindex)
 {
 	if (autoindex == "on" || autoindex == "true" || autoindex == "1"
 		|| autoindex == "on;" || autoindex == "true;" || autoindex == "1;")
@@ -74,12 +74,12 @@ void Location::setAutoindex(std::string autoindex)
 		this->autoindex = false;
 }
 
-void Location::setClientMaxBodySize(std::string cmbs)
+void Location::setClientMaxBodySize(const std::string &cmbs)
 {
 	this->client_max_body_size = std::strtoul(cmbs.c_str(), NULL, 10);
 }
 
-void Location::setMethods(std::vector<std::string> methods_vec)
+void Location::setMethods(const std::vector<std::string> &methods_vec)
 {
 	methods.clear();
 	for (size_t i = 0; i < methods_vec.size(); i++)
@@ -99,17 +99,17 @@ void Location::setMethods(std::vector<std::string> methods_vec)
 	}
 }
 
-void Location::setReturn(std::string returnStr)
+void Location::setReturn(const std::string &returnStr)
 {
 	this->_return = returnStr;
 }
 
-void Location::setAlias(std::string alias)
+void Location::setAlias(const std::string &alias)
 {
 	this->alias = alias;
 }
 
-void Location::setCgiPath(std::string cgiPath)
+void Location::setCgiPath(const std::string &cgiPath)
 {
 	this->cgi_path.clear();
 	std::istringstream iss(cgiPath);
@@ -118,7 +118,7 @@ void Location::setCgiPath(std::string cgiPath)
 		this->cgi_path.push_back(path);
 }
 
-void Location::setCgiExt(std::string cgiExt)
+void Location::setCgiExt(const std::string &cgiExt)
 {
 	this->cgi_ext.clear();
 	std::istringstream iss(cgiExt);
@@ -127,17 +127,17 @@ void Location::setCgiExt(std::string cgiExt)
 		this->cgi_ext.push_back(ext);
 }
 
-std::string Location::getPath()
+const std::string &Location::getPath()
 {
 	return (path);
 }
 
-std::string Location::getRoot()
+const std::string &Location::getRoot()
 {
 	return (root);
 }
 
-std::string Location::getIndex()
+const std::string &Location::getIndex()
 {
 	return (index);
 }
@@ -152,27 +152,27 @@ unsigned long Location::getClientMaxBodySize()
 	return (client_max_body_size);
 }
 
-std::vector<short> Location::getMethods()
+const std::vector<short> &Location::getMethods()
 {
 	return (methods);
 }
 
-std::string Location::getReturn()
+const std::string &Location::getReturn()
 {
 	return (_return);
 }
 
-std::string Location::getAlias()
+const std::string &Location::getAlias()
 {
 	return (alias);
 }
 
-std::vector<std::string> Location::getCgiPath()
+const std::vector<std::string> &Location::getCgiPath()
 {
 	return (cgi_path);
 }
 
-std::vector<std::string> Location::getCgiExt()
+const std::vector<std::string> &Location::getCgiExt()
 {
 	return (cgi_ext);
 }
