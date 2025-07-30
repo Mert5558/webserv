@@ -14,6 +14,12 @@
 #include <set>
 #include <arpa/inet.h>
 
+#include <unordered_map>
+#include <poll.h>
+
+#define PORT 8080
+#define BACKLOG 10
+
 
 class ConfigError: public std::exception
 {

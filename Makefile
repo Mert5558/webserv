@@ -3,7 +3,7 @@ CPPFLAGS = -Wall -Werror -Wextra -std=c++17
 
 NAME = webserv
 
-SRC = srcs/main.cpp srcs/Location.cpp srcs/InitConfig.cpp srcs/ParseConfig.cpp srcs/Server.cpp
+SRC = srcs/main.cpp srcs/Location.cpp srcs/InitConfig.cpp srcs/ParseConfig.cpp srcs/ParseHttp.cpp srcs/Server.cpp
 OBJ = $(SRC:.cpp=.o)
 
 all: $(NAME)
