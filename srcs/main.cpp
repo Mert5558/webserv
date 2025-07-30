@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/07/29 15:58:25 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/07/30 11:36:48 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,19 +14,6 @@
 #include "../inc/ParseConfig.hpp"
 #include "../inc/ParseHttp.hpp"
 
-
-// Function to read the contents of a file into a string
-std::string readFile(const std::string& filePath)
-{
-    std::ifstream file(filePath);
-    if (!file.is_open())
-    {
-        return "<html><body><h1>404 Not Found</h1></body></html>";
-    }
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
 
 int main(int argc, char **argv)
 {
@@ -115,19 +102,13 @@ int main(int argc, char **argv)
 					// {
 						std::string buffer = request.receiveRequest(client_fd);
 						request.parseRequest(buffer);
-
+						request.isValidMethod();
+						
 						
 						// 8. Send a basic HTTP response with keep-alive
-						std::string body = readFile("./www/index2.html");
-						std::string response =
-							"HTTP/1.1 200 OK\r\n"
-							"Content-Type: text/html\r\n"
-							"Content-Length:" + std::to_string(body.size()) + "\r\n"
-							// "Connection: keep-alive\r\n"  // Keep the connection alive
-							"Connection: close\r\n"  // Close the connection after the response
-							"\r\n" +
-							body;
-
+						std::string body = request.readFile("./www/index2.html");
+						std::string response = request.buildResponse();
+						
 						int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
 						if (bytes_sent < 0)
 						{

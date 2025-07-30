@@ -1,0 +1,26 @@
+### **Explanation of the `Folder` and `FIle` Structure**
+- **`index.html`**: The main homepage of the website.
+- **`error/`**: Contains error pages for various HTTP status codes.
+  - `404.html`: Page for "Not Found" errors.
+  - `500.html`: Page for "Internal Server Error".
+  - `408.html`: Page for "Request Timeout".
+  - `504.html`: Page for "Gateway Timeout".
+- **`assets/`**: Contains static resources like CSS, JavaScript, and images.
+  - **`css/`**: Stylesheets for the website.
+	- `styles.css`
+  - **`js/`**: JavaScript files for interactivity.
+	- `scripts.js`
+  - `images/`: Images used across the website.
+- **`uploads/`**: User - uploaded files.
+  - `images/`: Uploaded images.
+  - `documents/`: Uploaded documents.
+  - `temp/`: Temporary storage for uploads.
+- **`guestbook/`**: Contains the guestbook page.
+- **`about/`**: Contains the about page.
+    - `index.html`
+- **`contact/`**: Contains the contact page.
+ 	- `index.html`
+- **`cgi-bin/`**: Folders for CGI scripts.
+  - `script.py`: Python script.
+  - `script.pl`: Perl script.
+  - `script.sh`: Shell script.

@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/07/29 17:21:34 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/07/30 11:07:56 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,12 +63,16 @@ class	HttpRequest
 		std::vector<std::pair<std::string, std::string>> getHeaders() const;
 																			
 		bool parseRequest(const std::string &rawRequest);
-		bool isValidMethod(const std::string &method);
-		bool isValidVersion(const std::string &version);
-
+		bool isValidMethod();
+		bool isValidVersion();
+		bool isValidPath();
+		
 		std::string receiveRequest(int client_fd);
 		void log_headers(const std::vector<std::pair<std::string, std::string>> &headers);
 		void log_first_line();
-};
+
+		std::string buildResponse();
+		std::string readFile(const std::string& filePath);
+	};
 
 std::ostream &operator<<(std::ostream &os, const HttpRequest &request);

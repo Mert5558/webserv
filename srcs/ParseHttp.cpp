@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/07/29 17:23:06 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/07/30 11:34:02 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,9 +125,11 @@ std::string HttpRequest::receiveRequest(int client_fd)
             break;
         }
     }
-    // std::cout << "~~~~~~~~~~~~~~~Real Buffer: " << buffer << std::endl;
+    // std::cout << "----> Real Buffer: " << buffer << std::endl;
     return buffer;
 }
+
+
 
 bool    HttpRequest::parseRequest(const std::string &rawRequest)
 {
@@ -170,7 +172,6 @@ bool    HttpRequest::parseRequest(const std::string &rawRequest)
 
 
 
-
 void    HttpRequest::log_headers(const std::vector<std::pair<std::string, std::string>> &headers)
 {
     
@@ -183,4 +184,127 @@ void    HttpRequest::log_headers(const std::vector<std::pair<std::string, std::s
 void    HttpRequest::log_first_line()
 {
     std::cout << method << " " << path << " " << version << std::endl;
+}
+
+
+
+
+bool    HttpRequest::isValidMethod()
+{
+    if (method == "GET")
+    {
+        // do something
+        std::cout << "------- We have a correct GET method -------" << std::endl;
+    }
+    else if (method == "POST")
+    {
+        // do something else
+    }
+    else if (method == "DELETE")
+    {
+        // do something else
+    }
+    else
+    {
+        std::cout << "------- Invalid HTTP method -------" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+
+
+bool HttpRequest::isValidVersion()
+{
+    if (version == "HTTP/1.0" || version == "HTTP/1.1" || version == "HTTP/2")
+    {
+        std::cout << "------- Valid HTTP version: " << version << " -------" << std::endl;
+        return true;
+    }
+    else
+    {
+        std::cout << "------- Invalid HTTP version: " << version << " -------" << std::endl;
+        return false;
+    }
+}
+
+bool HttpRequest::isValidPath()
+{
+    // Check if the path is empty
+    if (path.empty())
+    {
+        std::cout << "------- Invalid Path: Path is empty -------" << std::endl;
+        return false;
+    }
+
+    // Check if the path starts with a '/'
+    if (path[0] != '/')
+    {
+        std::cout << "------- Invalid Path: Path does not start with '/' -------" << std::endl;
+        return false;
+    }
+
+    // Check for invalid characters (e.g., spaces)
+    if (path.find(' ') != std::string::npos)
+    {
+        std::cout << "------- Invalid Path: Path contains spaces -------" << std::endl;
+        return false;
+    }
+
+    // Additional checks can be added here (e.g., length, specific patterns, etc.)
+    std::cout << "------- Valid Path: " << path << " -------" << std::endl;
+    return true;
+}
+
+// Function to read the contents of a file into a string
+std::string HttpRequest::readFile(const std::string& filePath)
+{
+    std::ifstream file(filePath);
+    if (!file.is_open())
+    {
+        return "./www/error/404.html";
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+
+
+std::string HttpRequest::buildResponse()
+{
+    std::string status;
+    std::string content_type;
+    std::string body;
+
+    if(path == "/")
+    {
+        status = "HTTP/1.1 200 OK";
+        content_type = "text/html; charset=utf-8";
+        body = readFile("./www/index2.html");
+    }
+    else if (path == "/assets/images")
+    {
+        status = "HTTP/1.1 200 OK";
+        content_type = "image/svg+xml";
+        body = readFile("./www/assets/images/logo.svg");
+    }
+    else
+    {
+        status = "HTTP/1.1 404 Not Found";
+        content_type = "text/html; charset=utf-8";
+        body = readFile("./www/Error/404.html");
+    }
+
+    //Assemble the complete HTTP response
+    std::ostringstream response;
+    response << status << "\r\n";
+    response << "Content-Type: " << content_type << "\r\n";
+    response << "Content-Length: " << body.length() << "\r\n";
+    response << "Connection: close \r\n";
+    response << "\r\n";
+    response << body;
+
+    // std::cout << "---> HTTP Response:\n" << response.str() << std::endl; // print the complete HTTP response
+    return response.str();
 }
