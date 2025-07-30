@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/07/30 11:34:02 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/07/30 12:38:35 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -137,12 +137,16 @@ bool    HttpRequest::parseRequest(const std::string &rawRequest)
     std::string line;
     std::string content_body;
 
+     // Clear headers before parsing a new request
+     headers.clear();
+     
     // Parse the first line
     if (std::getline(raw, line))
     {
         std::istringstream requestLine(line);
         requestLine >> method >> path >> version;
     }
+
     log_first_line();
 
     // Parse headers
@@ -179,11 +183,12 @@ void    HttpRequest::log_headers(const std::vector<std::pair<std::string, std::s
     {
         std::cout << it->first << ":" << it->second << "\n";
     }
+    
 }
 
 void    HttpRequest::log_first_line()
 {
-    std::cout << method << " " << path << " " << version << std::endl;
+    std::cout << "\n" << method << " " << path << " " << version << std::endl;
 }
 
 
@@ -301,7 +306,6 @@ std::string HttpRequest::buildResponse()
     response << status << "\r\n";
     response << "Content-Type: " << content_type << "\r\n";
     response << "Content-Length: " << body.length() << "\r\n";
-    response << "Connection: close \r\n";
     response << "\r\n";
     response << body;
 

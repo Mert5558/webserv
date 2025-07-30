@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/07/30 11:36:48 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/07/30 11:51:53 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,15 +98,14 @@ int main(int argc, char **argv)
 					std::cout << "\n" << "Client connected: " << inet_ntoa(client_addr.sin_addr) << std::endl;
 
 					// Handle multiple requests from the same client
-					// while (true)
-					// {
+					while (true)
+					{
 						std::string buffer = request.receiveRequest(client_fd);
 						request.parseRequest(buffer);
 						request.isValidMethod();
 						
 						
 						// 8. Send a basic HTTP response with keep-alive
-						std::string body = request.readFile("./www/index2.html");
 						std::string response = request.buildResponse();
 						
 						int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
@@ -117,10 +116,10 @@ int main(int argc, char **argv)
 						}
 
 						std::cout << "Response sent (" << bytes_sent << " bytes)." << std::endl;
-					// }
-					close(client_fd); // Close the connection when the client disconnects
+					}
+					// close(client_fd); // Close the connection when the client disconnects
 				}
-				close(server_fd);
+				// close(server_fd);
 			}
 		}
 		catch (const ConfigError &e)
