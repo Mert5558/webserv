@@ -320,7 +320,7 @@ bool InitConfig::createAndBindSocket()
 	socket_address.sin_family = AF_INET;
 	socket_address.sin_port = htons(port);
 
-	if (host.empty() || host == "0.0.0.0")
+	if (host == "0.0.0.0")
 		socket_address.sin_addr.s_addr = INADDR_ANY;
 	else
 		socket_address.sin_addr.s_addr = inet_addr(host.c_str());

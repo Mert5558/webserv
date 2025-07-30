@@ -29,7 +29,7 @@ void Server::serverSetup(std::vector<InitConfig> servers)
 			if (servers[j].getHost() == servers[i].getHost() &&
 				servers[j].getPort() == servers[i].getPort())
 			{
-				servers[i].setFd(servers[j].getFd());
+				throw ConfigError("Error: do not support virtual host!");
 				duplicate = true;
 				break;
 			}
