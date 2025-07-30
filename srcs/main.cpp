@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/07/30 11:51:53 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/07/30 14:08:14 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
 					{
 						std::string buffer = request.receiveRequest(client_fd);
 						request.parseRequest(buffer);
-						request.isValidMethod();
+						// request.isValidMethod(); // maybe we should encaptulate the parseRequest() function iside this one and rename it
 						
 						
 						// 8. Send a basic HTTP response with keep-alive
@@ -117,9 +117,9 @@ int main(int argc, char **argv)
 
 						std::cout << "Response sent (" << bytes_sent << " bytes)." << std::endl;
 					}
-					// close(client_fd); // Close the connection when the client disconnects
+					close(client_fd); // Close the connection when the client disconnects
 				}
-				// close(server_fd);
+				close(server_fd);
 			}
 		}
 		catch (const ConfigError &e)
