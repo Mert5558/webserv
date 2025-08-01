@@ -1,6 +1,7 @@
 #include "../inc/Server.hpp"
 #include "../inc/ParseConfig.hpp"
 #include "../inc/ParseHttp.hpp"
+#include "../inc/httpResponse.hpp"
 
 Server::Server()
 {}
@@ -20,7 +21,7 @@ void Server::startServer(ParseConfig parse)
 	// 	sleep(1);
 }
 
-void Server::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request)
+void Server::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, httpResponse &response)
 {
 	struct pollfd fds[1];
 	std::cout << servers[0].getFd() << " before ---------------------" << std::endl;
@@ -60,7 +61,7 @@ void Server::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request)
 				
 				
 				// 8. Send a basic HTTP response with keep-alive
-				std::string response = request.buildResponse();
+				std::string raw_response = response.buildResponse();
 				
 				int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
 				if (bytes_sent < 0)
