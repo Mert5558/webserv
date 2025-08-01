@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ParseHttp.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/07/30 11:07:56 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/01 18:12:48 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,7 +71,7 @@ class	HttpRequest
 		void log_headers(const std::vector<std::pair<std::string, std::string>> &headers);
 		void log_first_line();
 
-		std::string buildResponse();
+		// std::string buildResponse();
 		std::string readFile(const std::string& filePath);
 	};
 

@@ -33,6 +33,9 @@ public:
 	void addHeader(const std::string &key, const std::string &value);
 
 	std::string buildResponse() const; // Builds the complete HTTP response string
+
+	std::string generateHttpResponse(int statusCode, const std::string& contentType, const std::string& body) const;
+	//========== Getters ==========
 	std::string getStatusCode() const;
 	std::string getContentType() const;
 	std::string getBody() const;
