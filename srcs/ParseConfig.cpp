@@ -42,7 +42,11 @@ int ParseConfig::parseFile(std::string configfile)
 		parseServerSettings(lines, config);
 		servers.push_back(config);
 	}
-	//servers[0].print();
+	// servers[0].print();		// Config print for debugging purposes
+	// if (this->servers.empty())
+	// {
+	// 	throw ConfigError("Error: No valid server blocks found in config file!");
+	// }
 	this->validatePaths();
 	this->checkDupServers();
 
