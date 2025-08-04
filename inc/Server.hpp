@@ -15,4 +15,6 @@ class Server
 		void serverSetup(std::vector<InitConfig> &servers);
 		void parseHttp(std::vector<InitConfig> &servers, HttpRequest &request);
 
+		std::vector<pollfd> initPollfd(std::vector<InitConfig> &servers);
+
 };
