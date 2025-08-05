@@ -299,7 +299,7 @@ int InitConfig::getFd()
 	return (listen_fd);
 }
 
-bool InitConfig::createAndBindSocket()
+bool InitConfig::createAndBindSocket() 
 {
 	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listen_fd == -1)

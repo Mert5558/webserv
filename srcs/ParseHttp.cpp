@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/07/30 14:18:06 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/05 22:56:34 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 
 HttpRequest::HttpRequest()
 {
-    this->method = "";
+    this->method = Method::INVALID;
     this->path = "";
     this->version = "";
     this->body = "";
@@ -53,9 +53,14 @@ HttpRequest::~HttpRequest()
 
 
 /* Setter */
-void HttpRequest::setMethod(const std::string &method)
+// void HttpRequest::setMethod(const std::string &method)
+// {
+// 	this->method = method;
+// }
+
+void HttpRequest::setMethod(Method method)
 {
-	this->method = method;
+    this->method = method;
 }
 
 void HttpRequest::setPath(const std::string &path)
@@ -83,7 +88,17 @@ void HttpRequest::setHeaders(const std::vector<std::pair<std::string, std::strin
 /* Getter */
 std::string HttpRequest::getMethod() const
 {
-    return (method);
+    switch(method)
+    {
+        case Method::GET:
+            return "GET";
+        case Method::POST:
+            return "POST";
+        case Method::DELETE:
+            return "DELETE";
+        default:
+            return "";
+    }
 }
 
 std::string HttpRequest::getPath() const
@@ -136,6 +151,7 @@ bool    HttpRequest::parseRequest(const std::string &rawRequest)
     std::istringstream  raw(rawRequest);
     std::string line;
     std::string content_body;
+    std::string methodStr;
 
      // Clear headers before parsing a new request
      headers.clear();
@@ -144,10 +160,21 @@ bool    HttpRequest::parseRequest(const std::string &rawRequest)
     if (std::getline(raw, line))
     {
         std::istringstream requestLine(line);
-        requestLine >> method >> path >> version;
+        requestLine >> methodStr >> path >> version;
     }
+    
+    // log_first_line();
+    std::cout << "\n" << methodStr << " " << path << " " << version << std::endl;
+    
+    if (methodStr == "GET")
+        method = Method::GET;
+    else if (methodStr == "Post")
+        method = Method::POST;
+    else if (methodStr == "DELETE")
+        method = Method::DELETE;
+    else
+        method = Method::INVALID;
 
-    log_first_line();
 
     // Parse headers
     while (std::getline(raw, line) && !line.empty() && line != "\r")
@@ -186,35 +213,17 @@ void    HttpRequest::log_headers(const std::vector<std::pair<std::string, std::s
     
 }
 
-void    HttpRequest::log_first_line()
+// void    HttpRequest::log_first_line()
+// {
+//     std::cout << "\n" << method << " " << path << " " << version << std::endl;
+// }
+
+
+
+
+bool    HttpRequest::isValidMethod() const
 {
-    std::cout << "\n" << method << " " << path << " " << version << std::endl;
-}
-
-
-
-
-bool    HttpRequest::isValidMethod()
-{
-    if (method == "GET")
-    {
-        // do something
-        std::cout << "------- We have a correct GET method -------" << std::endl;
-    }
-    else if (method == "POST")
-    {
-        // do something else
-    }
-    else if (method == "DELETE")
-    {
-        // do something else
-    }
-    else
-    {
-        std::cout << "------- Invalid HTTP method -------" << std::endl;
-        return false;
-    }
-    return true;
+    return method != Method::INVALID;
 }
 
 

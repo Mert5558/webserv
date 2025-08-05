@@ -23,11 +23,10 @@ void Server::startServer(ParseConfig parse)
 void Server::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request)
 {
 	struct pollfd fds[1];
-	std::cout << servers[0].getFd() << " before ---------------------" << std::endl;
 	fds[0].fd = servers[0].getFd();
-	std::cout << servers[0].getFd() << " after ---------------------" << std::endl;
 	fds[0].events = POLLIN;
-
+	
+	
 	while (true)
 	{
 		int ret = poll(fds, 1, -1);

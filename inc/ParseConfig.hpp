@@ -31,3 +31,4 @@ class ParseConfig
 	std::vector<InitConfig> &getServers();
 
 };
+
