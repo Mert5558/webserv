@@ -12,11 +12,12 @@ Server::~Server()
 void Server::startServer(ParseConfig parse)
 {
 	HttpRequest request;
+	httpResponse response;
 
 	std::vector<InitConfig> &servers = parse.getServers();
 	
 	serverSetup(servers);
-	parseHttp(servers, request);
+	parseHttp(servers, request, response);
 	// while (true)
 	// 	sleep(1);
 }
@@ -63,7 +64,7 @@ void Server::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, h
 				// 8. Send a basic HTTP response with keep-alive
 				std::string raw_response = response.buildResponse();
 				
-				int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
+				int bytes_sent = send(client_fd, raw_response.c_str(), raw_response.size(), 0);
 				if (bytes_sent < 0)
 				{
 					perror("send");
@@ -107,3 +108,29 @@ void Server::serverSetup(std::vector<InitConfig> &servers)
 		std::cout << "Server created 'host: ... ', port: '...'" << std::endl;     //logger
 	}
 }
+
+
+//============POLL EXAMPLE============
+// enum Flags
+// {
+// 	FLAG_POLLERR    = (0b1),
+// 	FLAG_POLLHUP   = (0b10),
+// 	FLAG_POLLIN   = (0b100),
+// 	FLAG_POLLOUT = (0b1000),
+// };
+
+// void whatever()
+// {
+// 	int pollfds_count = 0;
+// 	pollfd pollfds[16] = {};
+
+// 	pollfds[0].fd = server_fd;
+// 	pollfds[0].events = POLLIN;
+// 	pollfds_count += 1;
+
+// 	poll(pollfds, pollfds_count, 1000);
+// 	if (pollfds[0].revents & POLLIN)
+// 	{
+
+// 	}
+// }
