@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/05 15:53:55 by cmakario          #+#    #+#             */
-/*   Updated: 2025/08/05 20:15:14 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/06 00:16:08 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,8 @@
 #define BASIC_SOCKET_HPP
 
 #include <stdio.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#include <sys/socket.h> // For socket functions
+#include <netinet/in.h> // For sockaddr_in structure
 #include <iostream>
 
 // Inside this class we will create a basic socket that can be used for networking.
@@ -29,7 +29,7 @@ public:
 		// Constructor
 		basicSocket(int domain, int service, int protocol, int port, u_long interface);
 		// Connect through bind
-		virtual int connectTheSocket(int sock, struct sockaddr_in address) const = 0;
+		virtual int bindTheSocket(int sock, struct sockaddr_in address) const = 0;
 		// Test socket creation and bind
 		void testConnection(int testConnectedObject) const;
 		// Getters
