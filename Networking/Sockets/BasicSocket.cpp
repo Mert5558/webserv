@@ -6,11 +6,11 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/05 16:01:49 by cmakario          #+#    #+#             */
-/*   Updated: 2025/08/05 20:15:02 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/05 22:22:04 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "basicSocket.hpp"
+#include "BasicSocket.hpp"
 #include <sys/_endian.h>
 
 
@@ -20,8 +20,8 @@
 basicSocket::basicSocket(int domain, int service, int protocol, int port, u_long interface)
 {
 	// Initialize the address structure
-	address.sin_family = domain;
-	address.sin_port = htons(port); // Convert port to network byte order
+	address.sin_family = domain; // Address family (e.g., AF_INET for IPv4)
+	address.sin_port = htons(port); // Convert port to network byte order example: 8080 -> 0x1F90
 	address.sin_addr.s_addr = htonl(interface); // Convert interface to network byte order
 	// Socket creation
 	socket_fd = socket(domain, service, protocol);
