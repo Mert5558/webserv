@@ -1,4 +1,5 @@
 #include "../inc/Server.hpp"
+#include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
 #include "../inc/ParseHttp.hpp"
 #include "../inc/httpResponse.hpp"
@@ -12,14 +13,37 @@ Server::~Server()
 void Server::startServer(ParseConfig parse)
 {
 	HttpRequest request;
-	httpResponse response;
+	std::vector<pollfd> fds;
 
 	std::vector<InitConfig> &servers = parse.getServers();
 	
 	serverSetup(servers);
-	parseHttp(servers, request, response);
-	// while (true)
-	// 	sleep(1);
+
+	fds = initPollfd(servers);
+	
+	while (true)
+	{
+		
+	}
+
+}
+
+std::vector<pollfd> Server::initPollfd(std::vector<InitConfig> &servers)
+{
+	std::vector<pollfd> fds;
+	
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		pollfd pfd;
+
+		pfd.fd = servers[i].getFd();
+		pfd.events = POLL_IN;
+		fds.push_back(pfd);
+
+		if (fcntl(pfd.fd, F_SETFL, O_NONBLOCK) == -1)
+			std::cout << "Error: setting fd to nonblock" << std::endl;
+	}
+	return (fds);
 }
 
 void Server::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, httpResponse &response)
@@ -100,11 +124,9 @@ void Server::serverSetup(std::vector<InitConfig> &servers)
 
 		if (!duplicate)
 		{
-			std::cout << "-----------------------------------------------" << std::endl;
 			if (!servers[i].createAndBindSocket())
 				throw ConfigError("Failed to setup server socket!");
 		}
-		std::cout << servers[0].getFd() << " after socket creation" << std::endl;
 		std::cout << "Server created 'host: ... ', port: '...'" << std::endl;     //logger
 	}
 }

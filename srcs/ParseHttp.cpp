@@ -146,7 +146,6 @@ bool    HttpRequest::parseRequest(const std::string &rawRequest)
         std::istringstream requestLine(line);
         requestLine >> method >> path >> version;
     }
-
     log_first_line();
 
     // Parse headers
