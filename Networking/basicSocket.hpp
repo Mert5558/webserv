@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/05 15:53:55 by cmakario          #+#    #+#             */
-/*   Updated: 2025/08/05 17:25:36 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/05 20:15:14 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,12 +28,16 @@ private:
 public:
 		// Constructor
 		basicSocket(int domain, int service, int protocol, int port, u_long interface);
+		// Connect through bind
+		virtual int connectTheSocket(int sock, struct sockaddr_in address) const = 0;
 		// Test socket creation and bind
 		void testConnection(int testConnectedObject) const;
 		// Getters
 		struct sockaddr_in getAddress() const;
 		int getSocketFd() const;
 		int getBindResult() const;
+		// Setters
+		void setBindResult(int bindRslt);
 };
 
 #endif // BASIC_SOCKET_HPP

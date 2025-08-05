@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/05 16:01:49 by cmakario          #+#    #+#             */
-/*   Updated: 2025/08/05 16:53:03 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/05 20:15:02 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ basicSocket::basicSocket(int domain, int service, int protocol, int port, u_long
 	address.sin_addr.s_addr = htonl(interface); // Convert interface to network byte order
 	// Socket creation
 	socket_fd = socket(domain, service, protocol);
-	testConnection(socket_fd);
+	testConnection(socket_fd);	
 	// if (socket_fd < 0)
 	// {
 	// 	perror("Socket creation failed");
@@ -40,11 +40,11 @@ basicSocket::basicSocket(int domain, int service, int protocol, int port, u_long
 	// 	// throw std::runtime_error("Socket bind failed");
 	// }
 	// Network connection creation
-	bindResult = bind(socket_fd, (struct sockaddr *)&address, sizeof(address));
-	testConnection(bindResult);
+	// bindResult = bind(socket_fd, (struct sockaddr *)&address, sizeof(address));
+	// testConnection(bindResult);
 }
 // TODO : better implementation for errors.
-// Test Connection
+// Test Connection if was successful
 void basicSocket::testConnection(int testConnectedObject) const
 {
 	if (testConnectedObject < 0)
@@ -67,4 +67,10 @@ int basicSocket::getSocketFd() const
 int basicSocket::getBindResult() const
 {
 	return bindResult;
+}
+
+// Setters
+void basicSocket::setBindResult(int bindRslt)
+{
+	this->bindResult = bindRslt;
 }
