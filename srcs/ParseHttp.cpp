@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/05 22:56:34 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/05 23:41:40 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ HttpRequest::HttpRequest()
 {
     this->method = Method::INVALID;
     this->path = "";
-    this->version = "";
+    this->version = Version::INVALID;
     this->body = "";
     this->headers = {};
 }
@@ -53,10 +53,6 @@ HttpRequest::~HttpRequest()
 
 
 /* Setter */
-// void HttpRequest::setMethod(const std::string &method)
-// {
-// 	this->method = method;
-// }
 
 void HttpRequest::setMethod(Method method)
 {
@@ -68,7 +64,7 @@ void HttpRequest::setPath(const std::string &path)
 	this->path = path;
 }
 
-void HttpRequest::setVersion(const std::string &version)
+void HttpRequest::setVersion(Version version)
 {
 	this->version = version;
 }
@@ -97,7 +93,7 @@ std::string HttpRequest::getMethod() const
         case Method::DELETE:
             return "DELETE";
         default:
-            return "";
+            return "INVALID";
     }
 }
 
@@ -108,7 +104,17 @@ std::string HttpRequest::getPath() const
 
 std::string HttpRequest::getVersion() const
 {
-    return (version);
+    switch(version)
+    {
+        case Version::HTTP_1_0:
+            return "HTTP/1.0";
+        case Version::HTTP_1_1:
+            return "HTTP/1.1";
+        case Version::HTTP_2:
+            return "HTTP/2";
+        default:
+            return "INVALID";
+    }
 }
 
 std::string HttpRequest::getBody() const
@@ -152,6 +158,7 @@ bool    HttpRequest::parseRequest(const std::string &rawRequest)
     std::string line;
     std::string content_body;
     std::string methodStr;
+    std::string versionStr;
 
      // Clear headers before parsing a new request
      headers.clear();
@@ -160,21 +167,12 @@ bool    HttpRequest::parseRequest(const std::string &rawRequest)
     if (std::getline(raw, line))
     {
         std::istringstream requestLine(line);
-        requestLine >> methodStr >> path >> version;
+        requestLine >> methodStr >> path >> versionStr;
     }
     
-    // log_first_line();
-    std::cout << "\n" << methodStr << " " << path << " " << version << std::endl;
-    
-    if (methodStr == "GET")
-        method = Method::GET;
-    else if (methodStr == "Post")
-        method = Method::POST;
-    else if (methodStr == "DELETE")
-        method = Method::DELETE;
-    else
-        method = Method::INVALID;
-
+    method = toMethodEnum(methodStr);
+    version = toVersionEnum(versionStr);
+    log_first_line();
 
     // Parse headers
     while (std::getline(raw, line) && !line.empty() && line != "\r")
@@ -201,7 +199,31 @@ bool    HttpRequest::parseRequest(const std::string &rawRequest)
     return true;
 }
 
+Method		HttpRequest::toMethodEnum(const std::string &methodStr)
+{
+    if (methodStr == "GET")
+        return Method::GET;
+    else if (methodStr == "POST")
+        return Method::POST;
+    else if (methodStr == "DELETE")
+        return Method::DELETE;
+    
+    std::cerr << "Invalid HTTP method: " << methodStr << std::endl;
+    return Method::INVALID;
+}
 
+Version     HttpRequest::toVersionEnum(const std::string &versionStr)
+{
+    if (versionStr == "HTTP/1.0")
+        return Version::HTTP_1_0;
+    else if (versionStr == "HTTP/1.1")
+        return Version::HTTP_1_1;
+    else if (versionStr == "HTTP/2")
+        return Version::HTTP_2;
+
+    std::cerr << "Invalid HTTP version: " << versionStr << std::endl;
+    return Version::INVALID;
+}
 
 void    HttpRequest::log_headers(const std::vector<std::pair<std::string, std::string>> &headers)
 {
@@ -213,10 +235,10 @@ void    HttpRequest::log_headers(const std::vector<std::pair<std::string, std::s
     
 }
 
-// void    HttpRequest::log_first_line()
-// {
-//     std::cout << "\n" << method << " " << path << " " << version << std::endl;
-// }
+void    HttpRequest::log_first_line()
+{
+    std::cout << "\n" << getMethod() << " " << path << " " << getVersion() << std::endl;
+}
 
 
 
@@ -228,18 +250,9 @@ bool    HttpRequest::isValidMethod() const
 
 
 
-bool HttpRequest::isValidVersion()
+bool HttpRequest::isValidVersion() const
 {
-    if (version == "HTTP/1.0" || version == "HTTP/1.1" || version == "HTTP/2")
-    {
-        std::cout << "------- Valid HTTP version: " << version << " -------" << std::endl;
-        return true;
-    }
-    else
-    {
-        std::cout << "------- Invalid HTTP version: " << version << " -------" << std::endl;
-        return false;
-    }
+    return version != Version::INVALID;
 }
 
 bool HttpRequest::isValidPath()
