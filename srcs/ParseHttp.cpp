@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/05 23:41:40 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/06 03:19:17 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 
 // ParseConfig trimed;
 
-HttpRequest::HttpRequest()
+HttpRequest::HttpRequest() : parseState(ParseState::START_LINE)
 {
     this->method = Method::INVALID;
     this->path = "";
@@ -53,7 +53,6 @@ HttpRequest::~HttpRequest()
 
 
 /* Setter */
-
 void HttpRequest::setMethod(Method method)
 {
     this->method = method;
@@ -74,7 +73,7 @@ void HttpRequest::setBody(const std::string &body)
 	this->body = body;
 }
 
-void HttpRequest::setHeaders(const std::vector<std::pair<std::string, std::string>> &headers)
+void HttpRequest::setHeaders(const std::unordered_map<std::string, std::string> &headers)
 {
     this->headers = headers;
 }
@@ -122,7 +121,7 @@ std::string HttpRequest::getBody() const
     return (body);
 }
 
-std::vector<std::pair<std::string, std::string>> HttpRequest::getHeaders() const
+std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
 {
     return (headers);
 }
@@ -152,52 +151,155 @@ std::string HttpRequest::receiveRequest(int client_fd)
 
 
 
-bool    HttpRequest::parseRequest(const std::string &rawRequest)
-{
-    std::istringstream  raw(rawRequest);
-    std::string line;
-    std::string content_body;
-    std::string methodStr;
-    std::string versionStr;
+// bool    HttpRequest::parseRequest(const std::string &rawRequest)
+// {
+//     std::istringstream  raw(rawRequest);
+//     std::string line;
+//     std::string content_body;
+//     std::string methodStr;
+//     std::string versionStr;
 
-     // Clear headers before parsing a new request
-     headers.clear();
+//      // Clear headers before parsing a new request
+//      headers.clear();
      
-    // Parse the first line
-    if (std::getline(raw, line))
-    {
-        std::istringstream requestLine(line);
-        requestLine >> methodStr >> path >> versionStr;
-    }
+//     // Parse the first line
+//     // if (std::getline(raw, line))
+//     // {
+//     //     std::istringstream requestLine(line);
+//     //     requestLine >> methodStr >> path >> versionStr;
+//     // }
+//     // method = toMethodEnum(methodStr);
+//     // version = toVersionEnum(versionStr);
+//     // log_first_line();
     
+//     // Parse headers
+//     while (std::getline(raw, line) && !line.empty() && line != "\r")
+//     {
+//         size_t delimiterPos = line.find(':');
+//         if (delimiterPos != std::string::npos)
+//         {
+//             std::string key = line.substr(0, delimiterPos);
+//             std::string value = line.substr(delimiterPos + 1);
+//             // Trim whitespace around key and value
+//             key.erase(key.find_last_not_of(" \t\r\n") + 1);
+//             value.erase(0, value.find_first_not_of(" \t\r\n"));
+//             headers[key] = value; // Insert into unordered_map
+//         }
+//     }
+    
+//     log_headers();
+
+//     //Parse body
+//     while(std::getline(raw, line))
+//     {  
+//         content_body += line + "\n";
+//     }
+//     body = content_body;
+    
+    
+//     return true;
+// }
+
+
+
+bool    HttpRequest::parseStartLine(const std::string &line)
+{
+    std::istringstream requestLine(line);
+    std::string methodStr, versionStr;
+    
+    requestLine >> methodStr >> path >> versionStr;
+
     method = toMethodEnum(methodStr);
     version = toVersionEnum(versionStr);
-    log_first_line();
-
-    // Parse headers
-    while (std::getline(raw, line) && !line.empty() && line != "\r")
-    {
-        size_t delimiterPos = line.find(':');
-        if (delimiterPos != std::string::npos)
-        {
-            std::string key = line.substr(0, delimiterPos);
-            std::string value = line.substr(delimiterPos + 1);
-            headers.emplace_back(key, value);
-        }
-    }
     
-    log_headers(headers);
-
-    //Parse body
-    while(std::getline(raw, line))
+    if ( method == Method::INVALID || version == Version::INVALID)
     {
-        content_body += line + "\n";
+        // std::cerr << "Invalid start line " << line << std::endl;
+        return false;
     }
-    body = content_body;
-    
     
     return true;
 }
+
+bool    HttpRequest::parseHeaders(const std::string &line)
+{
+    size_t delimiterPos = line.find(':');
+    
+    if (delimiterPos == std::string::npos)
+    {
+        std::cerr << "Invalid header: " << line << std::endl;
+        return false;
+    }
+
+    std::string key = line.substr(0, delimiterPos);
+    std::string value = line.substr(delimiterPos + 1);
+
+    // Trim whitespace around key and value
+    key.erase(key.find_last_not_of(" \t\r\n") + 1);
+    value.erase(0, value.find_first_not_of(" \t\r\n"));
+
+    headers[key] = value;
+    
+    return true;   
+}
+
+
+
+
+bool    HttpRequest::parseRequest(const std::string &rawRequest)
+{
+    std::istringstream raw(rawRequest);
+    std::string line;
+    std::string content_body;
+
+    // Clear previous data
+    headers.clear();
+    body.clear();
+    parseState = ParseState::START_LINE;
+
+    while (std::getline(raw, line))
+    {
+        switch (parseState)
+        {
+            case ParseState::START_LINE:
+                if (!parseStartLine(line))
+                {
+                    parseState = ParseState::ERROR;
+                    return false;
+                }    
+                parseState = ParseState::HEADERS;
+                break;
+                
+                case ParseState::HEADERS:  
+                if (line.empty() || line == "\r")
+                {
+                    parseState = ParseState::BODY;
+                }    
+                else if (!parseHeaders(line))
+                {
+                    parseState = ParseState::ERROR;
+                    return false;
+                }    
+                break;
+                
+                case ParseState::BODY:    
+                content_body += line + "\n";
+                break;
+                
+                default:    
+                parseState = ParseState::ERROR;
+                return false;
+            }        
+        } 
+        log_first_line();  
+        log_headers();
+        
+    body = content_body;
+    parseState = ParseState::COMPLETE;
+    return true;
+}    
+
+
 
 Method		HttpRequest::toMethodEnum(const std::string &methodStr)
 {
@@ -225,14 +327,15 @@ Version     HttpRequest::toVersionEnum(const std::string &versionStr)
     return Version::INVALID;
 }
 
-void    HttpRequest::log_headers(const std::vector<std::pair<std::string, std::string>> &headers)
+
+
+
+void HttpRequest::log_headers()
 {
-    
-    for (auto it = headers.begin(); it != headers.end(); ++it)
+    for (const auto &header : headers)
     {
-        std::cout << it->first << ":" << it->second << "\n";
+        std::cout << header.first << ": " << header.second << std::endl;
     }
-    
 }
 
 void    HttpRequest::log_first_line()
@@ -240,20 +343,18 @@ void    HttpRequest::log_first_line()
     std::cout << "\n" << getMethod() << " " << path << " " << getVersion() << std::endl;
 }
 
-
-
-
 bool    HttpRequest::isValidMethod() const
 {
     return method != Method::INVALID;
 }
 
-
-
 bool HttpRequest::isValidVersion() const
 {
     return version != Version::INVALID;
 }
+
+
+
 
 bool HttpRequest::isValidPath()
 {
@@ -282,6 +383,9 @@ bool HttpRequest::isValidPath()
     std::cout << "------- Valid Path: " << path << " -------" << std::endl;
     return true;
 }
+
+
+
 
 // Function to read the contents of a file into a string
 std::string HttpRequest::readFile(const std::string& filePath)
