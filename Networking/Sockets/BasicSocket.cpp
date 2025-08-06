@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/05 16:01:49 by cmakario          #+#    #+#             */
-/*   Updated: 2025/08/06 00:18:40 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/06 00:52:14 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,14 +47,4 @@ struct sockaddr_in basicSocket::getAddress() const
 int basicSocket::getSocketFd() const
 {
 	return socket_fd;
-}
-int basicSocket::getBindResult() const
-{
-	return bindResult;
-}
-
-// Setters
-void basicSocket::setBindResult(int bindRslt)
-{
-	this->bindResult = bindRslt;
 }

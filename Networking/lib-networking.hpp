@@ -4,5 +4,6 @@
 /* ************************************************************************** */
 // Headers for networking library
 #include "Sockets/lib-sockets.hpp"
+#include "Servers/lib-servers.hpp"
 
 #endif //  LIB_NETWORKING_HPP

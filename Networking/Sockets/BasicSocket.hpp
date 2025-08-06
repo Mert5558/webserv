@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/05 15:53:55 by cmakario          #+#    #+#             */
-/*   Updated: 2025/08/06 00:16:08 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/06 00:52:06 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,6 @@ class basicSocket {
 private:
 		struct sockaddr_in	address;
 		int					socket_fd;
-		int					bindResult;
 public:
 		// Constructor
 		basicSocket(int domain, int service, int protocol, int port, u_long interface);
@@ -35,9 +34,6 @@ public:
 		// Getters
 		struct sockaddr_in getAddress() const;
 		int getSocketFd() const;
-		int getBindResult() const;
-		// Setters
-		void setBindResult(int bindRslt);
 };
 
 #endif // BASIC_SOCKET_HPP
