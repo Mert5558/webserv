@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/06 03:23:28 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/06 15:52:39 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,9 +24,12 @@ class	HttpRequest
 		Method												method;
 		std::string											path;
 		Version												version;
-		std::string											body;
+		std::ofstream										bodyFile;
+		size_t												bodySize;
+		std::string											bodyFilePath;
 		std::unordered_map<std::string, std::string> 		headers;
 		ParseState											parseState;
+		
 
 	public:
 		HttpRequest();
@@ -37,30 +40,37 @@ class	HttpRequest
 		void setMethod(Method method);
 		void setPath(const std::string &path);
 		void setVersion(Version version);
-		void setBody(const std::string &body);
+		void setBody(const std::string &filePath);
 		void setHeaders(const std::unordered_map<std::string, std::string> &headers);
 
 		std::string	getMethod() const;
-		Method		toMethodEnum(const std::string &methodStr);
 		std::string	getPath() const;
 		std::string getVersion() const;
-		Version		toVersionEnum(const std::string &versionStr);
-		std::string	getBody() const;
+		size_t		getBodySize() const;
+        std::string	getBodyFilePath() const;
 		std::unordered_map<std::string, std::string> getHeaders() const;
+		
+		// From String to enum 
+		Method		toMethodEnum(const std::string &methodStr);
+		Version		toVersionEnum(const std::string &versionStr);
 																			
 		bool parseRequest(const std::string &rawRequest);
 		bool parseStartLine(const std::string &line);
 		bool parseHeaders(const std::string &line);
+		
 		bool isValidMethod() const;
 		bool isValidVersion() const;
 		bool isValidPath();
 		
-		std::string receiveRequest(int client_fd);
+		// std::string receiveRequest(int client_fd);
+		ssize_t	receive(int client_fd, std::string &buffer);
 		void log_headers();
 		void log_first_line();
 
 		std::string buildResponse();
 		std::string readFile(const std::string& filePath);
+
+		void reset();
 
 	};
 

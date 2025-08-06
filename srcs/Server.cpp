@@ -35,7 +35,7 @@ void Server::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request)
 			perror("poll");
 			break;
 		}
-
+		
 		if (fds[0].revents & POLLIN)
 		{
 			// 6. Accept a new connection
@@ -47,32 +47,44 @@ void Server::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request)
 				perror("accept");
 				continue;
 			}
-
+			
 			std::cout << "\n" << "Client connected: " << inet_ntoa(client_addr.sin_addr) << std::endl;
-
+			
 			// Handle multiple requests from the same client
 			while (true)
 			{
-				std::string buffer = request.receiveRequest(client_fd);
-				request.parseRequest(buffer);
-				// request.isValidMethod(); // maybe we should encaptulate the parseRequest() function iside this one and rename it
-				
-				
-				// 8. Send a basic HTTP response with keep-alive
-				std::string response = request.buildResponse();
-				
-				int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
-				if (bytes_sent < 0)
+				std::string buffer;
+				std::cout << "buffer size at the begin: " << buffer.size() << std::endl;
+				ssize_t bytes = request.receive(client_fd, buffer);
+				std::cout << "buffer size after: " << buffer.size() << std::endl;
+				if (bytes <= 0)
 				{
-					perror("send");
 					break;
 				}
-
-				std::cout << "Response sent (" << bytes_sent << " bytes)." << std::endl;
+				
+				// Try to parse as much as possible from 'buffer'
+				if (request.parseRequest(buffer))
+				{
+					// Request complete
+					std::string response = request.buildResponse();
+					send(client_fd, response.c_str(), response.size(), 0);
+					
+					// print the response
+					std::cout << "\nResponse sent (" << response.size() << " bytes).\n" << std::endl;
+					// std::cout << response.c_str() << std::endl;
+					
+					buffer.clear();
+					request.reset();
+				}
+				else
+				{
+					// Not complete yet → keep reading
+					continue;
+				}		
 			}
-			close(client_fd); // Close the connection when the client disconnects
 		}
-		close(servers[0].getFd());
+		// close(client_fd); // Close the connection when done
+		// close(servers[0].getFd());
 	}
 }
 
