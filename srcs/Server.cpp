@@ -2,6 +2,7 @@
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
 #include "../inc/ParseHttp.hpp"
+#include "../inc/Client.hpp"
 
 Server::Server()
 {}
@@ -19,6 +20,8 @@ void Server::startServer(ParseConfig parse)
 	serverSetup(servers);
 
 	fds = initPollfd(servers);
+
+	std::unordered_map<int, Client> clients;
 	
 	while (true)
 	{
@@ -65,6 +68,8 @@ void Server::startServer(ParseConfig parse)
 					new_pollfd.fd = client_fd;
 					new_pollfd.events = POLLIN;
 					fds.push_back(new_pollfd);
+
+					clients[client_fd] = Client(client_fd);
 	
 					std::cout << "new client connected: " << client_fd << std::endl;
 				}
@@ -72,32 +77,66 @@ void Server::startServer(ParseConfig parse)
 				{
 					std::cout << "this is a request for a client, here we read, parse and then send the response" << std::endl;
 
-					std::string buffer = request.receiveRequest(fds[i].fd);
-					request.parseRequest(buffer);
-					// request.isValidMethod(); // maybe we should encaptulate the parseRequest() function iside this one and rename it
-					
-					
-					// 8. Send a basic HTTP response with keep-alive
-					std::string response = request.buildResponse();
-					
-					int bytes_sent = send(fds[i].fd, response.c_str(), response.size(), 0);
-					if (bytes_sent < 0)
+					int client_fd = fds[i].fd;
+
+					bool done = receiveReq(client_fd, clients);
+
+					if (done)
 					{
-						perror("send");
-						break;
+						std::cout << "entered done loop" << std::endl;
+						request.parseRequest(clients[client_fd].recv_buffer);
+
+						std::string response = request.buildResponse();
+						
+						int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
+						if (bytes_sent < 0)
+						{
+							perror("send");
+							break;
+						}
+
+						std::cout << "response send to: " << fds[i].fd << std::endl;
+	
+						std::cout << "fd removed: " << fds[i].fd << std::endl;
+						close(fds[i].fd);
+						fds.erase(fds.begin() + i);
+						i--;
 					}
-
-					std::cout << "response send to: " << fds[i].fd << std::endl;
-
-					std::cout << "fd removed: " << fds[i].fd << std::endl;
-					close(fds[i].fd);
-					fds.erase(fds.begin() + i);
-					i--;
-
 				}
 			}
 		}
 	}
+}
+
+bool Server::receiveReq(int client_fd, std::unordered_map<int, Client> &clients)
+{
+	Client &client = clients[client_fd];
+	char buf[4096];
+	ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
+	if (bytes <= 0)
+	{
+		client.disconnect = true;
+		return (true);
+	}
+
+	client.recv_buffer.append(buf, bytes);
+
+	if (!client.header_received)
+	{
+		size_t header_end = client.recv_buffer.find("\r\n\r\n");
+		if (header_end != std::string::npos)
+		{
+			client.header_received = true;
+			client.isComplete = true;
+		}
+	}
+	
+	if (!client.body_received)
+	{
+		
+	}
+
+	return (client.isComplete);
 }
 
 std::vector<pollfd> Server::initPollfd(std::vector<InitConfig> &servers)
