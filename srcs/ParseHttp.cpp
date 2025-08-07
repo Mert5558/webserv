@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/06 16:13:53 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/07 13:06:20 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,26 +140,26 @@ std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
 
 
 
-// std::string HttpRequest::receiveRequest(int client_fd)
-// {
-//     std::string buffer;
-//     char chunk[1024] = {0};
-//     unsigned long bytes_read;
+std::string HttpRequest::receiveRequest(int client_fd)
+{
+    std::string buffer;
+    char chunk[1024] = {0};
+    unsigned long bytes_read;
 
-//     while ((bytes_read = recv(client_fd, chunk, sizeof(chunk) - 1, 0)) > 0)
-//     {
-//         chunk[bytes_read] = '\0'; // Null-terminate the chunk
-//         buffer.append(chunk);    // Append to the buffer
-//         if (bytes_read < sizeof(chunk) - 1) break; // End of request
-//         if (bytes_read <= 0)																		
-//         {
-//             std::cout << "Client disconnected or error occurred." << std::endl;
-//             break;
-//         }
-//     }
-//     // std::cout << "----> Real Buffer: " << buffer << std::endl;
-//     return buffer;
-// }
+    while ((bytes_read = recv(client_fd, chunk, sizeof(chunk) - 1, 0)) > 0)
+    {
+        chunk[bytes_read] = '\0'; // Null-terminate the chunk
+        buffer.append(chunk);    // Append to the buffer
+        if (bytes_read < sizeof(chunk) - 1) break; // End of request
+        if (bytes_read <= 0)																		
+        {
+            std::cout << "Client disconnected or error occurred." << std::endl;
+            break;
+        }
+    }
+    // std::cout << "----> Real Buffer: " << buffer << std::endl;
+    return buffer;
+}
 
 
 ssize_t HttpRequest::receive(int client_fd, std::string &buffer)
@@ -178,7 +178,8 @@ ssize_t HttpRequest::receive(int client_fd, std::string &buffer)
 
 void    HttpRequest::reset()
 {
-    std::cout << "Called the reset() function " << std::endl;
+    std::cout << "\nCalled the reset() ---> method = Method::INVALID | path.clear() | version = Version::INVALID | headers.clear() | parseState = ParseState::START_LINE  " << std::endl;
+    
     method = Method::INVALID;
     path.clear();
     version = Version::INVALID;
@@ -236,16 +237,101 @@ bool    HttpRequest::parseHeaders(const std::string &line)
 
 
 
-bool    HttpRequest::parseRequest(const std::string &rawRequest)
+ParseResult HttpRequest::parseRequestPartial(std::string &buffer)
+{
+    while (true)
+    {
+        // debug state of parsing
+        std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
+        
+        switch (parseState)
+        {
+            case ParseState::START_LINE:
+            {
+                size_t pos = buffer.find("\r\n");
+                if (pos == std::string::npos)
+                    return ParseResult::INCOMPLETE;
+
+                std::string line = buffer.substr(0, pos);
+                buffer.erase(0, pos + 2); // remove processed line
+
+                if (!parseStartLine(line))
+                {
+                    parseState = ParseState::ERROR;
+                    return ParseResult::ERROR;
+                }
+                parseState = ParseState::HEADERS;
+                break;
+            }
+
+            case ParseState::HEADERS:
+            {
+                size_t pos = buffer.find("\r\n");
+                if (pos == std::string::npos)
+                    return ParseResult::INCOMPLETE;
+
+                std::string line = buffer.substr(0, pos);
+                buffer.erase(0, pos + 2);
+
+                if (line.empty() || line == "\r") // End of headers
+                {
+                    std::cout << "\nEnd of headers detected." << std::endl;
+                    // Decide if a body is expected
+                    if (method == Method::GET || method == Method::DELETE)
+                    {
+                        return ParseResult::COMPLETE;
+                        break;
+                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (it is not Method::POST)" << std::endl;
+                    }
+                    if (method == Method::POST)
+                        parseState = ParseState::BODY;
+                }
+
+                if (!parseHeaders(line))
+                {
+                    parseState = ParseState::ERROR;
+                    return ParseResult::ERROR;
+                }
+                break;
+            }
+
+            case ParseState::BODY:
+            {
+                auto it = headers.find("Content-Length");
+                if (it != headers.end())
+                {
+                    size_t contentLength = std::stoi(it->second);
+                    if (buffer.size() < contentLength)
+                        return ParseResult::INCOMPLETE;
+
+                    if (bodyFile.is_open())
+                        bodyFile.write(buffer.data(), contentLength);
+                    
+                    buffer.erase(0, contentLength);
+                    return ParseResult::COMPLETE;
+                }
+
+                // TODO: Handle Transfer-Encoding: chunked
+                return ParseResult::ERROR;
+            }
+
+            case ParseState::ERROR:
+                return ParseResult::ERROR;
+
+            case ParseState::COMPLETE:
+                return ParseResult::COMPLETE;
+        }
+    }
+}
+
+
+bool    HttpRequest::parseRequestFromCompleteBuffer(const std::string &rawRequest)
 {
     std::istringstream raw(rawRequest);
     std::string line;
 
     // Clear previous data
-    headers.clear();
-    if (bodyFile.is_open())
-        bodyFile.close();
-    parseState = ParseState::START_LINE;
+    reset();
 
     setBody("./http_request_body.txt");
     
@@ -435,9 +521,9 @@ std::string HttpRequest::buildResponse()
     }
     else
     {
-        status = "HTTP/1.1 404 Not Found";
+        status = "HTTP/1.1 404 OK";
         content_type = "text/html; charset=utf-8";
-        body = readFile("./www/Error/404.html");
+        body = readFile("./www/error/404.html");
     }
 
     //Assemble the complete HTTP response
