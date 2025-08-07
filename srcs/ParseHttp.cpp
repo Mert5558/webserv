@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/07 13:06:20 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/07 22:59:39 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,26 +140,26 @@ std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
 
 
 
-std::string HttpRequest::receiveRequest(int client_fd)
-{
-    std::string buffer;
-    char chunk[1024] = {0};
-    unsigned long bytes_read;
+// std::string HttpRequest::receiveRequest(int client_fd)
+// {
+//     std::string buffer;
+//     char chunk[1024] = {0};
+//     unsigned long bytes_read;
 
-    while ((bytes_read = recv(client_fd, chunk, sizeof(chunk) - 1, 0)) > 0)
-    {
-        chunk[bytes_read] = '\0'; // Null-terminate the chunk
-        buffer.append(chunk);    // Append to the buffer
-        if (bytes_read < sizeof(chunk) - 1) break; // End of request
-        if (bytes_read <= 0)																		
-        {
-            std::cout << "Client disconnected or error occurred." << std::endl;
-            break;
-        }
-    }
-    // std::cout << "----> Real Buffer: " << buffer << std::endl;
-    return buffer;
-}
+//     while ((bytes_read = recv(client_fd, chunk, sizeof(chunk) - 1, 0)) > 0)
+//     {
+//         chunk[bytes_read] = '\0'; // Null-terminate the chunk
+//         buffer.append(chunk);    // Append to the buffer
+//         if (bytes_read < sizeof(chunk) - 1) break; // End of request
+//         if (bytes_read <= 0)																		
+//         {
+//             std::cout << "Client disconnected or error occurred." << std::endl;
+//             break;
+//         }
+//     }
+//     // std::cout << "----> Real Buffer: " << buffer << std::endl;
+//     return buffer;
+// }
 
 
 ssize_t HttpRequest::receive(int client_fd, std::string &buffer)
@@ -242,7 +242,7 @@ ParseResult HttpRequest::parseRequestPartial(std::string &buffer)
     while (true)
     {
         // debug state of parsing
-        std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
+        // std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
         
         switch (parseState)
         {
@@ -275,16 +275,17 @@ ParseResult HttpRequest::parseRequestPartial(std::string &buffer)
 
                 if (line.empty() || line == "\r") // End of headers
                 {
-                    std::cout << "\nEnd of headers detected." << std::endl;
+                    std::cout << "End of headers detected." << std::endl;
                     // Decide if a body is expected
                     if (method == Method::GET || method == Method::DELETE)
                     {
+                        parseState = ParseState::COMPLETE; // Transition to COMPLETE state
+                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (not a Method::POST)" << std::endl;
                         return ParseResult::COMPLETE;
-                        break;
-                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (it is not Method::POST)" << std::endl;
                     }
                     if (method == Method::POST)
                         parseState = ParseState::BODY;
+                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
                 }
 
                 if (!parseHeaders(line))
@@ -325,78 +326,79 @@ ParseResult HttpRequest::parseRequestPartial(std::string &buffer)
 }
 
 
-bool    HttpRequest::parseRequestFromCompleteBuffer(const std::string &rawRequest)
-{
-    std::istringstream raw(rawRequest);
-    std::string line;
+// bool    HttpRequest::parseRequestFromCompleteBuffer(const std::string &rawRequest)
+// {
+//     std::istringstream raw(rawRequest);
+//     std::string line;
 
-    // Clear previous data
-    reset();
+//     // Clear previous data
+//     reset();
 
-    setBody("./http_request_body.txt");
+//     setBody("./http_request_body.txt");
     
-    while (std::getline(raw, line))
-    {
-        std::cout << "Processing line: " << line << std::endl;
-        std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
+//     while (std::getline(raw, line))
+//     {
+//         // log the parsing state
+//         std::cout << "Processing line: " << line << std::endl;
+//         std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
         
-        switch (parseState)
-        {
-            case ParseState::START_LINE:
-                if (!parseStartLine(line))
-                {
-                    parseState = ParseState::ERROR;
-                    return false;
-                }    
-                parseState = ParseState::HEADERS;
-                break;
+//         switch (parseState)
+//         {
+//             case ParseState::START_LINE:
+//                 if (!parseStartLine(line))
+//                 {
+//                     parseState = ParseState::ERROR;
+//                     return false;
+//                 }    
+//                 parseState = ParseState::HEADERS;
+//                 break;
                 
-                case ParseState::HEADERS:  
-                if (line.empty() || line == "\r") // End of headers
-                {
-                    std::cout << "\nEnd of headers detected." << std::endl;
-                    // Skip BODY state if the method does not support a body
-                    if (method == Method::GET || method == Method::DELETE)
-                    {
-                        parseState = ParseState::COMPLETE;
-                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (it is not Method::POST)" << std::endl;
-                        return true;
-                    }
-                    parseState = ParseState::BODY;
-                }  
-                else if (!parseHeaders(line))
-                {
-                    parseState = ParseState::ERROR;
-                    return false;
-                }    
-                break;
+//                 case ParseState::HEADERS:  
+//                 if (line.empty() || line == "\r") // End of headers
+//                 {
+//                     std::cout << "\nEnd of headers detected." << std::endl;
+//                     // Skip BODY state if the method does not support a body
+//                     if (method == Method::GET || method == Method::DELETE)
+//                     {
+//                         parseState = ParseState::COMPLETE;
+//                         std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (it is not Method::POST)" << std::endl;
+//                         return true;
+//                     }
+//                     parseState = ParseState::BODY;
+//                 }  
+//                 else if (!parseHeaders(line))
+//                 {
+//                     parseState = ParseState::ERROR;
+//                     return false;
+//                 }    
+//                 break;
                 
-                case ParseState::BODY:
-                std::cout << "i am in the BODY state " << std::endl;  
-                if (bodyFile.is_open())
-                {
-                    std::cout << "Writing line to body file: " << line << std::endl;
-                    bodyFile << line << "\n";
-                    bodySize += line.size() + 1;
-                }
-                else
-                {
-                    std::cerr << "Body file is not open!" << std::endl;
-                }
-                break;
+//                 case ParseState::BODY:
+//                 std::cout << "i am in the BODY state " << std::endl;  
+//                 if (bodyFile.is_open())
+//                 {
+//                     std::cout << "Writing line to body file: " << line << std::endl;
+//                     bodyFile << line << "\n";
+//                     bodySize += line.size() + 1;
+//                 }
+//                 else
+//                 {
+//                     std::cerr << "Body file is not open!" << std::endl;
+//                 }
+//                 break;
                 
-                default:    
-                parseState = ParseState::ERROR;
-                return false;
-        }        
+//                 default:    
+//                 parseState = ParseState::ERROR;
+//                 return false;
+//         }        
         
-    } 
-    log_first_line();  
-    log_headers();
+//     } 
+//     log_first_line();  
+//     log_headers();
 
-    parseState = ParseState::COMPLETE;
-    return true;
-}    
+//     parseState = ParseState::COMPLETE;
+//     return true;
+// }    
 
 
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>File Upload - School 42 Project</title>
+    <title>File Upload</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,7 +14,7 @@
         }
         .container {
             background: #fff;
-            padding: 32px 36px;
+            padding: 62px 66px;
             border-radius: 12px;
             box-shadow: 0 4px 24px rgba(42, 43, 54, 0.10);
             text-align: center;
@@ -25,7 +25,7 @@
         label {
             background: #2563eb;
             color: #fff;
-            padding: 12px 28px;
+            padding: 8px 28px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 16px;
@@ -43,7 +43,8 @@
 </head>
 <body>
     <div class="container">
-        <h2>Upload a File or Photo</h2>
+        <h2>Upload a File or Photo </h2>
+        <div style="height: 16px;"></div>
         <form method="POST" action="/upload" enctype="multipart/form-data">
             <input type="file" id="fileInput" name="file">
             <label for="fileInput">Choose File</label>

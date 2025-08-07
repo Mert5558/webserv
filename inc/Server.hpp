@@ -16,4 +16,6 @@ class Server
 		void parseHttp(std::vector<InitConfig> &servers, HttpRequest &request);
 
 		std::vector<pollfd> initPollfd(std::vector<InitConfig> &servers);
+
+		void	removeFd(std::vector<pollfd> &fds, size_t index);
 };

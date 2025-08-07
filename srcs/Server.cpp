@@ -42,15 +42,21 @@ void Server::startServer(ParseConfig parse)
 		{
 			if (fds[i].revents & POLLIN)
 			{
-				
+				if (fds[i].fd == -1)
+				{
+					std::cout << "Skipping invalid fd: " << fds[i].fd << std::endl;
+					continue;
+				}
+
+				// Print the current state of pollfd
+				std::cout << "DEBUG: Current state of pollfd array (size: " << fds.size() << "):" << std::endl;
 				for (size_t k = 0; k < fds.size(); k++)
 				{
-					std::cout << std::endl;
-					std::cout << "fd for index: " << k << fds[k].fd << std::endl;
-					std::cout << "event for index: " << k << fds[k].events << std::endl;
-					std::cout << "revent for index: " << k << fds[k].revents << std::endl;
-					std::cout << std::endl;
+					std::cout << "  [Index " << k << "] fd: " << fds[k].fd
+							<< ", events: " << fds[k].events
+							<< ", revents: " << fds[k].revents << std::endl;
 				}
+				std::cout << "-----------------------------------------------" << std::endl;
 
 
 				bool isSocketFd = false;
@@ -73,44 +79,88 @@ void Server::startServer(ParseConfig parse)
 					if (client_fd < 0)
 						std::cout << "Error client_fd" << std::endl;
 					
+					// Add new client to poll array
 					struct pollfd new_pollfd;
 					new_pollfd.fd = client_fd;
 					new_pollfd.events = POLLIN;
 					fds.push_back(new_pollfd);
 	
-					std::cout << "new client connected: " << client_fd << std::endl;
+					std::cout << "new client connected fd: " << client_fd << std::endl;
 				}
 				else
 				{
 					std::cout << "this is a request for a client, here we read, parse and then send the response" << std::endl;
-
-					std::string buffer = request.receiveRequest(fds[i].fd);
-					request.parseRequestFromCompleteBuffer(buffer);
-					// request.isValidMethod(); // maybe we should encaptulate the parseRequest() function iside this one and rename it
-					
-					
-					// 8. Send a basic HTTP response with keep-alive
-					std::string response = request.buildResponse();
-					
-					int bytes_sent = send(fds[i].fd, response.c_str(), response.size(), 0);
-					if (bytes_sent < 0)
+					std::string buffer;
+					while (true)
 					{
-						perror("send");
-						break;
+						ssize_t bytes = request.receive(fds[i].fd, buffer);
+						if (bytes <= 0)
+						{
+							break;
+						}
+						
+						ParseResult result = request.parseRequestPartial(buffer);
+						
+						switch (result)
+						{
+							case ParseResult::INCOMPLETE:
+								continue;
+							
+							case ParseResult::COMPLETE:
+							{
+								std::string response = request.buildResponse();
+								send(fds[i].fd, response.c_str(), response.size(), 0);
+
+								request.log_first_line();  
+								request.log_headers();
+								
+								// print the response
+								// std::cout << "\nResponse sent (" << response.size() << " bytes).\n" << std::endl;
+								// std::cout << response.c_str() << std::endl;
+								
+								request.reset();
+								buffer.clear();
+								break;
+								
+							}
+							
+							case ParseResult::ERROR:
+							{
+								std::string error = request.buildResponse();
+								send(fds[i].fd, error.c_str(), error.size(), 0);
+								request.reset();
+								buffer.clear();
+								break;
+							}
+							
+						}
+
+						std::cout << "response send to: " << fds[i].fd << std::endl;
+						removeFd(fds, i);
+
 					}
-
-					std::cout << "response send to: " << fds[i].fd << std::endl;
-
-					std::cout << "fd removed: " << fds[i].fd << std::endl;
-					close(fds[i].fd);
-					fds.erase(fds.begin() + i);
-					i--;
+					// close(servers[0].getFd());
 
 				}
 			}
 		}
 	}
 }
+
+
+void Server::removeFd(std::vector<pollfd> &fds, size_t index)
+{
+    if (fds[index].fd >= 0)
+    {
+        std::cout << "Closing fd: " << fds[index].fd << std::endl;
+        close(fds[index].fd);
+    }
+    fds.erase(fds.begin() + index);
+    std::cout << "Removed fd at index: " << index << std::endl;
+}
+
+
+
 
 std::vector<pollfd> Server::initPollfd(std::vector<InitConfig> &servers)
 {
@@ -236,7 +286,12 @@ void Server::serverSetup(std::vector<InitConfig> &servers)
 			if (!servers[i].createAndBindSocket())
 				throw ConfigError("Failed to setup server socket!");
 		}
-		std::cout << servers[0].getFd() << " after socket creation" << std::endl;
-		std::cout << "Server created 'host: ... ', port: '...'" << std::endl;     //logger
+		// std::cout << servers[0].getFd() << " after socket creation" << std::endl;
+		// std::cout << "Server created 'host: ... ', port: '...'" << std::endl;     //logger
+		std::cout << "Server socket created and bound successfully: "
+          << "Host: " << servers[i].getHost()
+          << ", Port: " << servers[i].getPort()
+          << ", Fd: " << servers[i].getFd()
+          << std::endl;
 	}
 }
