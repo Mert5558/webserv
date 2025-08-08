@@ -16,24 +16,24 @@ void Server::startServer(ParseConfig parse)
 	std::vector<pollfd> fds;
 
 	std::vector<InitConfig> &servers = parse.getServers();
-	
+
 	serverSetup(servers);
 
 	fds = initPollfd(servers);
 
 	std::unordered_map<int, Client> clients;
-	
+
 	while (true)
 	{
 		int ready = poll(fds.data(), fds.size(), 10);
 		if (ready < 0)
 			std::cout << "Error poll()!" << std::endl;
-		
+
 		for (size_t i = 0; i < fds.size(); i++)
 		{
 			if (fds[i].revents & POLLIN)
 			{
-				
+
 				for (size_t k = 0; k < fds.size(); k++)
 				{
 					std::cout << std::endl;
@@ -59,18 +59,18 @@ void Server::startServer(ParseConfig parse)
 					std::cout << "we accept the new client" << std::endl;
 					struct sockaddr_in client_addr;
 					socklen_t client_len = sizeof(client_addr);
-	
+
 					int client_fd = accept(fds[i].fd, (struct sockaddr*)&client_addr, &client_len);
 					if (client_fd < 0)
 						std::cout << "Error client_fd" << std::endl;
-					
+
 					struct pollfd new_pollfd;
 					new_pollfd.fd = client_fd;
 					new_pollfd.events = POLLIN;
 					fds.push_back(new_pollfd);
 
 					clients[client_fd] = Client(client_fd);
-	
+
 					std::cout << "new client connected: " << client_fd << std::endl;
 				}
 				else
@@ -84,23 +84,27 @@ void Server::startServer(ParseConfig parse)
 					if (done)
 					{
 						std::cout << "entered done loop" << std::endl;
-						request.parseRequest(clients[client_fd].recv_buffer);
-
-						std::string response = request.buildResponse();
-						
-						int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
-						if (bytes_sent < 0)
+						if (!clients[client_fd].disconnect)
 						{
-							perror("send");
-							break;
-						}
+							
+							request.parseRequest(clients[client_fd].recv_buffer);
 
-						std::cout << "response send to: " << fds[i].fd << std::endl;
-	
-						std::cout << "fd removed: " << fds[i].fd << std::endl;
-						close(fds[i].fd);
-						fds.erase(fds.begin() + i);
-						i--;
+							std::string response = request.buildResponse();
+
+							int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
+							if (bytes_sent < 0)
+							{
+								perror("send");
+								break;
+							}
+
+							std::cout << "response send to: " << fds[i].fd << std::endl;
+
+							std::cout << "fd removed: " << fds[i].fd << std::endl;
+							close(fds[i].fd);
+							fds.erase(fds.begin() + i);
+							i--;
+						}
 					}
 				}
 			}
@@ -123,17 +127,36 @@ bool Server::receiveReq(int client_fd, std::unordered_map<int, Client> &clients)
 
 	if (!client.header_received)
 	{
+		client.header_received = true;
 		size_t header_end = client.recv_buffer.find("\r\n\r\n");
+
 		if (header_end != std::string::npos)
 		{
-			client.header_received = true;
-			client.isComplete = true;
+			client.header_str = client.recv_buffer.substr(0, header_end + 4);
+
+			size_t cl_pos = client.header_str.find("Content-Length:");
+			if (cl_pos != std::string::npos)
+			{
+				size_t value_start = client.header_str.find_first_not_of(" ", cl_pos + 15);
+				size_t value_end = client.header_str.find("\r\n", value_start);
+				std::string str_len = client.header_str.substr(value_start, value_end - value_start);
+				client.expected_len = std::atoi(str_len.c_str());
+			}
+			else
+				client.expected_len = 0;
+			
+			client.body_start = header_end + 4;
 		}
 	}
-	
-	if (!client.body_received)
+
+	if (client.header_received && !client.body_received)
 	{
-		
+		size_t total_body_size = client.recv_buffer.size() - client.body_start;
+		if (client.expected_len == 0 || total_body_size >= client.expected_len)
+		{
+			client.body_received = true;
+			client.isComplete = true;
+		}
 	}
 
 	return (client.isComplete);
