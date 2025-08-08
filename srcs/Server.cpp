@@ -23,9 +23,82 @@ void Server::startServer(ParseConfig parse)
 	
 	while (true)
 	{
+		int ready = poll(fds.data(), fds.size(), 10);
+		if (ready < 0)
+			std::cout << "Error poll()!" << std::endl;
 		
-	}
+		for (size_t i = 0; i < fds.size(); i++)
+		{
+			if (fds[i].revents & POLLIN)
+			{
+				
+				for (size_t k = 0; k < fds.size(); k++)
+				{
+					std::cout << std::endl;
+					std::cout << "fd for index: " << k << fds[k].fd << std::endl;
+					std::cout << "event for index: " << k << fds[k].events << std::endl;
+					std::cout << "revent for index: " << k << fds[k].revents << std::endl;
+					std::cout << std::endl;
+				}
 
+
+				bool isSocketFd = false;
+				for (size_t s = 0; s < servers.size(); ++s)
+				{
+					if (fds[i].fd == servers[s].getFd())
+					{
+						isSocketFd = true;
+						break;
+					}
+				}
+
+				if (isSocketFd)
+				{
+					std::cout << "we accept the new client" << std::endl;
+					struct sockaddr_in client_addr;
+					socklen_t client_len = sizeof(client_addr);
+	
+					int client_fd = accept(fds[i].fd, (struct sockaddr*)&client_addr, &client_len);
+					if (client_fd < 0)
+						std::cout << "Error client_fd" << std::endl;
+					
+					struct pollfd new_pollfd;
+					new_pollfd.fd = client_fd;
+					new_pollfd.events = POLLIN;
+					fds.push_back(new_pollfd);
+	
+					std::cout << "new client connected: " << client_fd << std::endl;
+				}
+				else
+				{
+					std::cout << "this is a request for a client, here we read, parse and then send the response" << std::endl;
+
+					std::string buffer = request.receiveRequest(fds[i].fd);
+					request.parseRequest(buffer);
+					// request.isValidMethod(); // maybe we should encaptulate the parseRequest() function iside this one and rename it
+					
+					
+					// 8. Send a basic HTTP response with keep-alive
+					std::string response = request.buildResponse();
+					
+					int bytes_sent = send(fds[i].fd, response.c_str(), response.size(), 0);
+					if (bytes_sent < 0)
+					{
+						perror("send");
+						break;
+					}
+
+					std::cout << "response send to: " << fds[i].fd << std::endl;
+
+					std::cout << "fd removed: " << fds[i].fd << std::endl;
+					close(fds[i].fd);
+					fds.erase(fds.begin() + i);
+					i--;
+
+				}
+			}
+		}
+	}
 }
 
 std::vector<pollfd> Server::initPollfd(std::vector<InitConfig> &servers)
