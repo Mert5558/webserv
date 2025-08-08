@@ -13,6 +13,7 @@ Server::~Server()
 void Server::startServer(ParseConfig parse)
 {
 	HttpRequest request;
+	httpResponse response;
 	std::vector<pollfd> fds;
 
 	std::vector<InitConfig> &servers = parse.getServers();
@@ -79,9 +80,9 @@ void Server::startServer(ParseConfig parse)
 					
 					
 					// 8. Send a basic HTTP response with keep-alive
-					std::string response = request.buildResponse();
-					
-					int bytes_sent = send(fds[i].fd, response.c_str(), response.size(), 0);
+					std::string respons = response.buildResponse();
+
+					int bytes_sent = send(fds[i].fd, respons.c_str(), respons.size(), 0);
 					if (bytes_sent < 0)
 					{
 						perror("send");
