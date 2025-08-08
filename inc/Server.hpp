@@ -3,6 +3,7 @@
 #include "Webserv.hpp"
 #include "ParseConfig.hpp"
 #include "ParseHttp.hpp"
+#include "../inc/Client.hpp"
 
 class Server
 {
@@ -18,4 +19,5 @@ class Server
 		std::vector<pollfd> initPollfd(std::vector<InitConfig> &servers);
 
 		void	removeFd(std::vector<pollfd> &fds, size_t index);
+		bool receiveReq(int client_fd, std::unordered_map<int, Client> &clients);
 };

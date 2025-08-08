@@ -1,6 +1,7 @@
 #include "../inc/Server.hpp"
 #include "../inc/ParseConfig.hpp"
 #include "../inc/ParseHttp.hpp"
+#include "../inc/Client.hpp"
 
 Server::Server()
 {}
@@ -31,6 +32,8 @@ void Server::startServer(ParseConfig parse)
 	serverSetup(servers);
 
 	fds = initPollfd(servers);
+
+	std::unordered_map<int, Client> clients;
 	
 	while (true)
 	{
@@ -84,67 +87,151 @@ void Server::startServer(ParseConfig parse)
 					new_pollfd.fd = client_fd;
 					new_pollfd.events = POLLIN;
 					fds.push_back(new_pollfd);
+
+					clients[client_fd] = Client(client_fd);
 	
 					std::cout << "new client connected fd: " << client_fd << std::endl;
 				}
 				else
 				{
+					
 					std::cout << "this is a request for a client, here we read, parse and then send the response" << std::endl;
-					std::string buffer;
-					while (true)
+
+					int client_fd = fds[i].fd;
+
+					bool done = receiveReq(client_fd, clients);
+
+					if (done)
 					{
-						ssize_t bytes = request.receive(fds[i].fd, buffer);
-						if (bytes <= 0)
+						std::cout << "entered done loop" << std::endl;
+						if (!clients[client_fd].disconnect)
 						{
-							break;
-						}
-						
-						ParseResult result = request.parseRequestPartial(buffer);
-						
-						switch (result)
-						{
-							case ParseResult::INCOMPLETE:
-								continue;
-							
-							case ParseResult::COMPLETE:
-							{
-								std::string response = request.buildResponse();
-								send(fds[i].fd, response.c_str(), response.size(), 0);
+							request.parseRequestFromCompleteBuffer(clients[client_fd].recv_buffer);
 
-								request.log_first_line();  
-								request.log_headers();
-								
-								// print the response
-								// std::cout << "\nResponse sent (" << response.size() << " bytes).\n" << std::endl;
-								// std::cout << response.c_str() << std::endl;
-								
-								request.reset();
-								buffer.clear();
-								break;
-								
-							}
-							
-							case ParseResult::ERROR:
+							std::string response = request.buildResponse();
+
+							int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
+							if (bytes_sent < 0)
 							{
-								std::string error = request.buildResponse();
-								send(fds[i].fd, error.c_str(), error.size(), 0);
-								request.reset();
-								buffer.clear();
+								perror("send");
 								break;
 							}
-							
+
+							std::cout << "response send to: " << fds[i].fd << std::endl;
 						}
 
-						std::cout << "response send to: " << fds[i].fd << std::endl;
-						removeFd(fds, i);
-
+						std::cout << "fd removed: " << fds[i].fd << std::endl;
+						close(fds[i].fd);
+						fds.erase(fds.begin() + i);
+						i--;
 					}
-					// close(servers[0].getFd());
+					
+					// std::cout << "this is a request for a client, here we read, parse and then send the response" << std::endl;
+					// std::string buffer;
+					// while (true)
+					// {
+					// 	int client_fd = fds[i].fd;
+
+					// 	bool done = receiveReq(client_fd, clients);
+					// 	std::cout << "------ before done" << std::endl;
+					// 	if (done)
+					// 	{
+					// 		std::cout << "------ inside done" << std::endl;
+					// 		ParseResult result = request.parseRequestPartial(buffer);
+							
+					// 		switch (result)
+					// 		{
+					// 			case ParseResult::INCOMPLETE:
+					// 				continue;
+								
+					// 			case ParseResult::COMPLETE:
+					// 			{
+					// 				std::string response = request.buildResponse();
+					// 				send(fds[i].fd, response.c_str(), response.size(), 0);
+	
+					// 				request.log_first_line();  
+					// 				request.log_headers();
+									
+					// 				// print the response
+					// 				// std::cout << "\nResponse sent (" << response.size() << " bytes).\n" << std::endl;
+					// 				// std::cout << response.c_str() << std::endl;
+									
+					// 				request.reset();
+					// 				buffer.clear();
+					// 				break;
+									
+					// 			}
+								
+					// 			case ParseResult::ERROR:
+					// 			{
+					// 				std::string error = request.buildResponse();
+					// 				send(fds[i].fd, error.c_str(), error.size(), 0);
+					// 				request.reset();
+					// 				buffer.clear();
+					// 				break;
+					// 			}
+								
+					// 		}
+					// 		std::cout << "response send to: " << fds[i].fd << std::endl;
+					// 		removeFd(fds, i);
+					// 	}
+					// }
+					// // close(servers[0].getFd());
 
 				}
 			}
 		}
 	}
+}
+
+bool Server::receiveReq(int client_fd, std::unordered_map<int, Client> &clients)
+{
+	Client &client = clients[client_fd];
+	char buf[4096];
+	ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
+	if (bytes <= 0)
+	{
+		client.disconnect = true;
+		return (true);
+	}
+
+	client.recv_buffer.append(buf, bytes);
+
+	if (!client.header_received)
+	{
+		client.header_received = true;
+		size_t header_end = client.recv_buffer.find("\r\n\r\n");
+
+		if (header_end != std::string::npos)
+		{
+			client.header_str = client.recv_buffer.substr(0, header_end + 4);
+
+			size_t cl_pos = client.header_str.find("Content-Length:");
+			if (cl_pos != std::string::npos)
+			{
+				size_t value_start = client.header_str.find_first_not_of(" ", cl_pos + 15);
+				size_t value_end = client.header_str.find("\r\n", value_start);
+				std::string str_len = client.header_str.substr(value_start, value_end - value_start);
+				client.expected_len = std::atoi(str_len.c_str());
+			}
+			else
+				client.expected_len = 0;
+			
+			client.body_start = header_end + 4;
+		}
+	}
+
+	if (client.header_received && !client.body_received)
+	{
+		size_t total_body_size = client.recv_buffer.size() - client.body_start;
+		if (client.expected_len == 0 || total_body_size >= client.expected_len)
+		{
+			client.body_received = true;
+			client.isComplete = true;
+		}
+	}
+
+	return (client.isComplete);
 }
 
 
