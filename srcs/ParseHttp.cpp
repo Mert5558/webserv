@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/07 22:59:39 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/08 11:58:50 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -164,7 +164,7 @@ std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
 
 ssize_t HttpRequest::receive(int client_fd, std::string &buffer)
 {
-    char tmp[1024];
+    char tmp[2048];
     ssize_t bytes = 0;
 
     bytes = recv(client_fd, tmp, sizeof(tmp), 0);
@@ -489,15 +489,32 @@ bool HttpRequest::isValidPath()
 
 
 // Function to read the contents of a file into a string
+// std::string HttpRequest::readFile(const std::string& filePath)
+// {
+//     std::ifstream file(filePath);
+//     if (!file.is_open())
+//     {
+//         return "./www/error/404.html";
+//     }
+//     std::stringstream buffer;
+//     buffer << file.rdbuf();
+//     return buffer.str();
+// }
+
 std::string HttpRequest::readFile(const std::string& filePath)
 {
-    std::ifstream file(filePath);
+    std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open())
     {
         return "./www/error/404.html";
     }
-    std::stringstream buffer;
-    buffer << file.rdbuf();
+    std::ostringstream buffer;
+    char chunk[8192];
+    while (file.read(chunk, sizeof(chunk)))
+    {
+        buffer.write(chunk, file.gcount());
+    }
+    buffer.write(chunk, file.gcount()); // Write any remaining bytes
     return buffer.str();
 }
 
@@ -513,6 +530,7 @@ std::string HttpRequest::buildResponse()
     {
         status = "HTTP/1.1 200 OK";
         content_type = "text/html; charset=utf-8";
+        body = readFile("./www/large_test_file_10_mb.html");
         body = readFile("./www/index2.html");
     }
     else if (path == "/assets/images")
