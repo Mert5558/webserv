@@ -30,3 +30,6 @@ bin/
 
 # Ignore executable
 webserv
+
+# Ignore Icon i use in my folder
+Icon*
