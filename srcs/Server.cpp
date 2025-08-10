@@ -1,4 +1,5 @@
 #include "../inc/Server.hpp"
+#include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
 #include "../inc/ParseHttp.hpp"
 #include "../inc/Client.hpp"
@@ -466,7 +467,6 @@ void Server::serverSetup(std::vector<InitConfig> &servers)
 
 		if (!duplicate)
 		{
-			std::cout << "-----------------------------------------------" << std::endl;
 			if (!servers[i].createAndBindSocket())
 				throw ConfigError("Failed to setup server socket!");
 		}
@@ -477,5 +477,6 @@ void Server::serverSetup(std::vector<InitConfig> &servers)
           << ", Port: " << servers[i].getPort()
           << ", Fd: " << servers[i].getFd()
           << std::endl;
+		std::cout << "Server created 'host: ... ', port: '...'" << std::endl;     //logger
 	}
 }

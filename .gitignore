@@ -1,0 +1,35 @@
+# Ignore macOS system files
+.DS_Store
+
+# Ignore IDE and editor files
+.vscode/
+.vscode/*
+**/*.md
+
+# Ignore compiled files
+*.o
+
+# Ignore build directories
+*/build/
+build/
+*/bin/
+bin/
+
+# Ignore logs and temp files
+*.log
+*.tmp
+
+# Ignore Container
+.devcontainer
+
+# Ignore Images
+*.png
+
+# Ignore Images
+**/*.pdf
+
+# Ignore executable
+webserv
+
+# Ignore Icon i use in my folder
+Icon*
