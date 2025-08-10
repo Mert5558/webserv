@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/08 11:58:50 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/08 22:13:34 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -326,6 +326,7 @@ ParseResult HttpRequest::parseRequestPartial(std::string &buffer)
 }
 
 
+
 bool    HttpRequest::parseRequestFromCompleteBuffer(const std::string &rawRequest)
 {
     std::istringstream raw(rawRequest);
@@ -525,25 +526,28 @@ std::string HttpRequest::buildResponse()
     std::string status;
     std::string content_type;
     std::string body;
+    std::string connection;
 
     if(path == "/")
     {
         status = "HTTP/1.1 200 OK";
         content_type = "text/html; charset=utf-8";
-        body = readFile("./www/large_test_file_10_mb.html");
-        body = readFile("./www/test_file_2048KB.html");
+        body = readFile("./www/test_file_1024KB.html");
+        connection = "close";
     }
     else if (path == "/assets/images")
     {
         status = "HTTP/1.1 200 OK";
         content_type = "image/svg+xml";
         body = readFile("./www/assets/images/logo.svg");
+        connection = "close";
     }
     else
     {
         status = "HTTP/1.1 404 OK";
         content_type = "text/html; charset=utf-8";
         body = readFile("./www/error/404.html");
+        connection = "close";
     }
 
     //Assemble the complete HTTP response
@@ -551,9 +555,9 @@ std::string HttpRequest::buildResponse()
     response << status << "\r\n";
     response << "Content-Type: " << content_type << "\r\n";
     response << "Content-Length: " << body.length() << "\r\n";
+    response << "Connection: " << connection << "\r\n";
     response << "\r\n";
     response << body;
 
-    // std::cout << "---> HTTP Response:\n" << response.str() << std::endl; // print the complete HTTP response
     return response.str();
 }
