@@ -13,10 +13,10 @@ ParseConfig::~ParseConfig()
 int ParseConfig::parseFile(std::string configfile)
 {
 	std::cout << configfile << std::endl;
-	if (!isRegularFile(configfile))
-	{
-		throw ConfigError("Error: not a regular file or it does not exist!");
-	}
+	// if (!isRegularFile(configfile))
+	// {
+	// 	throw ConfigError("Error: not a regular file or it does not exist!");
+	// }
 	if (!isFileReadable(configfile))
 	{
 		throw ConfigError("Error: cannot read config file!");
@@ -60,27 +60,39 @@ bool ParseConfig::isFileReadable(const std::string &filename)
 	return (file.is_open());
 }
 
-bool ParseConfig::isRegularFile(const std::string &filename)
+// bool ParseConfig::isRegularFile(const std::string &filename)
+// {
+// 	std::ifstream file(filename.c_str());
+// 	if (!file.is_open())
+// 	return (false);
+	
+// 	char c;
+// 	file.get(c);
+// 	return (true);
+// }
+
+bool ParseConfig::isFileEmpty(const std::string& filename)
 {
 	std::ifstream file(filename.c_str());
 	if (!file.is_open())
-	return (false);
-	
+		return true; // Treat unreadable as empty
+
 	char c;
-	file.get(c);
-	return (true);
+	file.get(c); // Try to read one character
+
+	return !file;
 }
 
-bool ParseConfig::isFileEmpty(const std::string &filename)
-{
-	std::ifstream file(filename.c_str());
-	if (!file.is_open())
-	return (true);
+// bool ParseConfig::isFileEmpty(const std::string &filename)
+// {
+// 	std::ifstream file(filename.c_str());
+// 	if (!file.is_open())
+// 	return (true);
 	
-	char c;
-	file.get(c);
-	return (file.eof());
-}
+// 	char c;
+// 	file.get(c);
+// 	return (file.eof());
+// }
 void ParseConfig::removeComments(std::string &content)
 {
 	size_t pos = 0;

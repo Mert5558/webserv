@@ -17,7 +17,7 @@ class ParseConfig
 	int parseFile(std::string configfile);
 
 	bool isFileReadable(const std::string &filename);
-	bool isRegularFile(const std::string &filename);
+	// bool isRegularFile(const std::string &filename);
 	bool isFileEmpty(const std::string &filename);
 
 	void removeComments(std::string &content);
