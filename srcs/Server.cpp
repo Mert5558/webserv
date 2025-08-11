@@ -329,7 +329,7 @@ std::vector<pollfd> Server::initPollfd(std::vector<InitConfig> &servers)
 		pollfd pfd;
 
 		pfd.fd = servers[i].getFd();
-		pfd.events = POLL_IN;
+		pfd.events = POLLIN;
 		fds.push_back(pfd);
 
 		if (fcntl(pfd.fd, F_SETFL, O_NONBLOCK) == -1)
