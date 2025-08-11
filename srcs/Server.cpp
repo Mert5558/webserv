@@ -2,6 +2,7 @@
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
 #include "../inc/ParseHttp.hpp"
+#include "../inc/httpResponse.hpp"
 #include "../inc/Client.hpp"
 
 Server::Server()
@@ -28,6 +29,7 @@ Server::~Server()
 void Server::startServer(ParseConfig parse)
 {
 	HttpRequest request;
+	httpResponse response;
 	std::vector<pollfd> fds;
 
 	std::vector<InitConfig> &servers = parse.getServers();
@@ -100,57 +102,28 @@ void Server::startServer(ParseConfig parse)
 					
 					std::cout << "this is a request for a client, here we read, parse and then send the response" << std::endl;
 
-					// while (true)
-					// {
-						Client &client = clients[fds[i].fd];
-						
-						ssize_t bytes = client.request.receive(fds[i].fd, client.recv_buffer);
-						if (bytes <= 0)
-						{
-							removeFd(fds, i);
-							continue;
-						}
+					std::string buffer = request.receiveRequest(fds[i].fd);
+					request.parseRequestFromCompleteBuffer(buffer);
+					// request.isValidMethod(); // maybe we should encaptulate the parseRequest() function iside this one and rename it
+					
+					
+					// 8. Send a basic HTTP response with keep-alive
+					std::string respons = response.buildResponse();
 
-						ParseResult result = client.request.parseRequestPartial(client.recv_buffer);
-							
-						switch (result)
-						{
-							case ParseResult::INCOMPLETE:
-								break;
-							
-							case ParseResult::COMPLETE:
-							{
-								std::string response = client.request.buildResponse();
-								// std::cout << "--- Sending Response ---\n" << response << "\n------------------------\n";
-								// send(fds[i].fd, response.c_str(), response.size(), 0);
-								sendAll(fds[i].fd, response.c_str(), response.size());
-								std::cout << "response send to: " << fds[i].fd << std::endl;
-
-								client.request.log_first_line();  
-								client.request.log_headers();
-								
-								// print the response
-								// std::cout << "\nResponse sent (" << response.size() << " bytes).\n" << std::endl;
-								// std::cout << response.c_str() << std::endl;
-								
-								client.reset();
-								removeFd(fds, i);
-								break; 
-								
-							}
-							
-							case ParseResult::ERROR:
-							{
-								std::string error = client.request.buildResponse();
-								send(fds[i].fd, error.c_str(), error.size(), 0);
-								client.reset();
-								removeFd(fds, i);
-								break;
-							}
-							
-						// }
+					int bytes_sent = send(fds[i].fd, respons.c_str(), respons.size(), 0);
+					if (bytes_sent < 0)
+					{
+						perror("send");
+						break;
 					}
-					// // close(servers[0].getFd());
+
+					std::cout << "response send to: " << fds[i].fd << std::endl;
+
+					std::cout << "fd removed: " << fds[i].fd << std::endl;
+					close(fds[i].fd);
+					fds.erase(fds.begin() + i);
+					i--;
+
 				}
 			}
 		}
@@ -365,86 +338,62 @@ std::vector<pollfd> Server::initPollfd(std::vector<InitConfig> &servers)
 	return (fds);
 }
 
+void Server::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, httpResponse &response)
+{
+	struct pollfd fds[1];
+	std::cout << servers[0].getFd() << " before ---------------------" << std::endl;
+	fds[0].fd = servers[0].getFd();
+	std::cout << servers[0].getFd() << " after ---------------------" << std::endl;
+	fds[0].events = POLLIN;
 
-// void Server::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request)
-// {
-// 	struct pollfd fds[1];
-// 	fds[0].fd = servers[0].getFd();
-// 	fds[0].events = POLLIN;
-	
-	
-// 	while (true)
-// 	{
-// 		int ret = poll(fds, 1, -1);
-// 		if (ret < 0)
-// 		{
-// 			perror("poll");
-// 			break;
-// 		}
-		
-// 		if (fds[0].revents & POLLIN)
-// 		{
-// 			// 6. Accept a new connection
-// 			struct sockaddr_in client_addr;
-// 			socklen_t client_len = sizeof(client_addr);
-// 			int client_fd = accept(servers[0].getFd(), (struct sockaddr*)&client_addr, &client_len);
-// 			if (client_fd < 0)
-// 			{
-// 				perror("accept");
-// 				continue;
-// 			}
-			
-// 			std::cout << "\n" << "Client connected: " << inet_ntoa(client_addr.sin_addr) << std::endl;
-			
-// 			// Handle multiple requests from the same client
-// 			std::string buffer;
-// 			while (true)
-// 			{
-// 				ssize_t bytes = request.receive(client_fd, buffer);
-// 				if (bytes <= 0) break;
-				
-// 				ParseResult result = request.parseRequestPartial(buffer);
-				
-// 				switch (result)
-// 				{
-// 					case ParseResult::INCOMPLETE:
-// 						continue;
-					
-// 					case ParseResult::COMPLETE:
-// 					{
-// 						std::string response = request.buildResponse();
-// 						send(client_fd, response.c_str(), response.size(), 0);
+	while (true)
+	{
+		int ret = poll(fds, 1, -1);
+		if (ret < 0)
+		{
+			perror("poll");
+			break;
+		}
 
-// 						request.log_first_line();  
-// 						request.log_headers();
-						
-// 						// print the response
-// 						// std::cout << "\nResponse sent (" << response.size() << " bytes).\n" << std::endl;
-// 						// std::cout << response.c_str() << std::endl;
-						
-// 						request.reset();
-// 						buffer.clear();
-// 						break;
-						
-// 					}
-					
-// 					case ParseResult::ERROR:
-// 					{
-// 						std::string error = request.buildResponse();
-// 						send(client_fd, error.c_str(), error.size(), 0);
-// 						request.reset();
-// 						buffer.clear();
-// 						break;
-// 					}
-					
-// 				}
-// 				close(client_fd); // Close the connection when done
-						
-// 			}
-// 			close(servers[0].getFd());
-// 		}
-// 	}
-// }
+		if (fds[0].revents & POLLIN)
+		{
+			// 6. Accept a new connection
+			struct sockaddr_in client_addr;
+			socklen_t client_len = sizeof(client_addr);
+			int client_fd = accept(servers[0].getFd(), (struct sockaddr*)&client_addr, &client_len);
+			if (client_fd < 0)
+			{
+				perror("accept");
+				continue;
+			}
+
+			std::cout << "\n" << "Client connected: " << inet_ntoa(client_addr.sin_addr) << std::endl;
+
+			// Handle multiple requests from the same client
+			while (true)
+			{
+				std::string buffer = request.receiveRequest(client_fd);
+				request.parseRequestFromCompleteBuffer(buffer);
+				// request.isValidMethod(); // maybe we should encaptulate the parseRequest() function iside this one and rename it
+				
+				
+				// 8. Send a basic HTTP response with keep-alive
+				std::string raw_response = response.buildResponse();
+				
+				int bytes_sent = send(client_fd, raw_response.c_str(), raw_response.size(), 0);
+				if (bytes_sent < 0)
+				{
+					perror("send");
+					break;
+				}
+
+				std::cout << "Response sent (" << bytes_sent << " bytes)." << std::endl;
+			}
+			close(client_fd); // Close the connection when the client disconnects
+		}
+		close(servers[0].getFd());
+	}
+}
 
 void Server::serverSetup(std::vector<InitConfig> &servers)
 {
@@ -480,3 +429,29 @@ void Server::serverSetup(std::vector<InitConfig> &servers)
 		std::cout << "Server created 'host: ... ', port: '...'" << std::endl;     //logger
 	}
 }
+
+
+//============POLL EXAMPLE============
+// enum Flags
+// {
+// 	FLAG_POLLERR    = (0b1),
+// 	FLAG_POLLHUP   = (0b10),
+// 	FLAG_POLLIN   = (0b100),
+// 	FLAG_POLLOUT = (0b1000),
+// };
+
+// void whatever()
+// {
+// 	int pollfds_count = 0;
+// 	pollfd pollfds[16] = {};
+
+// 	pollfds[0].fd = server_fd;
+// 	pollfds[0].events = POLLIN;
+// 	pollfds_count += 1;
+
+// 	poll(pollfds, pollfds_count, 1000);
+// 	if (pollfds[0].revents & POLLIN)
+// 	{
+
+// 	}
+// }

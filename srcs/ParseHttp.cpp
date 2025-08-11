@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/10 13:39:46 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/11 13:47:20 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -520,44 +520,42 @@ std::string HttpRequest::readFile(const std::string& filePath)
 }
 
 
+// This is moved and developed in the httpResponse.cpp file
 
-std::string HttpRequest::buildResponse()
-{
-    std::string status;
-    std::string content_type;
-    std::string body;
-    std::string connection;
 
-    if(path == "/")
-    {
-        status = "HTTP/1.1 200 OK";
-        content_type = "text/html; charset=utf-8";
-        body = readFile("./www/test_file_1024KB.html");
-        connection = "close";
-    }
-    else if (path == "/assets/images")
-    {
-        status = "HTTP/1.1 200 OK";
-        content_type = "image/svg+xml";
-        body = readFile("./www/assets/images/logo.svg");
-        connection = "close";
-    }
-    else
-    {
-        status = "HTTP/1.1 404 OK";
-        content_type = "text/html; charset=utf-8";
-        body = readFile("./www/error/404.html");
-        connection = "close";
-    }
+// std::string HttpRequest::buildResponse()
+// {
+//     std::string status;
+//     std::string content_type;
+//     std::string body;
 
-    //Assemble the complete HTTP response
-    std::ostringstream response;
-    response << status << "\r\n";
-    response << "Content-Type: " << content_type << "\r\n";
-    response << "Content-Length: " << body.length() << "\r\n";
-    response << "Connection: " << connection << "\r\n";
-    response << "\r\n";
-    response << body;
+//     if(path == "/")
+//     {
+//         status = "HTTP/1.1 200 OK";
+//         content_type = "text/html; charset=utf-8";
+//         body = readFile("./www/index2.html");
+//     }
+//     else if (path == "/assets/images")
+//     {
+//         status = "HTTP/1.1 200 OK";
+//         content_type = "image/svg+xml";
+//         body = readFile("./www/assets/images/logo.svg");
+//     }
+//     else
+//     {
+//         status = "HTTP/1.1 404 Not Found";
+//         content_type = "text/html; charset=utf-8";
+//         body = readFile("./www/Error/404.html");
+//     }
 
-    return response.str();
-}
+//     //Assemble the complete HTTP response
+//     std::ostringstream response;
+//     response << status << "\r\n";
+//     response << "Content-Type: " << content_type << "\r\n";
+//     response << "Content-Length: " << body.length() << "\r\n";
+//     response << "\r\n";
+//     response << body;
+
+//     // std::cout << "---> HTTP Response:\n" << response.str() << std::endl; // print the complete HTTP response
+//     return response.str();
+// }
