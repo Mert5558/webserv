@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/11 13:47:20 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/11 14:01:54 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,26 +140,26 @@ std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
 
 
 
-// std::string HttpRequest::receiveRequest(int client_fd)
-// {
-//     std::string buffer;
-//     char chunk[1024] = {0};
-//     unsigned long bytes_read;
+std::string HttpRequest::receiveRequest(int client_fd)
+{
+    std::string buffer;
+    char chunk[1024] = {0};
+    unsigned long bytes_read;
 
-//     while ((bytes_read = recv(client_fd, chunk, sizeof(chunk) - 1, 0)) > 0)
-//     {
-//         chunk[bytes_read] = '\0'; // Null-terminate the chunk
-//         buffer.append(chunk);    // Append to the buffer
-//         if (bytes_read < sizeof(chunk) - 1) break; // End of request
-//         if (bytes_read <= 0)																		
-//         {
-//             std::cout << "Client disconnected or error occurred." << std::endl;
-//             break;
-//         }
-//     }
-//     // std::cout << "----> Real Buffer: " << buffer << std::endl;
-//     return buffer;
-// }
+    while ((bytes_read = recv(client_fd, chunk, sizeof(chunk) - 1, 0)) > 0)
+    {
+        chunk[bytes_read] = '\0'; // Null-terminate the chunk
+        buffer.append(chunk);    // Append to the buffer
+        if (bytes_read < sizeof(chunk) - 1) break; // End of request
+        if (bytes_read <= 0)																		
+        {
+            std::cout << "Client disconnected or error occurred." << std::endl;
+            break;
+        }
+    }
+    // std::cout << "----> Real Buffer: " << buffer << std::endl;
+    return buffer;
+}
 
 
 ssize_t HttpRequest::receive(int client_fd, std::string &buffer)
