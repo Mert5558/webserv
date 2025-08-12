@@ -285,7 +285,7 @@ std::string HttpRequest::buildResponse()
     {
         status = "HTTP/1.1 200 OK";
         content_type = "text/html; charset=utf-8";
-        body = readFile("./www/test7.html");
+        body = readFile("./www/index2.html");
     }
     else if (path == "/assets/images")
     {
