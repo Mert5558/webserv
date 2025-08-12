@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/11 14:01:54 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/12 15:41:35 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -502,7 +502,7 @@ bool HttpRequest::isValidPath()
 //     return buffer.str();
 // }
 
-std::string HttpRequest::readFile(const std::string& filePath)
+std::string HttpRequest::readFile(const std::string& filePath) const
 {
     std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open())

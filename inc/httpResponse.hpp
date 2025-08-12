@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <sstream>
+#include "../inc/ParseHttp.hpp"
 
 class httpResponse
 {
@@ -26,7 +27,7 @@ public:
 	void addHeader(const std::string &key, const std::string &value);
 
 	// Build the final response string
-	std::string buildResponse() const;
+	std::string buildResponse(const HttpRequest& request) const;
 
 	// ====== Getters ==========
 	std::string getStatusCode() const;

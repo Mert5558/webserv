@@ -194,6 +194,7 @@ bool Server::sendAll(int fd, const char* buffer, size_t length)
 void Server::startServer(ParseConfig parse)
 {
 	HttpRequest request;
+	httpResponse response;
 	std::vector<pollfd> fds;
 
 	std::vector<InitConfig> &servers = parse.getServers();
@@ -270,9 +271,9 @@ void Server::startServer(ParseConfig parse)
 							
 							request.parseRequestFromCompleteBuffer(clients[client_fd].recv_buffer);
 
-							std::string response = request.buildResponse();
+							std::string responseStr = response.buildResponse(request);
 
-							int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
+							int bytes_sent = send(client_fd, responseStr.c_str(), responseStr.size(), 0);
 							if (bytes_sent < 0)
 							{
 								perror("send");
@@ -420,7 +421,7 @@ void Server::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, h
 				
 				
 				// 8. Send a basic HTTP response with keep-alive
-				std::string raw_response = response.buildResponse();
+				std::string raw_response = response.buildResponse(request);
 				
 				int bytes_sent = send(client_fd, raw_response.c_str(), raw_response.size(), 0);
 				if (bytes_sent < 0)

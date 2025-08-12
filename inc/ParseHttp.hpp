@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/11 13:46:26 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/12 15:41:22 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,8 +84,7 @@ class	HttpRequest
 		void log_headers();
 		void log_first_line();
 
-		// std::string buildResponse();
-		std::string readFile(const std::string& filePath);
+		std::string readFile(const std::string& filePath) const;
 		std::string buildResponse();
 
 		void reset();
