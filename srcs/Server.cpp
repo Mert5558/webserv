@@ -90,9 +90,9 @@ void Server::startServer(ParseConfig parse)
 						{
 							request.parseRequest(clients[client_fd].recv_buffer);
 
-							std::string response = request.buildResponse();
+							std::string responseStr = response.buildResponse();
 
-							int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
+							int bytes_sent = send(client_fd, responseStr.c_str(), responseStr.size(), 0);
 							if (bytes_sent < 0)
 							{
 								perror("send");
