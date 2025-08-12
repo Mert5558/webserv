@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/01 17:49:25 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/11 14:01:54 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,12 +16,11 @@
 
 // ParseConfig trimed;
 
-HttpRequest::HttpRequest()
+HttpRequest::HttpRequest() : bodySize(0), parseState(ParseState::START_LINE)
 {
-    this->method = "";
+    this->method = Method::INVALID;
     this->path = "";
-    this->version = "";
-    this->body = "";
+    this->version = Version::INVALID;
     this->headers = {};
 }
 
@@ -30,7 +29,6 @@ HttpRequest::HttpRequest(const HttpRequest &copy)
     method = copy.method;
     path = copy.path;
     version = copy.version;
-    body = copy.body;
     headers = copy.headers;
 }
 
@@ -41,21 +39,25 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &copy)
         method = copy.method;
         path = copy.path;
         version = copy.version;
-        body = copy.body;
         headers = copy.headers;
     }
     return (*this);
 }
 
 HttpRequest::~HttpRequest()
-{}
+{
+    if (bodyFile.is_open())
+    {
+        bodyFile.close();
+    }
+}
 
 
 
 /* Setter */
-void HttpRequest::setMethod(const std::string &method)
+void HttpRequest::setMethod(Method method)
 {
-	this->method = method;
+    this->method = method;
 }
 
 void HttpRequest::setPath(const std::string &path)
@@ -63,17 +65,27 @@ void HttpRequest::setPath(const std::string &path)
 	this->path = path;
 }
 
-void HttpRequest::setVersion(const std::string &version)
+void HttpRequest::setVersion(Version version)
 {
 	this->version = version;
 }
 
-void HttpRequest::setBody(const std::string &body)
+void HttpRequest::setBody(const std::string &filePath)
 {
-	this->body = body;
+	if(this->bodyFile.is_open())
+        this->bodyFile.close();
+
+    this->bodyFile.open(filePath, std::ios::out | std::ios::trunc);
+    if (!bodyFile.is_open())
+    {
+        throw std::runtime_error("Failed to open file: " + filePath);
+    }
+    this->bodyFilePath = filePath;
+
+    std::cout << "Body file set to: " << filePath << std::endl;
 }
 
-void HttpRequest::setHeaders(const std::vector<std::pair<std::string, std::string>> &headers)
+void HttpRequest::setHeaders(const std::unordered_map<std::string, std::string> &headers)
 {
     this->headers = headers;
 }
@@ -83,7 +95,17 @@ void HttpRequest::setHeaders(const std::vector<std::pair<std::string, std::strin
 /* Getter */
 std::string HttpRequest::getMethod() const
 {
-    return (method);
+    switch(method)
+    {
+        case Method::GET:
+            return "GET";
+        case Method::POST:
+            return "POST";
+        case Method::DELETE:
+            return "DELETE";
+        default:
+            return "INVALID";
+    }
 }
 
 std::string HttpRequest::getPath() const
@@ -93,15 +115,25 @@ std::string HttpRequest::getPath() const
 
 std::string HttpRequest::getVersion() const
 {
-    return (version);
+    switch(version)
+    {
+        case Version::HTTP_1_0:
+            return "HTTP/1.0";
+        case Version::HTTP_1_1:
+            return "HTTP/1.1";
+        case Version::HTTP_2:
+            return "HTTP/2";
+        default:
+            return "INVALID";
+    }
 }
 
-std::string HttpRequest::getBody() const
+std::string HttpRequest::getBodyFilePath() const
 {
-    return (body);
+    return this->bodyFilePath; 
 }
 
-std::vector<std::pair<std::string, std::string>> HttpRequest::getHeaders() const
+std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
 {
     return (headers);
 }
@@ -130,107 +162,301 @@ std::string HttpRequest::receiveRequest(int client_fd)
 }
 
 
-
-bool    HttpRequest::parseRequest(const std::string &rawRequest)
+ssize_t HttpRequest::receive(int client_fd, std::string &buffer)
 {
-    std::istringstream  raw(rawRequest);
-    std::string line;
-    std::string content_body;
+    char tmp[2048];
+    ssize_t bytes = 0;
 
-     // Clear headers before parsing a new request
-     headers.clear();
-     
-    // Parse the first line
-    if (std::getline(raw, line))
+    bytes = recv(client_fd, tmp, sizeof(tmp), 0);
+    if (bytes > 0)
     {
-        std::istringstream requestLine(line);
-        requestLine >> method >> path >> version;
+        buffer.append(tmp, bytes);
     }
-    //log_first_line();
+    return bytes;
+}
 
-    // Parse headers
-    while (std::getline(raw, line) && !line.empty() && line != "\r")
-    {
-        size_t delimiterPos = line.find(':');
-        if (delimiterPos != std::string::npos)
-        {
-            std::string key = line.substr(0, delimiterPos);
-            std::string value = line.substr(delimiterPos + 1);
-            headers.emplace_back(key, value);
-        }
-    }
-    
-    //log_headers(headers);
 
-    //Parse body
-    while(std::getline(raw, line))
+void    HttpRequest::reset()
+{
+    std::cout << "\nCalled the reset() ---> method = Method::INVALID | path.clear() | version = Version::INVALID | headers.clear() | parseState = ParseState::START_LINE  " << std::endl;
+    
+    method = Method::INVALID;
+    path.clear();
+    version = Version::INVALID;
+    headers.clear();
+    if (bodyFile.is_open())
     {
-        content_body += line + "\n";
+        bodyFile.close();
     }
-    body = content_body;
-    
-    
-    return true;
+    parseState = ParseState::START_LINE;
 }
 
 
 
-void    HttpRequest::log_headers(const std::vector<std::pair<std::string, std::string>> &headers)
+bool    HttpRequest::parseStartLine(const std::string &line)
 {
+    std::istringstream requestLine(line);
+    std::string methodStr, versionStr;
     
-    for (auto it = headers.begin(); it != headers.end(); ++it)
+    requestLine >> methodStr >> path >> versionStr;
+
+    method = toMethodEnum(methodStr);
+    version = toVersionEnum(versionStr);
+    
+    if ( method == Method::INVALID || version == Version::INVALID)
     {
-        std::cout << it->first << ":" << it->second << "\n";
+        // std::cerr << "Invalid start line " << line << std::endl;
+        return false;
     }
     
+    return true;
+}
+
+bool    HttpRequest::parseHeaders(const std::string &line)
+{
+    size_t delimiterPos = line.find(':');
+    
+    if (delimiterPos == std::string::npos)
+    {
+        std::cerr << "Invalid header: " << line << std::endl;
+        return false;
+    }
+
+    std::string key = line.substr(0, delimiterPos);
+    std::string value = line.substr(delimiterPos + 1);
+
+    // Trim whitespace around key and value
+    key.erase(key.find_last_not_of(" \t\r\n") + 1);
+    value.erase(0, value.find_first_not_of(" \t\r\n"));
+
+    headers[key] = value;
+    
+    return true;   
+}
+
+
+
+
+ParseResult HttpRequest::parseRequestPartial(std::string &buffer)
+{
+    while (true)
+    {
+        // debug state of parsing
+        // std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
+        
+        switch (parseState)
+        {
+            case ParseState::START_LINE:
+            {
+                size_t pos = buffer.find("\r\n");
+                if (pos == std::string::npos)
+                    return ParseResult::INCOMPLETE;
+
+                std::string line = buffer.substr(0, pos);
+                buffer.erase(0, pos + 2); // remove processed line
+
+                if (!parseStartLine(line))
+                {
+                    parseState = ParseState::ERROR;
+                    return ParseResult::ERROR;
+                }
+                parseState = ParseState::HEADERS;
+                break;
+            }
+
+            case ParseState::HEADERS:
+            {
+                size_t pos = buffer.find("\r\n");
+                if (pos == std::string::npos)
+                    return ParseResult::INCOMPLETE;
+
+                std::string line = buffer.substr(0, pos);
+                buffer.erase(0, pos + 2);
+
+                if (line.empty() || line == "\r") // End of headers
+                {
+                    std::cout << "End of headers detected." << std::endl;
+                    // Decide if a body is expected
+                    if (method == Method::GET || method == Method::DELETE)
+                    {
+                        parseState = ParseState::COMPLETE; // Transition to COMPLETE state
+                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (not a Method::POST)" << std::endl;
+                        return ParseResult::COMPLETE;
+                    }
+                    if (method == Method::POST)
+                        parseState = ParseState::BODY;
+                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
+                }
+
+                if (!parseHeaders(line))
+                {
+                    parseState = ParseState::ERROR;
+                    return ParseResult::ERROR;
+                }
+                break;
+            }
+
+            case ParseState::BODY:
+            {
+                auto it = headers.find("Content-Length");
+                if (it != headers.end())
+                {
+                    size_t contentLength = std::stoi(it->second);
+                    if (buffer.size() < contentLength)
+                        return ParseResult::INCOMPLETE;
+
+                    if (bodyFile.is_open())
+                        bodyFile.write(buffer.data(), contentLength);
+                    
+                    buffer.erase(0, contentLength);
+                    return ParseResult::COMPLETE;
+                }
+
+                // TODO: Handle Transfer-Encoding: chunked
+                return ParseResult::ERROR;
+            }
+
+            case ParseState::ERROR:
+                return ParseResult::ERROR;
+
+            case ParseState::COMPLETE:
+                return ParseResult::COMPLETE;
+        }
+    }
+}
+
+
+
+bool    HttpRequest::parseRequestFromCompleteBuffer(const std::string &rawRequest)
+{
+    std::istringstream raw(rawRequest);
+    std::string line;
+
+    // Clear previous data
+    reset();
+
+    setBody("./http_request_body.txt");
+    
+    while (std::getline(raw, line))
+    {
+        // log the parsing state
+        std::cout << "Processing line: " << line << std::endl;
+        std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
+        
+        switch (parseState)
+        {
+            case ParseState::START_LINE:
+                if (!parseStartLine(line))
+                {
+                    parseState = ParseState::ERROR;
+                    return false;
+                }    
+                parseState = ParseState::HEADERS;
+                break;
+                
+                case ParseState::HEADERS:  
+                if (line.empty() || line == "\r") // End of headers
+                {
+                    std::cout << "\nEnd of headers detected." << std::endl;
+                    // Skip BODY state if the method does not support a body
+                    if (method == Method::GET || method == Method::DELETE)
+                    {
+                        parseState = ParseState::COMPLETE;
+                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (it is not Method::POST)" << std::endl;
+                        return true;
+                    }
+                    parseState = ParseState::BODY;
+                }  
+                else if (!parseHeaders(line))
+                {
+                    parseState = ParseState::ERROR;
+                    return false;
+                }    
+                break;
+                
+                case ParseState::BODY:
+                std::cout << "i am in the BODY state " << std::endl;  
+                if (bodyFile.is_open())
+                {
+                    std::cout << "Writing line to body file: " << line << std::endl;
+                    bodyFile << line << "\n";
+                    bodySize += line.size() + 1;
+                }
+                else
+                {
+                    std::cerr << "Body file is not open!" << std::endl;
+                }
+                break;
+                
+                default:    
+                parseState = ParseState::ERROR;
+                return false;
+        }        
+        
+    } 
+    log_first_line();  
+    log_headers();
+
+    parseState = ParseState::COMPLETE;
+    return true;
+}    
+
+
+
+Method		HttpRequest::toMethodEnum(const std::string &methodStr)
+{
+    if (methodStr == "GET")
+        return Method::GET;
+    else if (methodStr == "POST")
+        return Method::POST;
+    else if (methodStr == "DELETE")
+        return Method::DELETE;
+    
+    std::cerr << "Invalid HTTP method: " << methodStr << std::endl;
+    return Method::INVALID;
+}
+
+Version     HttpRequest::toVersionEnum(const std::string &versionStr)
+{
+    if (versionStr == "HTTP/1.0")
+        return Version::HTTP_1_0;
+    else if (versionStr == "HTTP/1.1")
+        return Version::HTTP_1_1;
+    else if (versionStr == "HTTP/2")
+        return Version::HTTP_2;
+
+    std::cerr << "Invalid HTTP version: " << versionStr << std::endl;
+    return Version::INVALID;
+}
+
+
+
+
+void HttpRequest::log_headers()
+{
+    for (const auto &header : headers)
+    {
+        std::cout << header.first << ": " << header.second << std::endl;
+    }
 }
 
 void    HttpRequest::log_first_line()
 {
-    std::cout << "\n" << method << " " << path << " " << version << std::endl;
+    std::cout << "\n" << getMethod() << " " << path << " " << getVersion() << std::endl;
 }
 
-
-
-
-bool    HttpRequest::isValidMethod()
+bool    HttpRequest::isValidMethod() const
 {
-    if (method == "GET")
-    {
-        // do something
-        std::cout << "------- We have a correct GET method -------" << std::endl;
-    }
-    else if (method == "POST")
-    {
-        // do something else
-    }
-    else if (method == "DELETE")
-    {
-        // do something else
-    }
-    else
-    {
-        std::cout << "------- Invalid HTTP method -------" << std::endl;
-        return false;
-    }
-    return true;
+    return method != Method::INVALID;
 }
 
-
-
-bool HttpRequest::isValidVersion()
+bool HttpRequest::isValidVersion() const
 {
-    if (version == "HTTP/1.0" || version == "HTTP/1.1" || version == "HTTP/2")
-    {
-        std::cout << "------- Valid HTTP version: " << version << " -------" << std::endl;
-        return true;
-    }
-    else
-    {
-        std::cout << "------- Invalid HTTP version: " << version << " -------" << std::endl;
-        return false;
-    }
+    return version != Version::INVALID;
 }
+
+
+
 
 bool HttpRequest::isValidPath()
 {
@@ -260,16 +486,36 @@ bool HttpRequest::isValidPath()
     return true;
 }
 
+
+
+
 // Function to read the contents of a file into a string
+// std::string HttpRequest::readFile(const std::string& filePath)
+// {
+//     std::ifstream file(filePath);
+//     if (!file.is_open())
+//     {
+//         return "./www/error/404.html";
+//     }
+//     std::stringstream buffer;
+//     buffer << file.rdbuf();
+//     return buffer.str();
+// }
+
 std::string HttpRequest::readFile(const std::string& filePath)
 {
-    std::ifstream file(filePath);
+    std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open())
     {
         return "./www/error/404.html";
     }
-    std::stringstream buffer;
-    buffer << file.rdbuf();
+    std::ostringstream buffer;
+    char chunk[8192];
+    while (file.read(chunk, sizeof(chunk)))
+    {
+        buffer.write(chunk, file.gcount());
+    }
+    buffer.write(chunk, file.gcount()); // Write any remaining bytes
     return buffer.str();
 }
 
