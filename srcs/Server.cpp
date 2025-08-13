@@ -11,7 +11,6 @@ Server::Server()
 Server::~Server()
 {}
 
-// --------------------- mert ------------------------
 void Server::startServer(ParseConfig parse)
 {
 	HttpRequest request;
@@ -247,28 +246,3 @@ bool Server::sendAll(int fd, const char* buffer, size_t length)
     }
     return true;
 }
-
-//============POLL EXAMPLE============
-// enum Flags
-// {
-// 	FLAG_POLLERR    = (0b1),
-// 	FLAG_POLLHUP   = (0b10),
-// 	FLAG_POLLIN   = (0b100),
-// 	FLAG_POLLOUT = (0b1000),
-// };
-
-// void whatever()
-// {
-// 	int pollfds_count = 0;
-// 	pollfd pollfds[16] = {};
-
-// 	pollfds[0].fd = server_fd;
-// 	pollfds[0].events = POLLIN;
-// 	pollfds_count += 1;
-
-// 	poll(pollfds, pollfds_count, 1000);
-// 	if (pollfds[0].revents & POLLIN)
-// 	{
-
-// 	}
-// }
