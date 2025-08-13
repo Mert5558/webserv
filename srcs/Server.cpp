@@ -361,8 +361,6 @@ void Server::removeFd(std::vector<pollfd> &fds, size_t index)
 }
 
 
-
-
 std::vector<pollfd> Server::initPollfd(std::vector<InitConfig> &servers)
 {
 	std::vector<pollfd> fds;

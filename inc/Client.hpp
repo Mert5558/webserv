@@ -23,8 +23,8 @@ class Client
 		HttpRequest     request;
 
 
-		Client() : fd(-1), expected_len(0), received_len(0), isComplete(false), header_received(false), body_received(false), body_start(0) {}
-		Client(int _fd) : fd(_fd), expected_len(0), received_len(0), isComplete(false), header_received(false), body_received(false), body_start(0) {}
+		Client() : fd(-1), expected_len(0), received_len(0), isComplete(false), disconnect(false), header_received(false), body_received(false), body_start(0) {}
+		Client(int _fd) : fd(_fd), expected_len(0), received_len(0), isComplete(false), disconnect(false), header_received(false), body_received(false), body_start(0) {}
 		~Client() {}
 
 
