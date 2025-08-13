@@ -1,41 +1,50 @@
-#pragma once
+#ifndef CLIENT_HPP
+#define CLIENT_HPP
 
 #include "Webserv.hpp"
 #include "ParseHttp.hpp"
 
-enum class ClientState	{IDLE, HEADERS_RECEIVED, BODY_RECEIVED, COMPLETE, ERROR};
+enum class ClientState { IDLE, COMPLETE, ERROR };
 
 class Client
 {
-	public:
-		int				fd;
-		std::string		recv_buffer;
-		size_t 			expected_len;
-		size_t 			received_len;
-		bool 			isComplete;
-		bool 			disconnect;
-		bool 			header_received;
-		bool 			body_received;
-		std::string		header_str;
-		size_t			body_start;
+public:
+	int				fd;
+	std::string		recv_buffer;
+	std::string		send_buffer;
+	size_t			send_offset;
+	bool			disconnect;
+	ClientState		state;
+	HttpRequest		request;
 
-		ClientState		state;
-		HttpRequest     request;
+	// Constructors and Destructor
+	Client() : fd(-1), send_offset(0), disconnect(false), state(ClientState::IDLE) {}
+	Client(int _fd) : fd(_fd), send_offset(0), disconnect(false), state(ClientState::IDLE) {}
+	~Client() {}
 
+	// Function to reset the client state
+	void reset()
+	{
+		recv_buffer.clear();
+		send_buffer.clear();
+		send_offset = 0;
+		disconnect = false;
+		state = ClientState::IDLE;
+		request.reset();
+	}
 
-		Client() : fd(-1), expected_len(0), received_len(0), isComplete(false), disconnect(false), header_received(false), body_received(false), body_start(0) {}
-		Client(int _fd) : fd(_fd), expected_len(0), received_len(0), isComplete(false), disconnect(false), header_received(false), body_received(false), body_start(0) {}
-		~Client() {}
-
-
-		void reset()
-		{
-			recv_buffer.clear();
-			header_str.clear();
-			expected_len = 0;
-			body_start = 0;
-			disconnect = false;
-			state = ClientState::IDLE;
-			request.reset();
-		}
+	// Function to make a simple response
+	void makeSimpleResponse(int code, const std::string &text, const std::string &body)
+	{
+		std::ostringstream ss;
+		ss << "HTTP/1.1 " << code << " " << text << "\r\n";
+		ss << "Content-Type: text/plain\r\n";
+		ss << "Content-Length: " << body.size() << "\r\n";
+		ss << "Connection: close\r\n\r\n";
+		ss << body;
+		send_buffer = ss.str();
+		send_offset = 0;
+	}
 };
+
+#endif // !CLIENT_HPP
