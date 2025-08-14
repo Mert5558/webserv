@@ -1,50 +1,62 @@
 #include "../inc/httpResponse.hpp"
 
-httpResponse::httpResponse() {}
+// ================== Costructors/Destructor ==================
+httpResponse::httpResponse()
+: statusCode("200 OK"),
+  contentType("text/plain"),
+  headersBuilt(false),
+  headerOffset(0),
+  useFile(false),
+  fileFd(-1),
+  fileSize(0),
+  fileOffset(0),
+  stageOffset(0),
+  done(false)
+{}
 
-httpResponse::httpResponse(const std::string &statusCode, const std::string &contentType, const std::string &body)
-	: statusCode(statusCode), contentType(contentType), body(body) {}
+httpResponse::httpResponse(const std::string &status, const std::string &type, const std::string &bodyStr)
+: statusCode(status),
+  contentType(type),
+  body(bodyStr),
+  headersBuilt(false),
+  headerOffset(0),
+  useFile(false),
+  fileFd(-1),
+  fileSize(0),
+  fileOffset(0),
+  stageOffset(0),
+  done(false)
+{}
 
-httpResponse::~httpResponse() {}
-
-// Setters
-void httpResponse::setStatusCode(const std::string &statusCode) {
-	this->statusCode = statusCode;
+httpResponse::~httpResponse()
+{
+	if (fileFd != -1)
+	{
+		::close(fileFd);
+	}
 }
 
-void httpResponse::setContentType(const std::string &contentType) {
-	this->contentType = contentType;
+// ================== Setters ==================
+
+void httpResponse::setStatusCode(const std::string &status)
+{
+	statusCode = status;
 }
 
-void httpResponse::setBody(const std::string &body) {
-	this->body = body;
+void httpResponse::setContentType(const std::string &type)
+{
+	contentType = type;
 }
 
-void httpResponse::addHeader(const std::string &key, const std::string &value) {
+void httpResponse::setBody(const std::string &bodyStr)
+{
+	body = bodyStr;
+}
+
+void httpResponse::addHeader(const std::string &key, const std::string &value)
+{
 	headers[key] = value;
 }
-
-// Getters
-std::string httpResponse::getStatusCode() const { return statusCode; }
-std::string httpResponse::getContentType() const { return contentType; }
-std::string httpResponse::getBody() const { return body; }
-std::map<std::string, std::string> httpResponse::getHeaders() const { return headers; }
-
-// Final response builder
-// std::string httpResponse::buildResponse() const {
-// 	std::ostringstream response;
-
-// 	response << "HTTP/1.1 " << statusCode << "\r\n";
-// 	response << "Content-Type: " << contentType << "\r\n";
-// 	response << "Content-Length: " << body.length() << "\r\n";
-
-// 	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
-// 		response << it->first << ": " << it->second << "\r\n";
-
-// 	response << "\r\n" << body;
-
-// 	return response.str();
-// }
 
 
 
@@ -86,3 +98,13 @@ std::string httpResponse::buildResponse(const HttpRequest& request) const
     // std::cout << "---> HTTP Response:\n" << response.str() << std::endl; // print the complete HTTP response
     return response.str();
 }
+
+
+bool httpResponse::isDone() const
+{
+	return done;
+}
+
+
+
+
