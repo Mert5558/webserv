@@ -23,7 +23,7 @@ class ServerLoop
 		void	removeFd(std::vector<pollfd> &fds, size_t index);
 		bool	receiveReq(int client_fd, std::unordered_map<int, Client> &clients);
 
-		bool	sendAll(int fd, const char* buffer, size_t length);
 
 		std::vector<pollfd> fds;
+		std::unordered_map<int, Client> clients;
 };

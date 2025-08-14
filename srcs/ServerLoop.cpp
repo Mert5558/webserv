@@ -22,8 +22,6 @@ void ServerLoop::startServer(ParseConfig parse)
 
 	initPollfd(servers);
 
-	std::unordered_map<int, Client> clients;
-
 	while (true)
 	{
 		int ready = poll(fds.data(), fds.size(), 10);
