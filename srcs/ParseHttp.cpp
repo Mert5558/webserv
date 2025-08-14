@@ -178,7 +178,7 @@ ssize_t HttpRequest::receive(int client_fd, std::string &buffer)
 
 void    HttpRequest::reset()
 {
-    std::cout << "\nCalled the reset() ---> method = Method::INVALID | path.clear() | version = Version::INVALID | headers.clear() | parseState = ParseState::START_LINE  " << std::endl;
+    //std::cout << "\nCalled the reset() ---> method = Method::INVALID | path.clear() | version = Version::INVALID | headers.clear() | parseState = ParseState::START_LINE  " << std::endl;
     
     method = Method::INVALID;
     path.clear();
@@ -189,6 +189,9 @@ void    HttpRequest::reset()
         bodyFile.close();
     }
     parseState = ParseState::START_LINE;
+
+	rawRequest.clear();
+	header_str.clear();
 }
 
 
@@ -280,12 +283,12 @@ ParseResult HttpRequest::parseRequestPartial(std::string &buffer)
                     if (method == Method::GET || method == Method::DELETE)
                     {
                         parseState = ParseState::COMPLETE; // Transition to COMPLETE state
-                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (not a Method::POST)" << std::endl;
+                        //std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (not a Method::POST)" << std::endl;
                         return ParseResult::COMPLETE;
                     }
                     if (method == Method::POST)
                         parseState = ParseState::BODY;
-                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
+                        //std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
                 }
 
                 if (!parseHeaders(line))
@@ -327,7 +330,7 @@ ParseResult HttpRequest::parseRequestPartial(std::string &buffer)
 
 
 
-bool    HttpRequest::parseRequestFromCompleteBuffer(const std::string &rawRequest)
+bool    HttpRequest::parseRequestFromCompleteBuffer()
 {
     std::istringstream raw(rawRequest);
     std::string line;
@@ -340,8 +343,8 @@ bool    HttpRequest::parseRequestFromCompleteBuffer(const std::string &rawReques
     while (std::getline(raw, line))
     {
         // log the parsing state
-        std::cout << "Processing line: " << line << std::endl;
-        std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
+        //std::cout << "Processing line: " << line << std::endl;
+        //std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
         
         switch (parseState)
         {
@@ -362,7 +365,7 @@ bool    HttpRequest::parseRequestFromCompleteBuffer(const std::string &rawReques
                     if (method == Method::GET || method == Method::DELETE)
                     {
                         parseState = ParseState::COMPLETE;
-                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (it is not Method::POST)" << std::endl;
+                        //std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (it is not Method::POST)" << std::endl;
                         return true;
                     }
                     parseState = ParseState::BODY;
@@ -394,8 +397,8 @@ bool    HttpRequest::parseRequestFromCompleteBuffer(const std::string &rawReques
         }        
         
     } 
-    log_first_line();  
-    log_headers();
+    //log_first_line();  
+    //log_headers();
 
     parseState = ParseState::COMPLETE;
     return true;
@@ -519,6 +522,54 @@ std::string HttpRequest::readFile(const std::string& filePath) const
     return buffer.str();
 }
 
+bool HttpRequest::receiveReq(int client_fd)
+{
+	char buf[4096];
+	ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
+	if (bytes <= 0)
+	{
+		disconnect = true;
+		return (true);
+	}
+
+	rawRequest.append(buf, bytes);
+
+	if (!header_received)
+	{
+		header_received = true;
+		size_t header_end = rawRequest.find("\r\n\r\n");
+
+		if (header_end != std::string::npos)
+		{
+			header_str = rawRequest.substr(0, header_end + 4);
+
+			size_t cl_pos = header_str.find("Content-Length:");
+			if (cl_pos != std::string::npos)
+			{
+				size_t value_start = header_str.find_first_not_of(" ", cl_pos + 15);
+				size_t value_end = header_str.find("\r\n", value_start);
+				std::string str_len = header_str.substr(value_start, value_end - value_start);
+				expected_len = std::atoi(str_len.c_str());
+			}
+			else
+				expected_len = 0;
+			
+			body_start = header_end + 4;
+		}
+	}
+
+	if (header_received && !body_received)
+	{
+		size_t total_body_size = rawRequest.size() - body_start;
+		if (expected_len == 0 || total_body_size >= expected_len)
+		{
+			body_received = true;
+			isComplete = true;
+		}
+	}
+
+	return (isComplete);
+}
 
 // This is moved and developed in the httpResponse.cpp file
 

@@ -12,7 +12,7 @@
 
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
-#include "../inc/Server.hpp"
+#include "../inc/ServerLoop.hpp"
 #include "../inc/ParseHttp.hpp"
 
 
@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 	if (argc == 1 || argc == 2)
 	{
 		ParseConfig	parse;
-		Server		server;
+		ServerLoop	ServerLoop;
 		std::string configName;
 		std::cout << "Webserv is starting..." << std::endl;
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 		try
 		{
 			parse.parseFile(configName);
-			server.startServer(parse);
+			ServerLoop.startServer(parse);
 		}
 		catch (const ConfigError &e)
 		{
