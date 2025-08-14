@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/14 13:49:11 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/14 16:18:23 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,75 +128,40 @@ std::map<std::string, std::string> HttpRequest::getHeaders() const
 
 
 
-// std::string HttpRequest::receiveRequest(int client_fd)
-// {
-//     std::string buffer;
-//     char chunk[1024] = {0};
-//     unsigned long bytes_read;
 
-//     while ((bytes_read = recv(client_fd, chunk, sizeof(chunk) - 1, 0)) > 0)
-//     {
-//         chunk[bytes_read] = '\0'; // Null-terminate the chunk
-//         buffer.append(chunk);    // Append to the buffer
-//         if (bytes_read < sizeof(chunk) - 1) break; // End of request
-//         if (bytes_read <= 0)																		
-//         {
-//             std::cout << "Client disconnected or error occurred." << std::endl;
-//             break;
-//         }
-//     }
-//     // std::cout << "----> Real Buffer: " << buffer << std::endl;
-//     return buffer;
-// }
-
-
-// ssize_t HttpRequest::receive(int client_fd, std::string &buffer)
-// {
-//     char tmp[2048];
-//     ssize_t bytes = 0;
-
-//     bytes = recv(client_fd, tmp, sizeof(tmp), 0);
-//     if (bytes > 0)
-//     {
-//         buffer.append(tmp, bytes);
-//     }
-//     return bytes;
-// }
-
-static inline  bool is_space(int c)
+std::string_view HttpRequest::trim(std::string_view str)
 {
-    return c == ' ' || c == '\t' || c == '\r' || c == '\n'; 
+    size_t wspace_start = 0;
+    while (wspace_start < str.size() && isspace(static_cast<unsigned char>(str[wspace_start]))) wspace_start++;
+    size_t wspace_end = str.size();
+    while (wspace_end > wspace_start && isspace(static_cast<unsigned char>(str[wspace_end - 1]))) wspace_end--;
+    return str.substr(wspace_start, wspace_end - wspace_start);
 }
 
-std::string HttpRequest::trim(const std::string &s)
-{
-	size_t a = 0;
-	while (a < s.size() && is_space((unsigned char)s[a])) a++;
-	if (a == s.size()) return "";
-	size_t b = s.size();
-	while (b > a && is_space((unsigned char)s[b - 1])) b--;
-	return s.substr(a, b - a);
-}
 
 
 
 void    HttpRequest::reset()
 {
-    std::cout << "\nCalled the reset() ---> method = Method::INVALID | path.clear() | version = Version::INVALID | headers.clear() | parseState = ParseState::START_LINE  " << std::endl;
-    
+    std::cout << "\nCalled the reset()" << std::endl;
     method = Method::INVALID;
     version = Version::INVALID;
     path.clear();
     headers.clear();
     
     parseState = ParseState::START_LINE;
+    parseResult = ParseResult::INCOMPLETE;
     content_length = 0;
     is_chunked = false;
     expected_chunk_size = 0;
+    
     if (bodyFile.is_open())
     {
         bodyFile.close();
     }
+    
+    bodySize = 0;
+    bodyFilePath.clear();
 }
 
 
@@ -219,27 +184,8 @@ bool    HttpRequest::parseStartLine(const std::string &line)
     return true;
 }
 
-// bool    HttpRequest::parseHeaders(const std::string &line)
-// {
-//     size_t delimiterPos = line.find(':');
-    
-//     if (delimiterPos == std::string::npos)
-//     {
-//         std::cerr << "Invalid header: " << line << std::endl;
-//         return false;
-//     }
 
-//     std::string key = line.substr(0, delimiterPos);
-//     std::string value = line.substr(delimiterPos + 1);
 
-//     // Trim whitespace around key and value
-//     key.erase(key.find_last_not_of(" \t\r\n") + 1);
-//     value.erase(0, value.find_first_not_of(" \t\r\n"));
-
-//     headers[key] = value;
-    
-//     return true;   
-// }
 
 bool    HttpRequest::parseHeadersBlock(const std::string &headerBlocks)
 {
@@ -248,114 +194,21 @@ bool    HttpRequest::parseHeadersBlock(const std::string &headerBlocks)
     
     while(std::getline(stream, line))
     {
-        if (!line.empty() && line.back() == '\r')
-            line.pop_back();
+        if (!line.empty() && line.back() == '\r') line.pop_back();
         
-            size_t  delimiterPos = line.find(':');
-            if (delimiterPos == std::string::npos) continue; // skip invalid lines
-            
-            std::string key = line.substr(0, delimiterPos);
-            std::string value = line.substr(delimiterPos + 1);
+        size_t  delimiterPos = line.find(':');
+        if (delimiterPos == std::string::npos) continue; // skip invalid lines
+        
+        std::string key = std::string(trim(line.substr(0, delimiterPos)));
+        std::string value = std::string(trim(line.substr(delimiterPos + 1)));
 
-            // Trim whitespace around key and value
-            key.erase(key.find_last_not_of(" \t\r\n") + 1);
-            value.erase(0, value.find_first_not_of(" \t\r\n"));
-
-            headers[key] = value;       
+        headers[key] = value;       
     }
     return true;
     
 }
 
 
-
-// ParseResult HttpRequest::parse(std::string &buffer)
-// {
-//     while (true)
-//     {
-//         // debug state of parsing
-//         // std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
-        
-//         switch (parseState)
-//         {
-//             case ParseState::START_LINE:
-//             {
-//                 size_t pos = buffer.find("\r\n");
-//                 if (pos == std::string::npos)
-//                     return ParseResult::INCOMPLETE;
-
-//                 std::string line = buffer.substr(0, pos);
-//                 buffer.erase(0, pos + 2); // remove processed line
-
-//                 if (!parseStartLine(line))
-//                 {
-//                     parseState = ParseState::ERROR;
-//                     return ParseResult::ERROR;
-//                 }
-//                 parseState = ParseState::HEADERS;
-//                 break;
-//             }
-
-//             case ParseState::HEADERS:
-//             {
-//                 size_t pos = buffer.find("\r\n");
-//                 if (pos == std::string::npos)
-//                     return ParseResult::INCOMPLETE;
-
-//                 std::string line = buffer.substr(0, pos);
-//                 buffer.erase(0, pos + 2);
-
-//                 if (line.empty() || line == "\r") // End of headers
-//                 {
-//                     std::cout << "End of headers detected." << std::endl;
-//                     // Decide if a body is expected
-//                     if (method == Method::GET || method == Method::DELETE)
-//                     {
-//                         parseState = ParseState::COMPLETE; // Transition to COMPLETE state
-//                         std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (not a Method::POST)" << std::endl;
-//                         return ParseResult::COMPLETE;
-//                     }
-//                     if (method == Method::POST)
-//                         parseState = ParseState::BODY;
-//                         std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
-//                 }
-
-//                 if (!parseHeaders(line))
-//                 {
-//                     parseState = ParseState::ERROR;
-//                     return ParseResult::ERROR;
-//                 }
-//                 break;
-//             }
-
-//             case ParseState::BODY:
-//             {
-//                 auto it = headers.find("Content-Length");
-//                 if (it != headers.end())
-//                 {
-//                     size_t contentLength = std::stoi(it->second);
-//                     if (buffer.size() < contentLength)
-//                         return ParseResult::INCOMPLETE;
-
-//                     if (bodyFile.is_open())
-//                         bodyFile.write(buffer.data(), contentLength);
-                    
-//                     buffer.erase(0, contentLength);
-//                     return ParseResult::COMPLETE;
-//                 }
-
-//                 // TODO: Handle Transfer-Encoding: chunked
-//                 return ParseResult::ERROR;
-//             }
-
-//             case ParseState::ERROR:
-//                 return ParseResult::ERROR;
-
-//             case ParseState::COMPLETE:
-//                 return ParseResult::COMPLETE;
-//         }
-//     }
-// }
 
 
 ParseResult HttpRequest::parse(std::string &buffer)
@@ -428,24 +281,24 @@ ParseResult HttpRequest::parse(std::string &buffer)
                     buffer.erase(0, contentLength);
                     return ParseResult::COMPLETE;
                 }
-
+                
                 // TODO: Handle Transfer-Encoding: chunked
                 return ParseResult::ERROR;
             }
             
             case ParseState::CHUNK_SIZE:
             {
-                
+                //return handleChunkSize(buffer);
             }
 
             case ParseState::CHUNK_DATA:
             {
-                
+                //return handleChunkData(buffer);
             }
 
             case ParseState::CHUNK_CRLF:
             {
-                
+                //return handleChunkCRLF(buffer);
             }
 
             case ParseState::ERROR:

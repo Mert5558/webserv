@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/14 13:53:10 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/14 16:00:25 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,8 +16,9 @@
 
 enum class Method {GET,POST,DELETE, INVALID};
 enum class Version {HTTP_1_0, HTTP_1_1, HTTP_2, INVALID};
-enum class ParseState {START_LINE, HEADERS, BODY, CHUNK_SIZE, CHUNK_DATA, CHUNK_CRLF, COMPLETE, ERROR};
+enum class ParseState {START_LINE, HEADERS, BODY, CHUNK_SIZE, CHUNK_DATA, CHUNK_CRLF, COMPLETE, ERROR};      // CHUNK_CRLF = Chunk Carriage Return Line Feed (\r\n)
 enum class ParseResult {INCOMPLETE, COMPLETE ,ERROR};
+
 
 class	HttpRequest
 {
@@ -84,7 +85,7 @@ class	HttpRequest
 		// Helper
 		void log_headers();
 		void log_first_line();
-		std::string	trim(const std::string &str);
+		std::string_view trim(std::string_view str);
 
 		std::string readFile(const std::string& filePath) const;
 		std::string buildResponse();
