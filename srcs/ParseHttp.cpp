@@ -178,7 +178,7 @@ ssize_t HttpRequest::receive(int client_fd, std::string &buffer)
 
 void    HttpRequest::reset()
 {
-    std::cout << "\nCalled the reset() ---> method = Method::INVALID | path.clear() | version = Version::INVALID | headers.clear() | parseState = ParseState::START_LINE  " << std::endl;
+    //std::cout << "\nCalled the reset() ---> method = Method::INVALID | path.clear() | version = Version::INVALID | headers.clear() | parseState = ParseState::START_LINE  " << std::endl;
     
     method = Method::INVALID;
     path.clear();
@@ -189,6 +189,9 @@ void    HttpRequest::reset()
         bodyFile.close();
     }
     parseState = ParseState::START_LINE;
+
+	rawRequest.clear();
+	header_str.clear();
 }
 
 
@@ -280,12 +283,12 @@ ParseResult HttpRequest::parseRequestPartial(std::string &buffer)
                     if (method == Method::GET || method == Method::DELETE)
                     {
                         parseState = ParseState::COMPLETE; // Transition to COMPLETE state
-                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (not a Method::POST)" << std::endl;
+                        //std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (not a Method::POST)" << std::endl;
                         return ParseResult::COMPLETE;
                     }
                     if (method == Method::POST)
                         parseState = ParseState::BODY;
-                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
+                        //std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
                 }
 
                 if (!parseHeaders(line))
@@ -340,8 +343,8 @@ bool    HttpRequest::parseRequestFromCompleteBuffer()
     while (std::getline(raw, line))
     {
         // log the parsing state
-        std::cout << "Processing line: " << line << std::endl;
-        std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
+        //std::cout << "Processing line: " << line << std::endl;
+        //std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
         
         switch (parseState)
         {
@@ -362,7 +365,7 @@ bool    HttpRequest::parseRequestFromCompleteBuffer()
                     if (method == Method::GET || method == Method::DELETE)
                     {
                         parseState = ParseState::COMPLETE;
-                        std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (it is not Method::POST)" << std::endl;
+                        //std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (it is not Method::POST)" << std::endl;
                         return true;
                     }
                     parseState = ParseState::BODY;
@@ -394,8 +397,8 @@ bool    HttpRequest::parseRequestFromCompleteBuffer()
         }        
         
     } 
-    log_first_line();  
-    log_headers();
+    //log_first_line();  
+    //log_headers();
 
     parseState = ParseState::COMPLETE;
     return true;

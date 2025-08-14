@@ -83,6 +83,7 @@ void ServerLoop::startServer(ParseConfig parse)
 						if (!clients[client_fd].request.disconnect)
 						{
 
+							std::cout << clients[client_fd].request.rawRequest << std::endl;
 							clients[client_fd].request.parseRequestFromCompleteBuffer();
 
 							std::string responseStr = clients[client_fd].response.buildResponse(clients[client_fd].request);
