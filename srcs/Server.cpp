@@ -1,12 +1,25 @@
 #include "../inc/Server.hpp"
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
-#include "../inc/ParseHttp.hpp"
+#include "../inc/HttpRequest.hpp"
 #include "../inc/httpResponse.hpp"
 #include "../inc/Client.hpp"
 
 Server::Server()
 {}
+
+HttpRequest &HttpRequest::operator=(const HttpRequest &copy)
+{
+    if (this != &copy)
+    {
+        method = copy.method;
+        path = copy.path;
+        version = copy.version;
+        headers = copy.headers;
+    }
+    return (*this);
+}
+
 
 Server::~Server()
 {}
@@ -89,7 +102,7 @@ void Server::startServer(ParseConfig parse)
 						if (!clients[client_fd].disconnect)
 						{
 
-							request.parseRequestFromCompleteBuffer(clients[client_fd].recv_buffer);
+							request.parse(clients[client_fd].recv_buffer);
 
 							std::string responseStr = response.buildResponse(request);
 

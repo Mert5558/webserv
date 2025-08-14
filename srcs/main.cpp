@@ -6,14 +6,14 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/08/01 11:14:19 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/14 09:24:48 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
 #include "../inc/Server.hpp"
-#include "../inc/ParseHttp.hpp"
+#include "../inc/HttpRequest.hpp"
 
 
 int main(int argc, char **argv)

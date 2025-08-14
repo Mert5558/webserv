@@ -4,7 +4,7 @@
 #include <string>
 #include <map>
 #include <sstream>
-#include "../inc/ParseHttp.hpp"
+#include "../inc/HttpRequest.hpp"
 
 class httpResponse
 {

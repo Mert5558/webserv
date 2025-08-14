@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Webserv.hpp"
-#include "ParseHttp.hpp"
+#include "HttpRequest.hpp"
 
 enum class ClientState	{IDLE, HEADERS_RECEIVED, BODY_RECEIVED, COMPLETE, ERROR};
 
