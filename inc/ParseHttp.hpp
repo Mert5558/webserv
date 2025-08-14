@@ -70,7 +70,7 @@ class	HttpRequest
 		
 		// Parsing
 		ParseResult	parseRequestPartial(std::string &buffer);
-		bool parseRequestFromCompleteBuffer(const std::string &rawRequest);
+		bool parseRequestFromCompleteBuffer();
 		bool parseStartLine(const std::string &line);
 		bool parseHeaders(const std::string &line);
 		
@@ -89,6 +89,18 @@ class	HttpRequest
 
 		void reset();
 
+		bool receiveReq(int client_fd);
+
+
+		std::string											rawRequest;
+		size_t 												expected_len;
+		size_t 												received_len;
+		bool 												isComplete;
+		bool 												disconnect;
+		bool 												header_received;
+		bool 												body_received;
+		std::string											header_str;
+		size_t												body_start;
 
 	};
 

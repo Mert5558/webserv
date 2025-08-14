@@ -77,7 +77,7 @@ void ServerLoop::startServer(ParseConfig parse)
 
 					int client_fd = fds[i].fd;
 
-					bool done = receiveReq(client_fd, clients);
+					bool done = clients[client_fd].request.receiveReq(client_fd);
 
 					if (done)
 					{
@@ -85,7 +85,7 @@ void ServerLoop::startServer(ParseConfig parse)
 						if (!clients[client_fd].disconnect)
 						{
 
-							clients[client_fd].request.parseRequestFromCompleteBuffer(clients[client_fd].recv_buffer);
+							clients[client_fd].request.parseRequestFromCompleteBuffer();
 
 							std::string responseStr = response.buildResponse(clients[client_fd].request);
 
@@ -109,57 +109,6 @@ void ServerLoop::startServer(ParseConfig parse)
 		}
 	}
 }
-
-bool ServerLoop::receiveReq(int client_fd, std::unordered_map<int, Client> &clients)
-{
-	Client &client = clients[client_fd];
-	char buf[4096];
-	ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
-	if (bytes <= 0)
-	{
-		client.disconnect = true;
-		return (true);
-	}
-
-	client.recv_buffer.append(buf, bytes);
-
-	if (!client.header_received)
-	{
-		client.header_received = true;
-		size_t header_end = client.recv_buffer.find("\r\n\r\n");
-
-		if (header_end != std::string::npos)
-		{
-			client.header_str = client.recv_buffer.substr(0, header_end + 4);
-
-			size_t cl_pos = client.header_str.find("Content-Length:");
-			if (cl_pos != std::string::npos)
-			{
-				size_t value_start = client.header_str.find_first_not_of(" ", cl_pos + 15);
-				size_t value_end = client.header_str.find("\r\n", value_start);
-				std::string str_len = client.header_str.substr(value_start, value_end - value_start);
-				client.expected_len = std::atoi(str_len.c_str());
-			}
-			else
-				client.expected_len = 0;
-			
-			client.body_start = header_end + 4;
-		}
-	}
-
-	if (client.header_received && !client.body_received)
-	{
-		size_t total_body_size = client.recv_buffer.size() - client.body_start;
-		if (client.expected_len == 0 || total_body_size >= client.expected_len)
-		{
-			client.body_received = true;
-			client.isComplete = true;
-		}
-	}
-
-	return (client.isComplete);
-}
-
 
 void ServerLoop::removeFd(std::vector<pollfd> &fds, size_t index)
 {

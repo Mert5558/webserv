@@ -327,7 +327,7 @@ ParseResult HttpRequest::parseRequestPartial(std::string &buffer)
 
 
 
-bool    HttpRequest::parseRequestFromCompleteBuffer(const std::string &rawRequest)
+bool    HttpRequest::parseRequestFromCompleteBuffer()
 {
     std::istringstream raw(rawRequest);
     std::string line;
@@ -519,6 +519,54 @@ std::string HttpRequest::readFile(const std::string& filePath) const
     return buffer.str();
 }
 
+bool HttpRequest::receiveReq(int client_fd)
+{
+	char buf[4096];
+	ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
+	if (bytes <= 0)
+	{
+		disconnect = true;
+		return (true);
+	}
+
+	rawRequest.append(buf, bytes);
+
+	if (!header_received)
+	{
+		header_received = true;
+		size_t header_end = rawRequest.find("\r\n\r\n");
+
+		if (header_end != std::string::npos)
+		{
+			header_str = rawRequest.substr(0, header_end + 4);
+
+			size_t cl_pos = header_str.find("Content-Length:");
+			if (cl_pos != std::string::npos)
+			{
+				size_t value_start = header_str.find_first_not_of(" ", cl_pos + 15);
+				size_t value_end = header_str.find("\r\n", value_start);
+				std::string str_len = header_str.substr(value_start, value_end - value_start);
+				expected_len = std::atoi(str_len.c_str());
+			}
+			else
+				expected_len = 0;
+			
+			body_start = header_end + 4;
+		}
+	}
+
+	if (header_received && !body_received)
+	{
+		size_t total_body_size = rawRequest.size() - body_start;
+		if (expected_len == 0 || total_body_size >= expected_len)
+		{
+			body_received = true;
+			isComplete = true;
+		}
+	}
+
+	return (isComplete);
+}
 
 // This is moved and developed in the httpResponse.cpp file
 
