@@ -2,6 +2,7 @@
 
 #include "Webserv.hpp"
 #include "ParseHttp.hpp"
+#include "httpResponse.hpp"
 
 enum class ClientState	{IDLE, HEADERS_RECEIVED, BODY_RECEIVED, COMPLETE, ERROR};
 
@@ -21,6 +22,7 @@ class Client
 
 		ClientState		state;
 		HttpRequest     request;
+		httpResponse 	response;
 
 
 		Client() : fd(-1), expected_len(0), received_len(0), isComplete(false), disconnect(false), header_received(false), body_received(false), body_start(0) {}

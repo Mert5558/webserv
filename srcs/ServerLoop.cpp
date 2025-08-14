@@ -13,8 +13,6 @@ ServerLoop::~ServerLoop()
 
 void ServerLoop::startServer(ParseConfig parse)
 {
-	httpResponse response;
-
 	std::vector<InitConfig> &servers = parse.getServers();
 
 	serverSetup(servers);
@@ -87,7 +85,7 @@ void ServerLoop::startServer(ParseConfig parse)
 
 							clients[client_fd].request.parseRequestFromCompleteBuffer();
 
-							std::string responseStr = response.buildResponse(clients[client_fd].request);
+							std::string responseStr = clients[client_fd].response.buildResponse(clients[client_fd].request);
 
 							int bytes_sent = send(client_fd, responseStr.c_str(), responseStr.size(), 0);
 							if (bytes_sent < 0)
