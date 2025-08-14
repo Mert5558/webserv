@@ -80,7 +80,7 @@ void ServerLoop::startServer(ParseConfig parse)
 					if (done)
 					{
 						std::cout << "entered done loop" << std::endl;
-						if (!clients[client_fd].disconnect)
+						if (!clients[client_fd].request.disconnect)
 						{
 
 							clients[client_fd].request.parseRequestFromCompleteBuffer();
