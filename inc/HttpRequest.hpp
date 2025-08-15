@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/15 16:18:16 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/15 16:37:33 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,20 +76,20 @@ class	HttpRequest
 		bool    parseHeadersBlock(const std::string &headerBlocks);
 
 		
-		// validation
+		// Validation
 		bool isValidMethod() const;
 		bool isValidVersion() const;
 		bool isValidPath();
 		
-		std::string receiveRequest(int client_fd);
-		ssize_t	receive(int client_fd, std::string &buffer);
+		// Helper
 		void log_headers();
 		void log_first_line();
+		void reset();
+		std::string_view trim(std::string_view str);
 
 		std::string readFile(const std::string& filePath) const;
 		std::string buildResponse();
 
-		void reset();
 
 		bool receiveReq(int client_fd);
 

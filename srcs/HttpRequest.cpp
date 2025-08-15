@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/15 16:30:41 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/15 16:39:26 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -196,6 +196,15 @@ bool    HttpRequest::parseStartLine(const std::string &line)
     return true;
 }
 
+std::string_view HttpRequest::trim(std::string_view str)
+{
+    size_t wspace_start = 0;
+    while (wspace_start < str.size() && isspace(static_cast<unsigned char>(str[wspace_start]))) wspace_start++;
+    size_t wspace_end = str.size();
+    while (wspace_end > wspace_start && isspace(static_cast<unsigned char>(str[wspace_end - 1]))) wspace_end--;
+    return str.substr(wspace_start, wspace_end - wspace_start);
+}
+
 bool    HttpRequest::parseHeadersBlock(const std::string &headerBlocks)
 {
     std::istringstream  stream(headerBlocks);
@@ -208,12 +217,8 @@ bool    HttpRequest::parseHeadersBlock(const std::string &headerBlocks)
         size_t  delimiterPos = line.find(':');
         if (delimiterPos == std::string::npos) continue; // skip invalid lines
         
-        std::string key = line.substr(0, delimiterPos);
-        std::string value = line.substr(delimiterPos + 1);
-
-         // Trim whitespace around key and value
-        key.erase(key.find_last_not_of(" \t\r\n") + 1);
-        value.erase(0, value.find_first_not_of(" \t\r\n"));
+        std::string key = std::string(trim(line.substr(0, delimiterPos)));
+        std::string value = std::string(trim(line.substr(delimiterPos + 1)));
 
         headers[key] = value;       
     }
