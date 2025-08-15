@@ -6,6 +6,7 @@
 #include "../inc/Client.hpp"
 
 
+
 // Set a file descriptor to non-blocking mode.
 static bool setNonBlocking(int fd)
 {
@@ -258,6 +259,7 @@ void ServerLoop::startServer(ParseConfig parse)
 				const char *data = cl.outBuf.c_str() + cl.outOff;
 
 				ssize_t n = send(pfd.fd, data, left, 0);
+
 				if (n < 0)
 				{
 					if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -306,6 +308,16 @@ void ServerLoop::startServer(ParseConfig parse)
 	}
 }
 
+
+void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, httpResponse &response)
+{
+	// simple routing: choose the first server
+	// pick servers[0] to get root/index. Extend later to pick by Host.
+	InitConfig *srv = servers.empty() ? NULL : &servers[0];
+
+	// Prepare a static file response under root based on request target
+	response.prepare(request, srv);
+}
 
 
 // // ================

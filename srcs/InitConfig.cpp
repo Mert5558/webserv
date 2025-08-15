@@ -264,12 +264,12 @@ const std::string &InitConfig::getServerName()
 	return (server_name);
 }
 
-const std::string &InitConfig::getRoot()
+const std::string &InitConfig::getRoot() const
 {
 	return (root);
 }
 
-const std::string &InitConfig::getIndex()
+const std::string &InitConfig::getIndex() const
 {
 	return (index);
 }
