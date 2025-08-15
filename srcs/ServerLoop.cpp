@@ -33,9 +33,9 @@ void ServerLoop::startServer(ParseConfig parse)
 				for (size_t k = 0; k < fds.size(); k++)
 				{
 					std::cout << std::endl;
-					std::cout << "fd for index: " << k << fds[k].fd << std::endl;
-					std::cout << "event for index: " << k << fds[k].events << std::endl;
-					std::cout << "revent for index: " << k << fds[k].revents << std::endl;
+					std::cout << "fd for index: " << k << " " << fds[k].fd << std::endl;
+					std::cout << "event for index: " << k << " " << fds[k].events << std::endl;
+					std::cout << "revent for index: " << k << " " << fds[k].revents << std::endl;
 					std::cout << std::endl;
 				}
 
@@ -82,23 +82,34 @@ void ServerLoop::startServer(ParseConfig parse)
 						std::cout << "entered done loop" << std::endl;
 						if (!clients[client_fd].request.disconnect)
 						{
-							clients[client_fd].request.parseRequestFromCompleteBuffer();
-
-							std::string responseStr = clients[client_fd].response.buildResponse(clients[client_fd].request);
-
-							int bytes_sent = send(client_fd, responseStr.c_str(), responseStr.size(), 0);
-							if (bytes_sent < 0)
+							ParseResult result = clients[client_fd].request.parse();
+							// clients[client_fd].request.getParseResult() == COMPLETE  <-- may we need in the future
+							if (result == ParseResult::COMPLETE)
 							{
-								perror("send");
-								break;
+								
+								std::string responseStr = clients[client_fd].response.buildResponse(clients[client_fd].request);
+	
+								int bytes_sent = send(client_fd, responseStr.c_str(), responseStr.size(), 0);
+								if (bytes_sent < 0)
+								{
+									perror("send");
+									break;
+								}
+	
+								std::cout << "response send to: " << fds[i].fd << std::endl;
+	
+								std::cout << "fd removed: " << fds[i].fd << std::endl;
+								close(fds[i].fd);
+								clients.erase(client_fd);
+								fds.erase(fds.begin() + i);
+								i--;
+							}
+							else if ( result == ParseResult::ERROR)
+							{
+								// should handle error
+								std::cerr << "we have an error " << std::endl;
 							}
 
-							std::cout << "response send to: " << fds[i].fd << std::endl;
-
-							std::cout << "fd removed: " << fds[i].fd << std::endl;
-							close(fds[i].fd);
-							fds.erase(fds.begin() + i);
-							i--;
 						}
 					}
 				}
