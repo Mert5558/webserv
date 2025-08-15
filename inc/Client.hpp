@@ -11,6 +11,7 @@ class Client
 {
 	public:
 		int				fd;
+		int				server_index;
 		ClientState		state;
 		HttpRequest		request;
 		httpResponse	response;
