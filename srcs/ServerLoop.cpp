@@ -1,7 +1,7 @@
 #include "../inc/ServerLoop.hpp"
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
-#include "../inc/ParseHttp.hpp"
+#include "../inc/HttpRequest.hpp"
 #include "../inc/httpResponse.hpp"
 #include "../inc/Client.hpp"
 
