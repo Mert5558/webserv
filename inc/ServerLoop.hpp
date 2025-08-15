@@ -8,23 +8,19 @@
 
 class ServerLoop
 {
-	private:
-	
 	public:
 		ServerLoop();
 		~ServerLoop();
+
 		void startServer(ParseConfig parse);
 		void serverSetup(std::vector<InitConfig> &servers);
-		void parseHttp(std::vector<InitConfig> &servers, HttpRequest &request,  httpResponse &response);
+		void parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, httpResponse &response); //to be moved to parseHttp.hpp
 
 		void initPollfd(std::vector<InitConfig> &servers);
 
+		void removeFd(std::vector<pollfd> &fds, size_t index);
 
-		void	removeFd(std::vector<pollfd> &fds, size_t index);
-		bool	receiveReq(int client_fd, std::unordered_map<int, Client> &clients);
-
-
-		std::vector<pollfd> fds;
-		std::unordered_map<int, Client> clients;
-
+		std::vector<pollfd>              fds;
+		std::unordered_map<int, Client>  clients;
 };
+
