@@ -20,9 +20,9 @@ class Client
 		std::string		outBuf;		// pending response bytes to send
 		size_t			outOff;		// how many bytes already sent
 
-		Client() : fd(-1), state(ClientState::IDLE), outOff(0) {}
+		Client() : fd(-1),server_index(-1), state(ClientState::IDLE), outOff(0) {}
 
-		Client(int _fd) : fd(_fd), state(ClientState::IDLE), outOff(0) {}
+		Client(int _fd, int _server_index) : fd(_fd), server_index(_server_index), state(ClientState::IDLE), outOff(0) {}
 
 		~Client() {}
 };
