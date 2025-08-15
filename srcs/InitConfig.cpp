@@ -294,7 +294,7 @@ const std::vector<Location> &InitConfig::getLocations()
 	return (locations);
 }
 
-int InitConfig::getFd()
+int InitConfig::getFd() const
 {
 	return (listen_fd);
 }

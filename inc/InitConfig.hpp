@@ -29,7 +29,7 @@ class InitConfig
 		const std::string &getServerName();
 		const std::string &getRoot();
 		const std::string &getIndex();
-		int getFd();
+		int getFd() const;
 		bool getAutoindex();
 		unsigned long getClientMaxBodySize();
 		const std::map<short, std::string> &getErrorPages();
