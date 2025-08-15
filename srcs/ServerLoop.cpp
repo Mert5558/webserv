@@ -121,6 +121,7 @@ void ServerLoop::startServer(ParseConfig parse)
 		{
 			// Timeout: nothing happened
 			std::cout << "[POLL] timeout (no events). fds.size()=" << fds.size() << std::endl;
+			dumpTopology(servers);
 			continue;
 		}
 
@@ -192,7 +193,7 @@ void ServerLoop::startServer(ParseConfig parse)
 						cp.revents = 0;
 						fds.push_back(cp);
 
-						clients[cfd] = Client(cfd);
+						clients[cfd] = Client(cfd, serverIdx);
 						std::cout << "New client connected: fd=" << cfd << std::endl;
 					}
 				}
@@ -305,6 +306,7 @@ void ServerLoop::startServer(ParseConfig parse)
 			// Move on
 			++i;
 		}
+		dumpTopology(servers);
 	}
 }
 
@@ -319,6 +321,42 @@ void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &reques
 	response.prepare(request, srv);
 }
 
+// Helper function to dump the current server topology and client states
+void ServerLoop::dumpTopology(const std::vector<InitConfig> &servers)
+{
+	std::ostringstream oss;
+	oss << "[TOPO] ";
+
+	for (size_t i = 0; i < servers.size(); ++i)
+	{
+		oss << "S" << i << "(fd=" << servers[i].getFd() << ")";
+		if (i + 1 < servers.size()) oss << " | ";
+	}
+
+	if (!clients.empty()) oss << " || ";
+
+	bool first = true;
+	for (std::unordered_map<int, Client>::const_iterator it = clients.begin(); it != clients.end(); ++it)
+	{
+		if (!first) oss << " | ";
+		first = false;
+
+		const Client &cl = it->second;
+		std::string state = "IDLE";
+		switch (cl.state)
+		{
+			case ClientState::HEADERS_RECEIVED: state = "HEADERS"; break;
+			case ClientState::BODY_RECEIVED:    state = "BODY";    break;
+			case ClientState::COMPLETE:         state = "COMP";    break;
+			case ClientState::ERROR:            state = "ERROR";   break;
+			case ClientState::IDLE:             default:           state = "IDLE";    break;
+		}
+
+		oss << "C" << cl.fd << "->S" << cl.server_index << "[" << state << "]";
+	}
+
+	std::cout << oss.str() << std::endl;
+}
 
 // // ================
 // void ServerLoop::startServer(ParseConfig parse)
