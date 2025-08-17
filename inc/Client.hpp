@@ -3,7 +3,7 @@
 
 #include "Webserv.hpp"
 #include "ParseHttp.hpp"
-#include "httpResponse.hpp"
+#include "HttpResponse.hpp"
 
 enum class ClientState { IDLE, HEADERS_RECEIVED, BODY_RECEIVED, COMPLETE, ERROR };
 
@@ -14,7 +14,7 @@ class Client
 		int				server_index;
 		ClientState		state;
 		HttpRequest		request;
-		httpResponse	response;
+		HttpResponse	response;
 
 		// Additions for non-blocking writes:
 		std::string		outBuf;		// pending response bytes to send

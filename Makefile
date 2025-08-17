@@ -4,7 +4,7 @@ CPPFLAGS = -Wall -Werror -Wextra -std=c++17
 NAME = webserv
 
 OBJDIR = obj
-SRC = srcs/main.cpp srcs/Location.cpp srcs/InitConfig.cpp srcs/ParseConfig.cpp srcs/ParseHttp.cpp srcs/ServerLoop.cpp srcs/httpResponse.cpp
+SRC = srcs/main.cpp srcs/Location.cpp srcs/InitConfig.cpp srcs/ParseConfig.cpp srcs/ParseHttp.cpp srcs/ServerLoop.cpp srcs/HttpResponse.cpp
 OBJ = $(SRC:srcs/%.cpp=$(OBJDIR)/%.o)
 
 all: $(OBJDIR) $(NAME)
@@ -34,7 +34,7 @@ re: fclean all
 
 # NAME = webserv
 
-# SRC = srcs/main.cpp srcs/Location.cpp srcs/InitConfig.cpp srcs/ParseConfig.cpp srcs/ParseHttp.cpp srcs/Server.cpp srcs/httpResponse.cpp
+# SRC = srcs/main.cpp srcs/Location.cpp srcs/InitConfig.cpp srcs/ParseConfig.cpp srcs/ParseHttp.cpp srcs/Server.cpp srcs/HttpResponce.cpp
 # OBJ = $(SRC:.cpp=.o)
 
 # all: $(NAME)

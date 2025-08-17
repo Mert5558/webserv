@@ -1,5 +1,4 @@
-#include "../inc/httpResponse.hpp"
-#include "../inc/httpResponse.hpp"
+#include "../inc/HttpResponse.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -12,7 +11,7 @@
 
 // HTTP server must send exactly the bytes on disk—no hidden changes.
 // This means we need to read files in binary mode, and handle '\0' bytes correctly.
-std::string httpResponse::slurpFile(const std::string &path)
+std::string HttpResponse::slurpFile(const std::string &path)
 {
 	// We'll put the file bytes here.
 	std::string data;
@@ -77,7 +76,7 @@ static bool ends_with(const std::string &str, const char *suf)
 }
 
 // Guess the content type based on the file extension
-std::string httpResponse::guessType(const std::string &path)
+std::string HttpResponse::guessType(const std::string &path)
 {
 	if (ends_with(path, ".html"))
 		return "text/html";
@@ -140,7 +139,7 @@ static std::string normalizePath(const std::string& path)
 }
 
 // Prepare a response based on the request and server root
-std::string httpResponse::safeJoin(const std::string& root, const std::string& cleaned)
+std::string HttpResponse::safeJoin(const std::string& root, const std::string& cleaned)
 {
 	if (cleaned == "/")
 		return root;
@@ -150,33 +149,33 @@ std::string httpResponse::safeJoin(const std::string& root, const std::string& c
 }
 
 // ================== Costructors/Destructor ==================
-httpResponse::httpResponse() : statusCode("200 OK"), contentType("text/plain") {}
-httpResponse::~httpResponse() {}
+HttpResponse::HttpResponse() : statusCode("200 OK"), contentType("text/plain") {}
+HttpResponse::~HttpResponse() {}
 
 // ================== Setters ==================
-void httpResponse::setStatusCode(const std::string &status)
+void HttpResponse::setStatusCode(const std::string &status)
 {
 	statusCode = status;
 }
 
-void httpResponse::setContentType(const std::string &type)
+void HttpResponse::setContentType(const std::string &type)
 {
 	contentType = type;
 }
 
-void httpResponse::setBody(const std::string &bodyStr)
+void HttpResponse::setBody(const std::string &bodyStr)
 {
 	body = bodyStr;
 }
 
-void httpResponse::addHeader(const std::string &key, const std::string &value)
+void HttpResponse::addHeader(const std::string &key, const std::string &value)
 {
 	headers[key] = value;
 }
 
 // ================== Build full string response ==================
 
-std::string httpResponse::buildResponse() const
+std::string HttpResponse::buildResponse() const
 {
 	std::ostringstream ss;
 	ss << "HTTP/1.1 " << statusCode << "\r\n";
@@ -242,7 +241,7 @@ static bool isDirectory(const std::string &path)
 }
 
 // ================== Prepare response based on request and server root ==================
-void httpResponse::prepare(const HttpRequest &request, const InitConfig *server)
+void HttpResponse::prepare(const HttpRequest &request, const InitConfig *server)
 {
 	// 1) Decide server root and index filename (no ternaries)
 	std::string serverRoot;

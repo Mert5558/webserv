@@ -6,7 +6,7 @@
 #include <map>
 #include "InitConfig.hpp"
 
-class httpResponse
+class HttpResponse
 {
 private:
 	// Classic fields
@@ -22,8 +22,8 @@ private:
 
 public:	
 	// Constructors and Destructor
-	httpResponse();
-	~httpResponse();
+	HttpResponse();
+	~HttpResponse();
 
 	// Setters
 	void setStatusCode(const std::string &status);

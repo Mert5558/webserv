@@ -3,7 +3,7 @@
 #include "Webserv.hpp"
 #include "ParseConfig.hpp"
 #include "ParseHttp.hpp"
-#include "httpResponse.hpp"
+#include "HttpResponse.hpp"
 #include "Client.hpp"
 
 class ServerLoop
@@ -18,7 +18,7 @@ class ServerLoop
 		void initPollfd(std::vector<InitConfig> &servers);
 
 		// Parse HTTP requests and send responses - Must be moved
-		void parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, httpResponse &response); //to be moved to parseHttp.hpp
+		void parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response); //to be moved to parseHttp.hpp
 
 		// Remove a file descriptor from the pollfd vector
 		void removeFd(std::vector<pollfd> &fds, size_t index);

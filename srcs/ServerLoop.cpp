@@ -2,7 +2,7 @@
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
 #include "../inc/ParseHttp.hpp"
-#include "../inc/httpResponse.hpp"
+#include "../inc/HttpResponse.hpp"
 #include "../inc/Client.hpp"
 
 
@@ -313,7 +313,7 @@ void ServerLoop::startServer(ParseConfig parse)
 }
 
 
-void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, httpResponse &response)
+void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
 {
 	// simple routing: choose the first server
 	// pick servers[0] to get root/index. Extend later to pick by Host.
