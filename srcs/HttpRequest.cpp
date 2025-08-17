@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/17 19:02:29 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/17 19:56:07 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,8 +55,7 @@ HttpRequest::HttpRequest()
     parseState(ParseState::START_LINE),
     parseResult(ParseResult::INCOMPLETE),
     content_length(0),
-    is_chunked(false),
-    expected_chunk_size(0),
+
     bodyFile(),
     bodySize(0),
     bodyFilePath()
@@ -75,7 +74,10 @@ HttpRequest::~HttpRequest()
 
 
 
-/* Setter */
+// ======================================================
+// Setter                           
+// ======================================================
+
 void HttpRequest::setMethod(Method method)
 {
     this->method = method;
@@ -113,7 +115,10 @@ void HttpRequest::setBody(const std::string &filePath)
 
 
 
-/* Getter */
+// ======================================================
+// Getter                           
+// ======================================================
+
 std::string HttpRequest::getMethod() const
 {
     switch(method)
@@ -160,22 +165,9 @@ std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
 }
 
 
-void    HttpRequest::reset()
-{    
-    method = Method::INVALID;
-    path.clear();
-    version = Version::INVALID;
-    headers.clear();
-    if (bodyFile.is_open())
-    {
-        bodyFile.close();
-    }
-    parseState = ParseState::START_LINE;
-
-	rawRequest.clear();
-}
-
-
+// ======================================================
+// Parsing functions for Header block and request line                          
+// ======================================================
 
 bool    HttpRequest::parseStartLine(const std::string &line)
 {
@@ -194,15 +186,6 @@ bool    HttpRequest::parseStartLine(const std::string &line)
     }
     
     return true;
-}
-
-std::string_view HttpRequest::trim(std::string_view str)
-{
-    size_t wspace_start = 0;
-    while (wspace_start < str.size() && isspace(static_cast<unsigned char>(str[wspace_start]))) wspace_start++;
-    size_t wspace_end = str.size();
-    while (wspace_end > wspace_start && isspace(static_cast<unsigned char>(str[wspace_end - 1]))) wspace_end--;
-    return str.substr(wspace_start, wspace_end - wspace_start);
 }
 
 bool    HttpRequest::parseHeadersBlock(const std::string &headerBlocks)
@@ -227,32 +210,68 @@ bool    HttpRequest::parseHeadersBlock(const std::string &headerBlocks)
 }
 
 
-bool HttpRequest::receiveReq(int client_fd)
+// ======================================================
+// Helper functions for handle the chunked body                            
+// ======================================================
+
+ParseResult HttpRequest::handleChunkSize(std::string &rawRequest)
 {
-    char buf[4096];
-    while (true)
-    {
-        ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
-        if (bytes > 0)
-        {
-            rawRequest.append(buf, buf + bytes);
-        }
-        else if (bytes == 0)
-        {
-            disconnect = true;
-            return false;
-        }
-        else
-        {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
-            return false;
-        }
-    }
-    return true;
+    size_t eol = rawRequest.find("\r\n");
+    if (eol == std::string::npos)
+        return ParseResult::INCOMPLETE;
+
+    std::string sizeLine = rawRequest.substr(0, eol);
+    rawRequest.erase(0, eol + 2);
+
+    size_t sc = sizeLine.find(';');
+    if (sc != std::string::npos) sizeLine = sizeLine.substr(0, sc);
+
+    chunk_remain_bytes = static_cast<size_t>(std::strtoul(sizeLine.c_str(), NULL, 16));
+    if (chunk_remain_bytes == 0)
+        parseState = ParseState::CHUNK_CRLF;
+    else
+        parseState = ParseState::CHUNK_DATA;
+
+    return ParseResult::INCOMPLETE;
 }
 
 
+ParseResult HttpRequest::handleChunkData(std::string &rawRequest)
+{
+    if (rawRequest.size() < chunk_remain_bytes + 2)
+        return ParseResult::INCOMPLETE;
+
+    if (bodyFile.is_open())
+        bodyFile.write(rawRequest.data(), chunk_remain_bytes);
+
+    rawRequest.erase(0, chunk_remain_bytes);
+
+    if (rawRequest.size() < 2)
+        return ParseResult::INCOMPLETE;
+    if (rawRequest.compare(0, 2, "\r\n") != 0)
+        return ParseResult::ERROR;
+    rawRequest.erase(0, 2);
+
+    parseState = ParseState::CHUNK_SIZE;
+    return ParseResult::INCOMPLETE;
+}
+
+ParseResult HttpRequest::handleChunkCRLF(std::string &rawRequest)
+{
+    if (rawRequest.size() < 2)
+        return ParseResult::INCOMPLETE;
+    if (rawRequest.compare(0, 2, "\r\n") != 0)
+        return ParseResult::ERROR;
+    rawRequest.erase(0, 2);
+
+    parseState = ParseState::COMPLETE;
+    return ParseResult::COMPLETE;
+}
+
+
+// ======================================================
+// Base function for Parsing with machine state                             
+// ======================================================
 
 ParseResult HttpRequest::parse()
 {
@@ -327,23 +346,22 @@ ParseResult HttpRequest::parse()
                     return ParseResult::COMPLETE;
                 }
                 
-                // TODO: Handle Transfer-Encoding: chunked
                 return ParseResult::ERROR;
             }
             
             case ParseState::CHUNK_SIZE:
             {
-                //return handleChunkSize(rawRequest);
+                return handleChunkSize(rawRequest);
             }
 
             case ParseState::CHUNK_DATA:
             {
-                //return handleChunkData(rawRequest);
+                return handleChunkData(rawRequest);
             }
 
             case ParseState::CHUNK_CRLF:
             {
-                //return handleChunkCRLF(rawRequest);
+                return handleChunkCRLF(rawRequest);
             }
 
             case ParseState::ERROR:
@@ -433,6 +451,9 @@ ParseResult HttpRequest::parse()
 // }    
 
 
+// ======================================================
+// Function for Parsing with machine state                             
+// ======================================================
 
 Method		HttpRequest::toMethodEnum(const std::string &methodStr)
 {
@@ -461,7 +482,9 @@ Version     HttpRequest::toVersionEnum(const std::string &versionStr)
 }
 
 
-
+// ======================================================
+// Helper functions                             
+// ======================================================
 
 void HttpRequest::log_headers()
 {
@@ -485,8 +508,6 @@ bool HttpRequest::isValidVersion() const
 {
     return version != Version::INVALID;
 }
-
-
 
 bool HttpRequest::isValidPath()
 {
@@ -516,8 +537,6 @@ bool HttpRequest::isValidPath()
     return true;
 }
 
-
-
 std::string HttpRequest::readFile(const std::string& filePath) const
 {
     std::ifstream file(filePath, std::ios::binary);
@@ -533,4 +552,53 @@ std::string HttpRequest::readFile(const std::string& filePath) const
     }
     buffer.write(chunk, file.gcount()); // Write any remaining bytes
     return buffer.str();
+}
+
+void    HttpRequest::reset()
+{    
+    method = Method::INVALID;
+    path.clear();
+    version = Version::INVALID;
+    headers.clear();
+    if (bodyFile.is_open())
+    {
+        bodyFile.close();
+    }
+    parseState = ParseState::START_LINE;
+
+	rawRequest.clear();
+}
+
+std::string_view    HttpRequest::trim(std::string_view str)
+{
+    size_t wspace_start = 0;
+    while (wspace_start < str.size() && isspace(static_cast<unsigned char>(str[wspace_start]))) wspace_start++;
+    size_t wspace_end = str.size();
+    while (wspace_end > wspace_start && isspace(static_cast<unsigned char>(str[wspace_end - 1]))) wspace_end--;
+    return str.substr(wspace_start, wspace_end - wspace_start);
+}
+
+bool    HttpRequest::receiveReq(int client_fd)
+{
+    char buf[4096];
+    while (true)
+    {
+        ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
+        if (bytes > 0)
+        {
+            rawRequest.append(buf, buf + bytes);
+        }
+        else if (bytes == 0)
+        {
+            disconnect = true;
+            return false;
+        }
+        else
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+            return false;
+        }
+    }
+    return true;
 }

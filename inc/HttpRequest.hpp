@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/17 18:59:57 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/17 20:06:10 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,8 +36,7 @@ class	HttpRequest
 	ParseState											parseState;
 	ParseResult											parseResult;
 	size_t												content_length;
-	bool												is_chunked;
-	size_t												expected_chunk_size;
+	size_t												chunk_remain_bytes;
 	
 	std::ofstream										bodyFile;
 	size_t												bodySize;
@@ -65,14 +64,15 @@ class	HttpRequest
         std::string	getBodyFilePath() const;
 		std::unordered_map<std::string, std::string> getHeaders() const;
 		
-		// From String to enum 
-		Method		toMethodEnum(const std::string &methodStr);
-		Version		toVersionEnum(const std::string &versionStr);
-		
 		// Parsing
 		bool		parseStartLine(const std::string &line);
 		bool    	parseHeadersBlock(const std::string &headerBlocks);
 		ParseResult	parse();
+		
+		ParseResult handleChunkSize(std::string &rawRequest);
+		ParseResult handleChunkData(std::string &rawRequest);
+		ParseResult handleChunkCRLF(std::string &rawRequest);
+		
 		
 		// Validation
 		bool isValidMethod() const;
@@ -84,17 +84,19 @@ class	HttpRequest
 		void				log_headers();
 		void				log_first_line();
 		void				reset();
-
+		
+		// From String to enum 
+		Method		toMethodEnum(const std::string &methodStr);
+		Version		toVersionEnum(const std::string &versionStr);
+		
 		std::string readFile(const std::string& filePath) const;
 		std::string buildResponse();
 
 
 		bool receiveReq(int client_fd);
 
-
-		// std::string											rawRequest;
-		bool 												disconnect;
-	
+		bool disconnect;
+		
 
 	};
 
