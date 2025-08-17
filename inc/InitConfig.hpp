@@ -27,9 +27,9 @@ class InitConfig
 		uint16_t getPort();
 		const std::string &getHost();
 		const std::string &getServerName();
-		const std::string &getRoot();
-		const std::string &getIndex();
-		int getFd();
+		const std::string &getRoot() const;
+		const std::string &getIndex() const;
+		int getFd() const;
 		bool getAutoindex();
 		unsigned long getClientMaxBodySize();
 		const std::map<short, std::string> &getErrorPages();

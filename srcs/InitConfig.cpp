@@ -264,12 +264,12 @@ const std::string &InitConfig::getServerName()
 	return (server_name);
 }
 
-const std::string &InitConfig::getRoot()
+const std::string &InitConfig::getRoot() const
 {
 	return (root);
 }
 
-const std::string &InitConfig::getIndex()
+const std::string &InitConfig::getIndex() const
 {
 	return (index);
 }
@@ -294,7 +294,7 @@ const std::vector<Location> &InitConfig::getLocations()
 	return (locations);
 }
 
-int InitConfig::getFd()
+int InitConfig::getFd() const
 {
 	return (listen_fd);
 }
