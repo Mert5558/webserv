@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/15 16:39:26 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/17 19:02:29 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,7 @@ HttpRequest::HttpRequest()
     version(Version::INVALID),
     headers(),
     path(),
+    rawRequest(),
     parseState(ParseState::START_LINE),
     parseResult(ParseResult::INCOMPLETE),
     content_length(0),
@@ -171,8 +172,7 @@ void    HttpRequest::reset()
     }
     parseState = ParseState::START_LINE;
 
-	rawRequest.clear();  // < -- mert
-	header_str.clear(); //< --- mert
+	rawRequest.clear();
 }
 
 
@@ -224,6 +224,32 @@ bool    HttpRequest::parseHeadersBlock(const std::string &headerBlocks)
     }
     return true;
     
+}
+
+
+bool HttpRequest::receiveReq(int client_fd)
+{
+    char buf[4096];
+    while (true)
+    {
+        ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
+        if (bytes > 0)
+        {
+            rawRequest.append(buf, buf + bytes);
+        }
+        else if (bytes == 0)
+        {
+            disconnect = true;
+            return false;
+        }
+        else
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -462,7 +488,6 @@ bool HttpRequest::isValidVersion() const
 
 
 
-
 bool HttpRequest::isValidPath()
 {
     // Check if the path is empty
@@ -493,81 +518,6 @@ bool HttpRequest::isValidPath()
 
 
 
-bool HttpRequest::receiveReq(int client_fd)
-{
-	char buf[4096];
-	ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
-	if (bytes <= 0)
-	{
-		disconnect = true;
-		return (true);
-	}
-
-	rawRequest.append(buf, bytes);
-
-	if (!header_received)
-	{
-		header_received = true;
-		size_t header_end = rawRequest.find("\r\n\r\n");
-
-		if (header_end != std::string::npos)
-		{
-			header_str = rawRequest.substr(0, header_end + 4);
-
-			size_t cl_pos = header_str.find("Content-Length:");
-			if (cl_pos != std::string::npos)
-			{
-				size_t value_start = header_str.find_first_not_of(" ", cl_pos + 15);
-				size_t value_end = header_str.find("\r\n", value_start);
-				std::string str_len = header_str.substr(value_start, value_end - value_start);
-				expected_len = std::atoi(str_len.c_str());
-			}
-			else
-				expected_len = 0;
-			
-			body_start = header_end + 4;
-		}
-	}
-
-	if (header_received && !body_received)
-	{
-		size_t total_body_size = rawRequest.size() - body_start;
-		if (expected_len == 0 || total_body_size >= expected_len)
-		{
-			body_received = true;
-			isComplete = true;
-		}
-	}
-
-	return (isComplete);
-}
-
-// last attempt
-// bool HttpRequest::receiveReq(int client_fd)
-// {
-//     char chunk[1024];
-//     size_t bytes;
-
-//     while ((bytes = recv(client_fd, chunk, sizeof(chunk), 0)) > 0)
-//     {
-//         if (bytes > 0)
-//         recv_buffer.append(chunk, bytes);
-//         return true;
-//     }
-//     if (bytes == 0)
-//     { 
-//         disconnect = true; 
-//         return false;
-//     }
-//     if (errno == EAGAIN || errno == EWOULDBLOCK)
-//     {
-//         return false;
-//         disconnect = true;
-//     }
-//     return false;
-// }
-
-
 std::string HttpRequest::readFile(const std::string& filePath) const
 {
     std::ifstream file(filePath, std::ios::binary);
@@ -584,49 +534,3 @@ std::string HttpRequest::readFile(const std::string& filePath) const
     buffer.write(chunk, file.gcount()); // Write any remaining bytes
     return buffer.str();
 }
-
-
-
-
-
-
-// This is moved and developed in the httpResponse.cpp file
-
-
-// std::string HttpRequest::buildResponse()
-// {
-//     std::string status;
-//     std::string content_type;
-//     std::string body;
-
-//     if(path == "/")
-//     {
-//         status = "HTTP/1.1 200 OK";
-//         content_type = "text/html; charset=utf-8";
-//         body = readFile("./www/index2.html");
-//     }
-//     else if (path == "/assets/images")
-//     {
-//         status = "HTTP/1.1 200 OK";
-//         content_type = "image/svg+xml";
-//         body = readFile("./www/assets/images/logo.svg");
-//     }
-//     else
-//     {
-//         status = "HTTP/1.1 404 Not Found";
-//         content_type = "text/html; charset=utf-8";
-//         body = readFile("./www/Error/404.html");
-//     }
-
-//     //Assemble the complete HTTP response
-//     std::ostringstream response;
-//     response << status << "\r\n";
-//     response << "Content-Type: " << content_type << "\r\n";
-//     response << "Content-Length: " << body.length() << "\r\n";
-//     response << "\r\n";
-//     response << body;
-
-//     // std::cout << "---> HTTP Response:\n" << response.str() << std::endl; // print the complete HTTP response
-//     return response.str();
-// }
-

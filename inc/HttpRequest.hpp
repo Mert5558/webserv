@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/15 16:37:33 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/17 18:59:57 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ class	HttpRequest
 	Version												version;
 	std::unordered_map<std::string, std::string> 		headers;
 	std::string											path;
-	// std::string											recv_buffer; <-- we need to rename it to rawRequest later
+	std::string											rawRequest;
 	
 	// internal state
 	ParseState											parseState;
@@ -50,12 +50,14 @@ class	HttpRequest
 		HttpRequest &operator=(const HttpRequest &copy);
 		~HttpRequest();
 
+		// setter
 		void setMethod(Method method);
 		void setPath(const std::string &path);
 		void setVersion(Version version);
 		void setBody(const std::string &filePath);
 		void setHeaders(const std::unordered_map<std::string, std::string> &headers);
 
+		// getter
 		std::string	getMethod() const;
 		std::string	getPath() const;
 		std::string getVersion() const;
@@ -68,13 +70,9 @@ class	HttpRequest
 		Version		toVersionEnum(const std::string &versionStr);
 		
 		// Parsing
-		// ParseResult	parseRequestPartial(std::string &buffer);
-		ParseResult parse();
-		bool parseRequestFromCompleteBuffer();
-		bool parseStartLine(const std::string &line);
-		// bool parseHeaders(const std::string &line);
-		bool    parseHeadersBlock(const std::string &headerBlocks);
-
+		bool		parseStartLine(const std::string &line);
+		bool    	parseHeadersBlock(const std::string &headerBlocks);
+		ParseResult	parse();
 		
 		// Validation
 		bool isValidMethod() const;
@@ -82,10 +80,10 @@ class	HttpRequest
 		bool isValidPath();
 		
 		// Helper
-		void log_headers();
-		void log_first_line();
-		void reset();
-		std::string_view trim(std::string_view str);
+		std::string_view	trim(std::string_view str);
+		void				log_headers();
+		void				log_first_line();
+		void				reset();
 
 		std::string readFile(const std::string& filePath) const;
 		std::string buildResponse();
@@ -94,15 +92,9 @@ class	HttpRequest
 		bool receiveReq(int client_fd);
 
 
-		std::string											rawRequest;
-		size_t 												expected_len;
-		size_t 												received_len;
+		// std::string											rawRequest;
 		bool 												disconnect;
-		bool 												isComplete;
-		bool 												header_received;
-		bool 												body_received;
-		std::string											header_str;
-		size_t												body_start;
+	
 
 	};
 
