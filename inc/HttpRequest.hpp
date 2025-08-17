@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ParseHttp.hpp                                      :+:      :+:    :+:   */
+/*   HttpRequest.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/12 15:41:22 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/17 20:06:10 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,33 +16,31 @@
 
 enum class Method {GET,POST,DELETE, INVALID};
 enum class Version {HTTP_1_0, HTTP_1_1, HTTP_2, INVALID};
-enum class ParseState {START_LINE, HEADERS, BODY, COMPLETE, ERROR};
+enum class ParseState {START_LINE, HEADERS, BODY, CHUNK_SIZE, CHUNK_DATA, CHUNK_CRLF, COMPLETE, ERROR};      // CHUNK_CRLF = Chunk Carriage Return Line Feed (\r\n)
 enum class ParseResult {COMPLETE, INCOMPLETE, ERROR};
 
-/*
-enum class ParseResult		//? later i can improve it 
-{
-    COMPLETE,
-    INCOMPLETE,
-    INVALIDSTARTLINE,
-    INVALIDHEADER,
-    BODYTOOLARGE,
-    INTERNALERROR
-};
-*/
+// i can do a ConnectionState also CLOSED/OPEN/PENDING
+
 
 class	HttpRequest
 {
 	private:
-		Method												method;
-		std::string											path;
-		Version												version;
-		std::ofstream										bodyFile;
-		size_t												bodySize;
-		std::string											bodyFilePath;
-		std::unordered_map<std::string, std::string> 		headers;
-		ParseState											parseState;
-		ParseResult											parseResult;
+	// parsed data
+	Method												method;
+	Version												version;
+	std::unordered_map<std::string, std::string> 		headers;
+	std::string											path;
+	std::string											rawRequest;
+	
+	// internal state
+	ParseState											parseState;
+	ParseResult											parseResult;
+	size_t												content_length;
+	size_t												chunk_remain_bytes;
+	
+	std::ofstream										bodyFile;
+	size_t												bodySize;
+	std::string											bodyFilePath;
 		
 
 	public:
@@ -51,12 +49,14 @@ class	HttpRequest
 		HttpRequest &operator=(const HttpRequest &copy);
 		~HttpRequest();
 
+		// setter
 		void setMethod(Method method);
 		void setPath(const std::string &path);
 		void setVersion(Version version);
 		void setBody(const std::string &filePath);
 		void setHeaders(const std::unordered_map<std::string, std::string> &headers);
 
+		// getter
 		std::string	getMethod() const;
 		std::string	getPath() const;
 		std::string getVersion() const;
@@ -64,43 +64,39 @@ class	HttpRequest
         std::string	getBodyFilePath() const;
 		std::unordered_map<std::string, std::string> getHeaders() const;
 		
-		// From String to enum 
-		Method		toMethodEnum(const std::string &methodStr);
-		Version		toVersionEnum(const std::string &versionStr);
-		
 		// Parsing
-		ParseResult	parseRequestPartial(std::string &buffer);
-		bool parseRequestFromCompleteBuffer();
-		bool parseStartLine(const std::string &line);
-		bool parseHeaders(const std::string &line);
+		bool		parseStartLine(const std::string &line);
+		bool    	parseHeadersBlock(const std::string &headerBlocks);
+		ParseResult	parse();
 		
-		// validation
+		ParseResult handleChunkSize(std::string &rawRequest);
+		ParseResult handleChunkData(std::string &rawRequest);
+		ParseResult handleChunkCRLF(std::string &rawRequest);
+		
+		
+		// Validation
 		bool isValidMethod() const;
 		bool isValidVersion() const;
 		bool isValidPath();
 		
-		std::string receiveRequest(int client_fd);
-		ssize_t	receive(int client_fd, std::string &buffer);
-		void log_headers();
-		void log_first_line();
-
+		// Helper
+		std::string_view	trim(std::string_view str);
+		void				log_headers();
+		void				log_first_line();
+		void				reset();
+		
+		// From String to enum 
+		Method		toMethodEnum(const std::string &methodStr);
+		Version		toVersionEnum(const std::string &versionStr);
+		
 		std::string readFile(const std::string& filePath) const;
 		std::string buildResponse();
 
-		void reset();
 
 		bool receiveReq(int client_fd);
 
-
-		std::string											rawRequest;
-		size_t 												expected_len;
-		size_t 												received_len;
-		bool 												isComplete;
-		bool 												disconnect;
-		bool 												header_received;
-		bool 												body_received;
-		std::string											header_str;
-		size_t												body_start;
+		bool disconnect;
+		
 
 	};
 

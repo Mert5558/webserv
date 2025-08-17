@@ -1,7 +1,7 @@
 #include "../inc/ServerLoop.hpp"
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
-#include "../inc/ParseHttp.hpp"
+#include "../inc/HttpRequest.hpp"
 #include "../inc/HttpResponse.hpp"
 #include "../inc/Client.hpp"
 
@@ -229,7 +229,11 @@ void ServerLoop::startServer(ParseConfig parse)
 				// 	continue;
 				// }
 
-				if (cl.request.isComplete)
+				// Parse the request after receiving data
+				ParseResult parse = cl.request.parse();
+
+				// if (cl.request.isComplete)
+				if(parse == ParseResult::COMPLETE)
 				{
 					std::cout << "\t[READ] Request complete for fd=" << pfd.fd << std::endl;
 
@@ -329,7 +333,7 @@ void ServerLoop::dumpTopology(const std::vector<InitConfig> &servers)
 	std::ostringstream oss;
 	oss << "[TOPO] ";
 
-	for (size_t i = 0; i < servers.size(); ++i)
+	for (size_t i = 0; i < servers.size(); ++i)    
 	{
 		oss << "S" << i << "(fd=" << servers[i].getFd() << ")";
 		if (i + 1 < servers.size()) oss << " | ";

@@ -2,7 +2,7 @@
 #define CLIENT_HPP
 
 #include "Webserv.hpp"
-#include "ParseHttp.hpp"
+#include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 
 enum class ClientState { IDLE, HEADERS_RECEIVED, BODY_RECEIVED, COMPLETE, ERROR };

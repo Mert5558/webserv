@@ -262,13 +262,13 @@ void HttpResponse::prepare(const HttpRequest &request, const InitConfig *server)
 	//    - Treat empty as "/"
 	std::string requestedTarget;
 
-	if (request.target.empty())
+	if (request.getPath().empty())
 	{
 		requestedTarget = "/";
 	}
 	else
 	{
-		requestedTarget = request.target;
+		requestedTarget = request.getPath();
 	}
 
 	// 3) If the target ends with a slash, serve the directory index

@@ -2,7 +2,7 @@
 
 #include "Webserv.hpp"
 #include "ParseConfig.hpp"
-#include "ParseHttp.hpp"
+#include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "Client.hpp"
 
