@@ -84,8 +84,10 @@ void ServerLoop::removeFd(std::vector<pollfd> &fds, size_t index)
 		close(fds[index].fd);
 	}
 
+	int fd = fds[index].fd;
 	fds.erase(fds.begin() + index);
-	std::cout << "Removed fd at index: " << index << std::endl;
+	std::cout << "(-) Removed fd=" << fd << " at index: " << index << std::endl;
+
 }
 // ================
 
