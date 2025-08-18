@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/18 20:36:25 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/19 00:29:27 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,8 @@ class	HttpRequest
 		size_t		getBodySize() const { return bodySize; }
 		std::string	getBodyFilePath() const;
 		std::unordered_map<std::string, std::string> getHeaders() const;
+		
+		
 		
 		// Parsing
 		bool		parseStartLine(const std::string &line);

@@ -274,7 +274,7 @@ const std::string &InitConfig::getIndex() const
 	return (index);
 }
 
-bool InitConfig::getAutoindex()
+bool InitConfig::getAutoIndex() const
 {
 	return (autoindex);
 }

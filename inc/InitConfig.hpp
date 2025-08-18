@@ -30,7 +30,7 @@ class InitConfig
 		const std::string &getRoot() const;
 		const std::string &getIndex() const;
 		int getFd() const;
-		bool getAutoindex();
+		bool getAutoIndex() const;
 		unsigned long getClientMaxBodySize();
 		const std::map<short, std::string> &getErrorPages();
 		const std::vector<Location> &getLocations();
