@@ -39,18 +39,7 @@ void ServerLoop::startServer(ParseConfig parse)
 					std::cout << std::endl;
 				}
 
-
-				bool isSocketFd = false;
-				for (size_t s = 0; s < servers.size(); ++s)
-				{
-					if (fds[i].fd == servers[s].getFd())
-					{
-						isSocketFd = true;
-						break;
-					}
-				}
-
-				if (isSocketFd)
+				if (isSocketFd(fds[i].fd, servers))
 				{
 					acceptClient(fds[i].fd);
 					std::cout << "new client connected: " << std::endl;
@@ -89,6 +78,18 @@ void ServerLoop::startServer(ParseConfig parse)
 		}
 		updateFds();
 	}
+}
+
+bool ServerLoop::isSocketFd(int client_fd, std::vector<InitConfig> &servers)
+{
+	for (size_t s = 0; s < servers.size(); ++s)
+	{
+		if (client_fd == servers[s].getFd())
+		{
+			return (true);
+		}
+	}
+	return (false);
 }
 
 void ServerLoop::acceptClient(int client_fd)

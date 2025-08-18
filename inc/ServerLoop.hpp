@@ -18,6 +18,7 @@ class ServerLoop
 
 		void initPollfd(std::vector<InitConfig> &servers);
 
+		bool	isSocketFd(int client_fd, std::vector<InitConfig> &servers);
 		void	acceptClient(int client_fd);
 		void	removeClient(int client_fd);
 		void	updateFds();
