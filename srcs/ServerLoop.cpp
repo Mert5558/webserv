@@ -52,22 +52,8 @@ void ServerLoop::startServer(ParseConfig parse)
 
 				if (isSocketFd)
 				{
-					std::cout << "we accept the new client" << std::endl;
-					struct sockaddr_in client_addr;
-					socklen_t client_len = sizeof(client_addr);
-
-					int client_fd = accept(fds[i].fd, (struct sockaddr*)&client_addr, &client_len);
-					if (client_fd < 0)
-						std::cout << "Error client_fd" << std::endl;
-
-					struct pollfd new_pollfd;
-					new_pollfd.fd = client_fd;
-					new_pollfd.events = POLLIN;
-					fds.push_back(new_pollfd);
-
-					clients[client_fd] = Client(client_fd);
-
-					std::cout << "new client connected: " << client_fd << std::endl;
+					acceptClient(fds[i].fd);
+					std::cout << "new client connected: " << std::endl;
 				}
 				else
 				{
@@ -95,27 +81,68 @@ void ServerLoop::startServer(ParseConfig parse)
 
 							std::cout << "response send to: " << fds[i].fd << std::endl;
 
-							std::cout << "fd removed: " << fds[i].fd << std::endl;
-							close(fds[i].fd);
-							fds.erase(fds.begin() + i);
-							i--;
+							removeClient(fds[i].fd);
 						}
 					}
 				}
 			}
 		}
+		updateFds();
 	}
 }
 
-void ServerLoop::removeFd(std::vector<pollfd> &fds, size_t index)
+void ServerLoop::acceptClient(int client_fd)
 {
-    if (fds[index].fd >= 0)
-    {
-        std::cout << "Closing fd: " << fds[index].fd << std::endl;
-        close(fds[index].fd);
-    }
-    fds.erase(fds.begin() + index);
-    std::cout << "Removed fd at index: " << index << std::endl;
+	struct sockaddr_in client_addr;
+	socklen_t client_len = sizeof(client_addr);
+
+	int cfd = accept(client_fd, (struct sockaddr*)&client_addr, &client_len);
+	if (cfd == 0)
+		std::cout << "Error: accept client" << std::endl;
+	
+	int flags = fcntl(cfd, F_GETFL, 0);
+	if (flags == -1)
+		std::cout << "Error: fcntl F_GETFL" << std::endl;
+	else if (fcntl(cfd, F_SETFL, flags | O_NONBLOCK) == -1)
+		std::cout << "Error: fcntl F_SETFL O_NONBLOCK" << std::endl;
+
+	clients[cfd] = Client(cfd);
+
+	struct pollfd new_pollfd;
+	new_pollfd.fd = cfd;
+	new_pollfd.events = POLLIN;
+	toAdd.push_back(new_pollfd);
+}
+
+void ServerLoop::removeClient(int client_fd)
+{
+    std::cout << "client removed: " << client_fd << std::endl;
+	toRemove.push_back(client_fd);
+	clients.erase(client_fd);
+	close(client_fd);
+}
+
+void ServerLoop::updateFds()
+{
+	for (size_t i = 0; i < toRemove.size(); i++)
+	{
+		for (size_t j = 0; j < fds.size(); j++)
+		{
+			if (fds[j].fd == toRemove[i])
+			{
+				fds.erase(fds.begin() + j);
+				break;
+			}
+		}
+	}
+
+	for (size_t x = 0; x < toAdd.size(); x++)
+	{
+		fds.push_back(toAdd[x]);
+	}
+
+	toAdd.clear();
+	toRemove.clear();
 }
 
 

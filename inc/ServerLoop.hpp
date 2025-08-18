@@ -15,16 +15,18 @@ class ServerLoop
 		~ServerLoop();
 		void startServer(ParseConfig parse);
 		void serverSetup(std::vector<InitConfig> &servers);
-		void parseHttp(std::vector<InitConfig> &servers, HttpRequest &request,  httpResponse &response);
 
 		void initPollfd(std::vector<InitConfig> &servers);
 
-
-		void	removeFd(std::vector<pollfd> &fds, size_t index);
-		bool	receiveReq(int client_fd, std::unordered_map<int, Client> &clients);
+		void	acceptClient(int client_fd);
+		void	removeClient(int client_fd);
+		void	updateFds();
 
 
 		std::vector<pollfd> fds;
 		std::unordered_map<int, Client> clients;
+
+		std::vector<pollfd> toAdd;
+		std::vector<int> toRemove;
 
 };
