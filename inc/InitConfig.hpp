@@ -24,8 +24,8 @@ class InitConfig
 		InitConfig &operator=(const InitConfig &copy);
 		~InitConfig();
 
-		uint16_t getPort();
-		const std::string &getHost();
+		uint16_t getPort() const;
+		const std::string &getHost() const;
 		const std::string &getServerName();
 		const std::string &getRoot() const;
 		const std::string &getIndex() const;

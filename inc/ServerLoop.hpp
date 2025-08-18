@@ -30,4 +30,3 @@ class ServerLoop
 		std::vector<pollfd>              fds;
 		std::unordered_map<int, Client>  clients;
 };
-

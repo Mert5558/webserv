@@ -4,7 +4,7 @@ CPPFLAGS = -Wall -Werror -Wextra -std=c++17
 NAME = webserv
 
 OBJDIR = obj
-SRC = srcs/main.cpp srcs/Location.cpp srcs/InitConfig.cpp srcs/ParseConfig.cpp srcs/ParseHttp.cpp srcs/ServerLoop.cpp srcs/HttpResponse.cpp
+SRC = srcs/main.cpp srcs/Location.cpp srcs/InitConfig.cpp srcs/ParseConfig.cpp srcs/HttpRequest.cpp srcs/ServerLoop.cpp srcs/HttpResponse.cpp
 OBJ = $(SRC:srcs/%.cpp=$(OBJDIR)/%.o)
 
 all: $(OBJDIR) $(NAME)

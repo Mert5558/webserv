@@ -249,12 +249,12 @@ void InitConfig::addLocation(Location &loc)
 	this->locations.push_back(loc);
 }
 
-uint16_t InitConfig::getPort()
+uint16_t InitConfig::getPort() const
 {
 	return (port);
 }
 
-const std::string &InitConfig::getHost()
+const std::string &InitConfig::getHost() const
 {
 	return (host);
 }
