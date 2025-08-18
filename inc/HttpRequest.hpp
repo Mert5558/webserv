@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/17 20:06:10 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/18 20:36:25 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ class	HttpRequest
 		
 
 	public:
+		// OCF
 		HttpRequest();
 		HttpRequest(const HttpRequest &copy);
 		HttpRequest &operator=(const HttpRequest &copy);
@@ -54,14 +55,14 @@ class	HttpRequest
 		void setPath(const std::string &path);
 		void setVersion(Version version);
 		void setBody(const std::string &filePath);
-		void setHeaders(const std::unordered_map<std::string, std::string> &headers);
+		// void setHeaders(const std::unordered_map<std::string, std::string> &headers);
 
 		// getter
 		std::string	getMethod() const;
 		std::string	getPath() const;
 		std::string getVersion() const;
-		size_t		getBodySize() const;
-        std::string	getBodyFilePath() const;
+		size_t		getBodySize() const { return bodySize; }
+		std::string	getBodyFilePath() const;
 		std::unordered_map<std::string, std::string> getHeaders() const;
 		
 		// Parsing

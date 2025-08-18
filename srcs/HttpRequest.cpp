@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/17 19:56:07 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/18 20:50:47 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,37 +14,6 @@
 #include "../inc/HttpRequest.hpp"
 #include "../inc/ParseConfig.hpp"
 
-// ParseConfig trimed;
-
-// HttpRequest::HttpRequest() : bodySize(0), parseState(ParseState::START_LINE)
-// {
-//     this->method = Method::INVALID;
-//     this->path = "";
-//     this->version = Version::INVALID;
-//     this->headers = {};
-// }
-
-// HttpRequest::HttpRequest(const HttpRequest &copy)
-// {
-//     method = copy.method;
-//     path = copy.path;
-//     version = copy.version;
-//     headers = copy.headers;
-// }
-
-
-HttpRequest &HttpRequest::operator=(const HttpRequest &copy)
-{
-        if (this != &copy)
-        {
-                method = copy.method;
-                path = copy.path;
-                version = copy.version;
-                headers = copy.headers;
-            }
-            return (*this);
-        }
-        
 
 HttpRequest::HttpRequest()
   : method(Method::INVALID),
@@ -58,11 +27,52 @@ HttpRequest::HttpRequest()
 
     bodyFile(),
     bodySize(0),
-    bodyFilePath()
+    bodyFilePath(),
+    disconnect(false)	
 {
   // finish init the variables
 }
 
+HttpRequest::HttpRequest(const HttpRequest &copy)
+	: method(copy.method),
+	  version(copy.version),
+	  headers(copy.headers),
+	  path(copy.path),
+	  rawRequest(copy.rawRequest),
+	  parseState(copy.parseState),
+	  parseResult(copy.parseResult),
+	  content_length(copy.content_length),
+	  chunk_remain_bytes(copy.chunk_remain_bytes),
+	  bodySize(copy.bodySize),
+	  bodyFilePath(copy.bodyFilePath),
+	  disconnect(copy.disconnect)
+{
+
+}
+
+HttpRequest &HttpRequest::operator=(const HttpRequest &copy)
+{
+    if (this != &copy)
+    {
+        method = copy.method;
+        path = copy.path;
+        version = copy.version;
+        headers = copy.headers;
+        rawRequest = copy.rawRequest;
+
+        parseState = copy.parseState;
+        parseResult = copy.parseResult;
+        content_length = copy.content_length;
+        chunk_remain_bytes = copy.chunk_remain_bytes;
+
+        bodySize = copy.bodySize;
+        bodyFilePath = copy.bodyFilePath;
+
+        disconnect = copy.disconnect;
+    }
+    return (*this);
+}
+        
 
 HttpRequest::~HttpRequest()
 {
@@ -156,7 +166,7 @@ std::string HttpRequest::getVersion() const
 
 std::string HttpRequest::getBodyFilePath() const
 {
-    return this->bodyFilePath; 
+	return this->bodyFilePath;
 }
 
 std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
@@ -203,6 +213,11 @@ bool    HttpRequest::parseHeadersBlock(const std::string &headerBlocks)
         std::string key = std::string(trim(line.substr(0, delimiterPos)));
         std::string value = std::string(trim(line.substr(delimiterPos + 1)));
 
+        for (size_t i = 0; i < key.size(); ++i)
+		{
+			key[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(key[i])));
+		}
+        
         headers[key] = value;       
     }
     return true;
@@ -332,10 +347,10 @@ ParseResult HttpRequest::parse()
 
             case ParseState::BODY:
             {
-                auto it = headers.find("content-length");
+                std::unordered_map<std::string, std::string>::const_iterator it = headers.find("content-length");
                 if (it != headers.end())
                 {
-                    size_t contentLength = std::stoi(it->second);
+                    size_t contentLength = static_cast<size_t>(std::strtoul(it->second.c_str(), NULL, 10));
                     if (rawRequest.size() < contentLength)
                         return ParseResult::INCOMPLETE;
 
@@ -343,6 +358,7 @@ ParseResult HttpRequest::parse()
                         bodyFile.write(rawRequest.data(), contentLength);
                     
                     rawRequest.erase(0, contentLength);
+                    parseState = ParseState::COMPLETE;
                     return ParseResult::COMPLETE;
                 }
                 
@@ -560,13 +576,21 @@ void    HttpRequest::reset()
     path.clear();
     version = Version::INVALID;
     headers.clear();
+    
     if (bodyFile.is_open())
     {
         bodyFile.close();
     }
+    
     parseState = ParseState::START_LINE;
+	parseResult = ParseResult::INCOMPLETE;
+	content_length = 0;
+	chunk_remain_bytes = 0;
+	bodySize = 0;
+	bodyFilePath.clear();
 
 	rawRequest.clear();
+	disconnect = false;	
 }
 
 std::string_view    HttpRequest::trim(std::string_view str)
@@ -587,6 +611,7 @@ bool    HttpRequest::receiveReq(int client_fd)
         if (bytes > 0)
         {
             rawRequest.append(buf, buf + bytes);
+            continue;
         }
         else if (bytes == 0)
         {
@@ -596,7 +621,13 @@ bool    HttpRequest::receiveReq(int client_fd)
         else
         {
             if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
                 break;
+            }
+            if (errno == EINTR)
+			{
+				continue;
+			}
             return false;
         }
     }
