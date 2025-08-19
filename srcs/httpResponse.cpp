@@ -462,31 +462,42 @@ std::string HttpResponse::buildAutoindexHtml(const std::string &webRoot,
 void HttpResponse::renderError(int code, const std::string &reason, const InitConfig *server)
 {
 	std::string page = loadConfiguredErrorPage(code, server);
-	if (!page.empty())
+
+	// --- Set status code string ---
+	switch (code)
 	{
-		statusCode = (code == 404 ? "404 Not Found" :
-					  code == 403 ? "403 Forbidden" :
-					  code == 405 ? "405 Method Not Allowed" :
-					  code == 500 ? "500 Internal Server Error" :
-					  code == 413 ? "413 Payload Too Large" :
-					  code == 400 ? "400 Bad Request" :
-									 (std::ostringstream().seekp(0), "500 Internal Server Error"));
-		contentType = "text/html; charset=iso-8859-1";
-		body = page;
-		return;
+		case 404: statusCode = "404 Not Found";
+			break;
+		case 403: statusCode = "403 Forbidden";
+			break;
+		case 405: statusCode = "405 Method Not Allowed";
+			break;
+		case 500: statusCode = "500 Internal Server Error";
+			break;
+		case 413: statusCode = "413 Payload Too Large";
+			break;
+		case 400: statusCode = "400 Bad Request";
+			break;
+		default: statusCode = "500 Internal Server Error";
+			break;
 	}
 
-	// fallback tiny HTML
-	statusCode = (code == 404 ? "404 Not Found" :
-				  code == 403 ? "403 Forbidden" :
-				  code == 405 ? "405 Method Not Allowed" :
-				  code == 500 ? "500 Internal Server Error" :
-				  code == 413 ? "413 Payload Too Large" :
-				  code == 400 ? "400 Bad Request" :
-								 "500 Internal Server Error");
+	// --- Always HTML error response ---
 	contentType = "text/html; charset=iso-8859-1";
-	body = defaultErrorBody(code, reason);
+
+	// --- Use configured page if available, else default tiny HTML ---
+	if (!page.empty())
+	{
+		body = page;
+	}
+	else
+	{
+		body = defaultErrorBody(code, reason);
+	}
+
+	// No  more headers here! They 'll be added automatically by buildResponse()
 }
+
 
 std::string HttpResponse::buildResponse() const
 {
@@ -505,7 +516,11 @@ std::string HttpResponse::buildResponse() const
 	{
 		ss << "Connection: close\r\n";
 	}
-
+	if (headers.find("Server") == headers.end())
+	{
+		ss << "Server: webserv/1.0\r\n";
+	}
+	
 	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
 	{
 		if (it->first != "Content-Type" && it->first != "Content-Length" && it->first != "Connection")
@@ -555,8 +570,7 @@ void HttpResponse::prepare(const HttpRequest &req, const InitConfig *server)
 	body.clear();
 	headers.clear();
 
-	// 1) Methods: we fully implement GET here.
-	// Others will be 405 for now (spec requires GET, POST, DELETE later). 
+	// 1) Methods:only GET for now
 	if (req.getMethod() != "GET")
 	{
 		// statusCode = "405 Method Not Allowed";
@@ -572,9 +586,7 @@ void HttpResponse::prepare(const HttpRequest &req, const InitConfig *server)
 	const std::string indexName = (server ? server->getIndex() : "index.html");
 	const bool autoIndex = (server ? server->getAutoIndex() : false);
 
-	// 3) Resolve target path safely (Beej: guard against ".." traversal). 
-	// const std::string target = req.getPath().empty() ? "/" : req.getPath();
-	
+	// 3) Resolve target path safely (Beej: guard against ".." traversal). );
 	std::string rawTarget = req.getPath().empty() ? "/" : req.getPath();
 
 	// Decode percent-encoding so %2e%2e etc. can't bypass normalization
