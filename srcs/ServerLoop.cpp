@@ -21,7 +21,7 @@ void ServerLoop::startServer(ParseConfig parse)
 
 	while (true)
 	{
-		int ready = poll(fds.data(), fds.size(), 10);
+		int ready = poll(fds.data(), fds.size(), 1000);
 		if (ready < 0)
 			std::cout << "Error poll()!" << std::endl;
 
@@ -60,17 +60,18 @@ void ServerLoop::startServer(ParseConfig parse)
 							clients[client_fd].request.parseRequestFromCompleteBuffer();
 
 							std::string responseStr = clients[client_fd].response.buildResponse(clients[client_fd].request);
-
-							int bytes_sent = send(client_fd, responseStr.c_str(), responseStr.size(), 0);
-							if (bytes_sent < 0)
+							fds[i].revents = POLLOUT;
+							if (fds[i].revents & POLLOUT)
 							{
-								perror("send");
-								break;
+								int bytes_sent = send(client_fd, responseStr.c_str(), responseStr.size(), 0);
+								if (bytes_sent < 0)
+								{
+									perror("send");
+									break;
+								}
+								std::cout << "response send to: " << fds[i].fd << std::endl;
+								removeClient(fds[i].fd);
 							}
-
-							std::cout << "response send to: " << fds[i].fd << std::endl;
-
-							removeClient(fds[i].fd);
 						}
 					}
 				}
