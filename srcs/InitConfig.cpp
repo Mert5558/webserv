@@ -235,7 +235,16 @@ bool InitConfig::setErrorPage(const std::string &errorpage)
 	if (!isValidErrorCode(code))
 		return (false);
 	if (!path.empty())
-		this->error_pages[code] = path;
+	{
+		std::string full_path;
+		if (!this->root.empty() && this->root.back() == '/' && path.front() == '/')
+			full_path = this->root + path.substr(1);
+		else if (!this->root.empty() && this->root.back() != '/' && path.front() != '/')
+			full_path = this->root + "/" + path;
+		else
+			full_path = this->root + path;
+		this->error_pages[code] = full_path;
+	}
 	return (true);
 }
 
