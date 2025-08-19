@@ -284,7 +284,7 @@ unsigned long InitConfig::getClientMaxBodySize()
 	return (client_max_body_size);
 }
 
-const std::map<short, std::string> &InitConfig::getErrorPages()
+const std::map<short, std::string> &InitConfig::getErrorPages() const
 {
 	return (error_pages);
 }

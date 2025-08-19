@@ -5,22 +5,24 @@
 #include <string>
 #include <map>
 #include "InitConfig.hpp"
-
 #include <string>
 #include <map>
-#include <sstream>
-#include <fstream>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <filesystem>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <vector>
+
+
 
 
 class HttpResponse
 {
 private:
 	// Classic fields (as you already had)
-	std::string								statusCode;     // e.g. "200 OK"
-	std::string								contentType;    // e.g. "text/html"
+	std::string								statusCode;
+	std::string								contentType;
 	std::string								body;           // response body
 	std::map<std::string, std::string>		headers;        // extra headers
 
@@ -38,23 +40,31 @@ private:
 	static bool			isUnderRootAbs(const std::string &absPath, const std::string &absRoot);
 	static std::string	percentDecode(const std::string &in);
 
+	// Error pages handling
+	static std::string	loadConfiguredErrorPage(int code, const InitConfig *server);
+	// Autoindex HTML generation
+	static std::string	buildAutoindexHtml(const std::string &webRoot,
+		const std::string &absDir,
+		const std::string &requestPath);
+	// Render error response
+	void				renderError(int code, const std::string &reason, const InitConfig *server);
 
 public:
 	//========== OCF ==========
 	HttpResponse();
 	~HttpResponse();
 
-	// Your existing builder
+	// Builder of raw HTTP response
 	std::string			buildResponse() const;
-
-	// *** DO NOT CHANGE THIS SIGNATURE ***
+	
+	// Prepare response based on the request and server configuration
 	void				prepare(const HttpRequest &req, const InitConfig *server);
 
-	// Optional setters (if you use them elsewhere)
-	void				setStatusCode(const std::string &sc) { statusCode = sc; }
-	void				setContentType(const std::string &ct) { contentType = ct; }
-	void				setBody(const std::string &b) { body = b; }
-	void				addHeader(const std::string &k, const std::string &v) { headers[k] = v; }
+	// Setters
+	void				setStatusCode(const std::string &sc);
+	void				setContentType(const std::string &ct);
+	void				setBody(const std::string &b) ;
+	void				addHeader(const std::string &k, const std::string &v) ;
 };
 
 #endif
