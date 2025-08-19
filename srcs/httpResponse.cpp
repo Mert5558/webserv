@@ -2,6 +2,11 @@
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
+#include <limits.h>		// PATH_MAX
+#include <unistd.h>		// getcwd, realpath
+#include <sys/stat.h>	// stat
+#include <cstring>		// std::strncmp, std::strlen
+#include <cstdlib>		// realpath decl on some libcs
 
 // ========== Constructor / Destructor ==========
 
@@ -215,31 +220,96 @@ std::string HttpResponse::makeAbsolute(const std::string &path)
 	return base + path;
 }
 
+// Check if the absolute path is under the root directory -- Safety Handle
 bool HttpResponse::isUnderRootAbs(const std::string &absPath, const std::string &absRoot)
 {
 	if (absRoot.empty())
 	{
 		return false;
 	}
-	std::string root = absRoot;
-	if (root.size() > 1 && root[root.size() - 1] == '/')
-	{
-		root.erase(root.size() - 1);
-	}
-	if (absPath.size() < root.size())
+
+	// 1) Canonicalize the root (must exist)
+	char rootReal[PATH_MAX];
+	if (!realpath(absRoot.c_str(), rootReal))
 	{
 		return false;
 	}
-	if (absPath.compare(0, root.size(), root) != 0)
+
+	// 2) If target exists, canonicalize it and do a safe prefix+boundary check
+	struct stat st;
+	if (stat(absPath.c_str(), &st) == 0)
 	{
-		return false;
+		char pathReal[PATH_MAX];
+		if (!realpath(absPath.c_str(), pathReal))
+		{
+			return false;
+		}
+
+		size_t n = std::strlen(rootReal);
+		if (std::strncmp(pathReal, rootReal, n) != 0)
+		{
+			return false;
+		}
+		return pathReal[n] == '\0' || pathReal[n] == '/';
 	}
-	if (absPath.size() == root.size())
+
+	// 3) Target does NOT exist:
+	//    If absPath was built from the SAME absRoot (string) you computed in prepare(),
+	//    then absPath should begin with absRoot (including any "./"). In that case,
+	//    it's lexically inside the root -> let caller return 404.
 	{
-		return true;
+		const size_t nAbsRoot = absRoot.size();
+		if (absPath.size() >= nAbsRoot &&
+			std::strncmp(absPath.c_str(), absRoot.c_str(), nAbsRoot) == 0 &&
+			(absPath.size() == nAbsRoot || absPath[nAbsRoot] == '/'))
+		{
+			// Quick sanity—joinUnderRoot already stripped "..", but keep this anyway:
+			if (absPath.find("..") != std::string::npos)
+			{
+				return false;
+			}
+			return true; // inside root lexically -> let higher layer decide 404
+		}
 	}
-	return absPath[root.size()] == '/';
+
+	// 4) Fallback: find deepest existing ancestor and ensure THAT is under root
+	std::string cur = absPath;
+	while (!cur.empty())
+	{
+		struct stat st2;
+		if (stat(cur.c_str(), &st2) == 0 && S_ISDIR(st2.st_mode))
+		{
+			char parentReal[PATH_MAX];
+			if (!realpath(cur.c_str(), parentReal))
+			{
+				return false;
+			}
+			size_t n = std::strlen(rootReal);
+			if (std::strncmp(parentReal, rootReal, n) != 0)
+			{
+				return false;
+			}
+			return parentReal[n] == '\0' || parentReal[n] == '/';
+		}
+
+		size_t pos = cur.rfind('/');
+		if (pos == std::string::npos)
+		{
+			break;
+		}
+		if (pos == 0)
+		{
+			cur = "/";
+			break;
+		}
+		cur.erase(pos);
+	}
+
+	// If we have no existing ancestor to anchor, be conservative:
+	return false;
 }
+
+
 
 // ========== Public API ==========
 
@@ -275,6 +345,41 @@ std::string HttpResponse::buildResponse() const
 	return ss.str();
 }
 
+
+// 
+std::string HttpResponse::percentDecode(const std::string &in)
+{
+	std::string out;
+	out.reserve(in.size());
+
+	for (size_t i = 0; i < in.size(); ++i)
+	{
+		unsigned char c = static_cast<unsigned char>(in[i]);
+
+		if (c == '%' && i + 2 < in.size())
+		{
+			unsigned char c1 = static_cast<unsigned char>(in[i + 1]);
+			unsigned char c2 = static_cast<unsigned char>(in[i + 2]);
+
+			if (std::isxdigit(c1) && std::isxdigit(c2))
+			{
+				int hi = std::isdigit(c1) ? (c1 - '0') : (std::tolower(c1) - 'a' + 10);
+				int lo = std::isdigit(c2) ? (c2 - '0') : (std::tolower(c2) - 'a' + 10);
+				out.push_back(static_cast<char>((hi << 4) | lo));
+				i += 2;
+				continue;
+			}
+		}
+		out.push_back(static_cast<char>(c));
+	}
+	return out;
+}
+
+
+
+
+
+
 // *** DO NOT CHANGE THIS SIGNATURE ***
 void HttpResponse::prepare(const HttpRequest &req, const InitConfig *server)
 {
@@ -301,15 +406,31 @@ void HttpResponse::prepare(const HttpRequest &req, const InitConfig *server)
 	const bool autoIndex = (server ? server->getAutoIndex() : false);
 
 	// 3) Resolve target path safely (Beej: guard against ".." traversal). 
-	const std::string target = req.getPath().empty() ? "/" : req.getPath();
-	std::string full = joinUnderRoot(serverRoot, target);
+	// const std::string target = req.getPath().empty() ? "/" : req.getPath();
+	
+	std::string rawTarget = req.getPath().empty() ? "/" : req.getPath();
+
+	// Decode percent-encoding so %2e%2e etc. can't bypass normalization
+	std::string decodedTarget = percentDecode(rawTarget);
+
+	// std::string full = joinUnderRoot(serverRoot, target);
+	std::string full = joinUnderRoot(serverRoot, decodedTarget);
+
 
 	const std::string absRoot = makeAbsolute(serverRoot);
 	const std::string absPath = makeAbsolute(full);
 
+	// std::cout << "--------------> " << isUnderRootAbs(absPath, absRoot) << std::endl;
+	std::cout << "[DBG] absRoot=" << absRoot << "\n";
+	std::cout << "[DBG] absPath=" << absPath << "\n";
+
 	if (!isUnderRootAbs(absPath, absRoot))
 	{
+		// std::cout << "----------------------------------------> " << std::endl;
 		statusCode = "403 Forbidden";
+
+		std::cout << "Forbidden access to: " << absPath << std::endl;
+
 		contentType = "text/html; charset=iso-8859-1";
 		body = defaultErrorBody(403, "Forbidden");
 		return;
@@ -384,3 +505,4 @@ void HttpResponse::prepare(const HttpRequest &req, const InitConfig *server)
 	contentType = "text/html; charset=iso-8859-1";
 	body = defaultErrorBody(404, "Not Found");
 }
+

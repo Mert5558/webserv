@@ -12,6 +12,8 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <filesystem>
+
 
 class HttpResponse
 {
@@ -30,10 +32,12 @@ private:
 	static bool			fileExists(const std::string &path);
 	static std::string	defaultErrorBody(int code, const std::string &message);
 
-	// Safe path joining (prefer your own safeJoin() if present)
+	// Safe path joining
 	static std::string	joinUnderRoot(const std::string &root, const std::string &target);
 	static std::string	makeAbsolute(const std::string &path);
 	static bool			isUnderRootAbs(const std::string &absPath, const std::string &absRoot);
+	static std::string	percentDecode(const std::string &in);
+
 
 public:
 	//========== OCF ==========
