@@ -651,10 +651,11 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		renderError(404, "Not Found", server);
 		return;
 	}
-
+	std::cout << "----------------------------------------> " << req.getMethod() << std::endl;
 	// ============== DELETE ===================
 	if (req.getMethod() == "DELETE")
 	{
+		std::cout << "--------------------------> HELLLLLLLo" << std::endl;
 		off_t sizeTmp = 0;
 		if (!isRegular(absPath, sizeTmp))
 		{
@@ -666,7 +667,44 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 			}
 			renderError(404, "Not Found", server);
 		}
+
+		if (::unlink(absPath.c_str()) == !0)
+		{
+			switch (errno)
+			{
+				case EACCES:
+				case EPERM:
+					renderError(403, "Forbidden", server);
+					break;
+				case ENOENT:
+					renderError(404, "Not Found", server);
+					break;
+				case ENOTDIR:
+					renderError(404, "Not Found", server);
+					break;
+				case EISDIR:
+					renderError(403, "Forbidden", server); // do not allow dlt directory
+					break;
+				case EBUSY:
+				case ETXTBSY:
+				case EROFS:
+					renderError(409, "Conflict", server);
+					break;
+				default:
+					renderError(500, "Internal Server Error", server);
+					return;
+			}
+		}
+
+		statusCode = "200 OK";
+		contentType = "text/plain; charset=iso-8859-1";
+		body = "Deleted\n";
+		return;
 	}
+
+	
+
+
 
 	// ============== INVALID ===================
 	if (req.getMethod() != "GET")
