@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/08/19 19:29:26 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/20 11:22:38 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,9 +20,9 @@ void	testCgi()
 {
 	std::map<std::string,std::string> env;
     env["REQUEST_METHOD"] = "GET";
-    env["SCRIPT_FILENAME"] = "/Users/kkaratsi/Desktop/mak_branch/www/cgi_script.py";
+    env["SCRIPT_FILENAME"] = "/Users/kkaratsi/Desktop/mak_branch/www/cgi-bin/script.py";
 
-    Cgi cgi("/Users/kkaratsi/Desktop/mak_branch/www/cgi_script.py", env);
+    Cgi cgi("/Users/kkaratsi/Desktop/mak_branch/www/cgi-bin/script.py", env);
 
     try
 	{
