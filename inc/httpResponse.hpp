@@ -58,7 +58,7 @@ public:
 	std::string			buildResponse() const;
 	
 	// Prepare response based on the request and server configuration
-	void				prepare(const HttpRequest &req, const InitConfig *server);
+	void				prepare(const HttpRequest &req, InitConfig *server);
 
 	// Setters
 	void				setStatusCode(const std::string &sc);
