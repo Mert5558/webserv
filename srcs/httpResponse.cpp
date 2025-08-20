@@ -301,8 +301,6 @@ bool HttpResponse::isUnderRootAbs(const std::string &absPath, const std::string 
 }
 
 
-
-
 std::string HttpResponse::loadConfiguredErrorPage(int code, const InitConfig *server)
 {
 	// server->getErrorPagePath(code)
@@ -360,12 +358,23 @@ static std::string escapeHtml(const std::string &s)
 	{
 		switch (s[i])
 		{
-			case '&': out += "&amp;"; break;
-			case '<': out += "&lt;"; break;
-			case '>': out += "&gt;"; break;
-			case '"': out += "&quot;"; break;
-			case '\'': out += "&#39;"; break;
-			default: out += s[i];
+			case '&':
+				out += "&amp;";
+				break;
+			case '<':
+				out += "&lt;";
+				break;
+			case '>':
+				out += "&gt;";
+				break;
+			case '"':
+				out += "&quot;";
+				break;
+			case '\'':
+				out += "&#39;";
+				break;
+			default:
+				out += s[i];
 		}
 	}
 	return out;
@@ -398,7 +407,7 @@ std::string HttpResponse::buildAutoindexHtml(const std::string &webRoot,
 		baseHref += "/";
 	}
 
-	// Optional: parent directory link if we’re not at root
+	// Parent directory link if we’re not at root
 	if (absDir != makeAbsolute(webRoot))
 	{
 		// Compute parent URL by stripping one segment
@@ -418,6 +427,7 @@ std::string HttpResponse::buildAutoindexHtml(const std::string &webRoot,
 		}
 		html << "<a href=\"" << escapeHtml(parent) << "\">../</a>\n";
 	}
+	// (void)webRoot; // Unused in this function, but kept for consistency
 
 	struct dirent *ent;
 	std::vector<std::string> names;
@@ -429,7 +439,7 @@ std::string HttpResponse::buildAutoindexHtml(const std::string &webRoot,
 		{
 			continue;
 		}
-		// include ".." only if it resolves under root (guarded by parent link above)
+		// include ".." only if it resolves under root
 		if (name == "..")
 		{
 			continue;
@@ -586,7 +596,7 @@ void HttpResponse::prepare(const HttpRequest &req, const InitConfig *server)
 	const std::string indexName = (server ? server->getIndex() : "index.html");
 	const bool autoIndex = (server ? server->getAutoIndex() : false);
 
-	// 3) Resolve target path safely (Beej: guard against ".." traversal). );
+	// 3) Resolve target path safely (guard against ".."traversal)
 	std::string rawTarget = req.getPath().empty() ? "/" : req.getPath();
 
 	// Decode percent-encoding so %2e%2e etc. can't bypass normalization
