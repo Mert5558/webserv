@@ -590,24 +590,17 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	contentType = "text/plain";
 	body.clear();
 	headers.clear();
+	
+	// Server root / index / autoindex from config
 
-	// 1) Methods:only GET for now
-	if (req.getMethod() != "GET")
-	{
-		// statusCode = "405 Method Not Allowed";
-		// contentType = "text/html; charset=iso-8859-1";
-		// body = defaultErrorBody(405, "Method Not Allowed");
-		headers["Allow"] = "GET, POST, DELETE";
-		renderError(405, "Method Not Allowed", server);
-		return;
-	}
-
-	// 2) Server root / index / autoindex from config
+	//Find location for request path
 	Location *loc = server->findLocationForPath(req.getPath());
+
 	std::string serverRoot;
 	std::string indexName;
 	bool autoIndex;
 
+	// If location is found, use its settings; otherwise use server defaults
 	if (loc)
 	{
 		std::cout << "------indise loccccc-----" << std::endl;
@@ -622,10 +615,10 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		autoIndex = server->getAutoIndex();
 	}
 
-	// 3) Resolve target path safely (Beej: guard against ".." traversal). 
-	// const std::string target = req.getPath().empty() ? "/" : req.getPath();
+	// Location path for relative target resolution
 	std::string locationPath = loc ? loc->getPath() : "";
-
+	
+	// Resolve target path safely 
 	std::string rawTarget = req.getPath().empty() ? "/" : req.getPath();
 
 	// Decode percent-encoding so %2e%2e etc. can't bypass normalization
@@ -641,7 +634,6 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	// std::string full = joinUnderRoot(serverRoot, target);
 	std::string full = joinUnderRoot(serverRoot, decodedTarget);
 
-
 	const std::string absRoot = makeAbsolute(serverRoot);
 	const std::string absPath = makeAbsolute(full);
 
@@ -653,15 +645,41 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	{
 		// std::cout << "----------------------------------------> " << std::endl;
 		// statusCode = "403 Forbidden";
-
 		// std::cout << "Forbidden access to: " << absPath << std::endl;
-
 		// contentType = "text/html; charset=iso-8859-1";
 		// body = defaultErrorBody(403, "Forbidden");
-		renderError(404, "Not Found", server); // optionally we could use renderError here
+		renderError(404, "Not Found", server);
 		return;
 	}
 
+	// ============== DELETE ===================
+	if (req.getMethod() == "DELETE")
+	{
+		off_t sizeTmp = 0;
+		if (!isRegular(absPath, sizeTmp))
+		{
+			// if is directory or if not found
+			if (isDirectory(absPath))
+			{
+				renderError(403, "Forbidden", server); // do not allow dlt directory
+				return;
+			}
+			renderError(404, "Not Found", server);
+		}
+	}
+
+	// ============== INVALID ===================
+	if (req.getMethod() != "GET")
+	{
+		// statusCode = "405 Method Not Allowed";
+		// contentType = "text/html; charset=iso-8859-1";
+		// body = defaultErrorBody(405, "Method Not Allowed");
+		headers["Allow"] = "GET, POST, DELETE";
+		renderError(405, "Method Not Allowed", server);
+		return;
+	}
+
+	// ============== GET ===================
 	// 4) If directory, try index.html (or configured index). If still a dir:
 	//    - autoindex off -> 403 (we'll add actual listing later)
 	//    - autoindex on  -> minimal 200 placeholder for now
