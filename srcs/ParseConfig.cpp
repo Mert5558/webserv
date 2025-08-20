@@ -384,8 +384,8 @@ void ParseConfig::validatePaths()				// change name
 			std::string loc_root = loc.getRoot().empty() ? config.getRoot() : loc.getRoot();
 			std::string loc_index = loc_root + "/" + loc.getIndex();
 
-			if (!pathExistsAndReadable(loc_index))
-				throw ConfigError("Location indexx file missing or not readable" + loc_index);
+			// if (!pathExistsAndReadable(loc_index))
+			// 	throw ConfigError("Location indexx file missing or not readable: " + loc_index);
 			
 			if (!loc.getAlias().empty() && !pathExistsAndReadable(loc.getAlias()))
 				throw ConfigError("Alias is not readable " + loc.getAlias());
