@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/18 20:50:47 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/20 17:31:00 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,19 +103,36 @@ void HttpRequest::setVersion(Version version)
 	this->version = version;
 }
 
-void HttpRequest::setBody(const std::string &filePath)
-{
-	if(this->bodyFile.is_open())
-        this->bodyFile.close();
+// void HttpRequest::setBody(const std::string &filePath)
+// {
+// 	if(this->bodyFile.is_open())
+//         this->bodyFile.close();
 
-    this->bodyFile.open(filePath, std::ios::out | std::ios::trunc);
-    if (!bodyFile.is_open())
+//     this->bodyFile.open(filePath, std::ios::out | std::ios::trunc);
+//     if (!bodyFile.is_open())
+//     {
+//         throw std::runtime_error("Failed to open file: " + filePath);
+//     }
+//     this->bodyFilePath = filePath;
+
+//     std::cout << "Body file set to: " << filePath << std::endl;
+// }
+
+void    HttpRequest::setBody(const std::string &filePath)
+{
+    if (bodyFile.is_open())
+        return;
+
+    bodyFile.open(filePath.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
+    if(!bodyFile.is_open())
     {
+        std::cerr << "Failed to open body file: " << filePath
+                    << " (errno=" << errno << " : " << std::strerror(errno) << ")\n";
         throw std::runtime_error("Failed to open file: " + filePath);
     }
-    this->bodyFilePath = filePath;
-
+    bodyFilePath = filePath;
     std::cout << "Body file set to: " << filePath << std::endl;
+    
 }
 
 // void HttpRequest::setHeaders(const std::unordered_map<std::string, std::string> &headers)
@@ -339,6 +356,27 @@ ParseResult HttpRequest::parse()
                 }
                 if (method == Method::POST)
                 {
+                    bool chunked = false;
+                    std::unordered_map<std::string,std::string>::const_iterator te = headers.find("transfer-encoding");
+                    if (te != headers.end() && te->second.find("chunked") != std::string::npos)
+                        chunked = true;
+
+                    if (!bodyFile.is_open())
+                        setBody("./http_request_body.txt");
+
+                    if (chunked)
+                    {
+                        parseState = ParseState::CHUNK_SIZE;
+                        return handleChunkSize(rawRequest); // may still be INCOMPLETE
+                    }
+
+                    if (headers.find("content-length") == headers.end())
+                    {
+                        std::cerr << "POST without Content-Length or chunked\n";
+                        parseState = ParseState::ERROR;
+                        return ParseResult::ERROR;
+                    }
+                    
                     parseState = ParseState::BODY;
                     std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
                 }
@@ -355,7 +393,16 @@ ParseResult HttpRequest::parse()
                         return ParseResult::INCOMPLETE;
 
                     if (bodyFile.is_open())
-                        bodyFile.write(rawRequest.data(), contentLength);
+                    {
+                        bodyFile.write(rawRequest.data(), contentLength); 
+                        bodyFile.flush();
+                        if (!bodyFile)
+                        {
+                            std::cerr << "Body write failed\n";
+                            parseState = ParseState::ERROR;
+                            return ParseResult::ERROR;
+                        } 
+                    }
                     
                     rawRequest.erase(0, contentLength);
                     parseState = ParseState::COMPLETE;

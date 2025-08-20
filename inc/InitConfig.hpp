@@ -33,7 +33,7 @@ class InitConfig
 		bool getAutoIndex() const;
 		unsigned long getClientMaxBodySize();
 		const std::map<short, std::string> &getErrorPages() const;
-		const std::vector<Location> &getLocations();
+		const std::vector<Location> &getLocations() const;
 
 
 		void setPort(const std::string &port);

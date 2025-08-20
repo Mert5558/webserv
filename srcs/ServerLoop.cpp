@@ -4,6 +4,8 @@
 #include "../inc/HttpRequest.hpp"
 #include "../inc/HttpResponse.hpp"
 #include "../inc/Client.hpp"
+#include "../inc/InitConfig.hpp"
+#include "../inc/Cgi.hpp"
 
 #include <cerrno>     // for errno
 #include <signal.h>   // for signal(SIGPIPE, SIG_IGN)
@@ -89,11 +91,121 @@ void ServerLoop::removeFd(std::vector<pollfd> &fds, size_t index)
 }
 
 // Build HTTP response based on request and server config
+// void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
+// {
+// 	InitConfig *srv = servers.empty() ? NULL : &servers[0];
+// 	response.prepare(request, srv);
+// }
+
+
+
+static const Location* findLocation(const InitConfig &srv, const std::string &reqPath)
+{
+	const std::vector<Location> &locs = srv.getLocations(); // assumes this exists
+    const Location *best = NULL;
+    size_t bestLen = 0;
+    for (size_t i = 0; i < locs.size(); ++i)
+	{
+        const std::string &lp = locs[i].getPath();
+        if (!lp.empty() && reqPath.rfind(lp, 0) == 0) { // prefix
+            if (lp.size() > bestLen)
+			{
+                best = &locs[i];
+                bestLen = lp.size();
+            }
+        }
+    }
+    return best;
+}
+
+
 void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
 {
-	InitConfig *srv = servers.empty() ? NULL : &servers[0];
-	response.prepare(request, srv);
+    InitConfig *srv = servers.empty() ? NULL : &servers[0];
+    if (!srv) {
+        response.prepare(request, NULL);
+        return;
+    }
+
+    const std::string reqPath = request.getPath();
+    const Location *loc = findLocation(*srv, reqPath);
+
+    bool isCgi = false;
+    const Location *cgiLoc = NULL;
+    std::string scriptFsPath;
+
+    if (loc) {
+        // Check extension against configured CGI extensions
+        const std::vector<std::string> &exts = loc->getCgiExt();
+        if (!exts.empty())
+		{
+            size_t dot = reqPath.rfind('.');
+            if (dot != std::string::npos)
+			{
+                std::string ext = reqPath.substr(dot);
+                for (size_t i = 0; i < exts.size(); ++i)
+				{
+                    if (exts[i] == ext)
+					{
+                        isCgi = true;
+                        cgiLoc = loc;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (isCgi && cgiLoc)
+	{
+        try {
+            // Build filesystem path: root + remainder after location prefix
+            std::string locPrefix = cgiLoc->getPath();          // e.g. "/cgi-bin"
+            std::string rel = reqPath.substr(locPrefix.size()); // may be "/script.py"
+            if (!rel.empty() && rel[0] == '/')
+                rel.erase(0,1);
+            scriptFsPath = cgiLoc->getRoot();
+            if (!scriptFsPath.empty() && scriptFsPath.back() != '/')
+                scriptFsPath += '/';
+            scriptFsPath += rel;
+
+            // Prepare environment
+            Location locCopy = *cgiLoc; // buildEnv wants non-const ref
+            Client dummyClient;         // if you later store real client info, pass it
+            std::map<std::string,std::string> env = Cgi::buildEnv(request, locCopy, dummyClient, scriptFsPath);
+
+            Cgi cgi(scriptFsPath, env);
+            auto res = cgi.execute("", locCopy);
+            if (res.first == CgiStatus::SUCCESS)
+			{
+                // If CGI output already contains headers (e.g. "Content-Type: ...\r\n\r\n")
+                // you could parse them. For now wrap as plain text.
+                // response.clear(); // ensure a clean slate (implement if needed)
+                response.setStatusCode("OK");        // adapt to your HttpResponse API
+                response.addHeader("Content-Type", "text/plain");
+                response.setBody(res.second);
+                return;
+            }
+			else
+			{
+				std::cerr << "ERROR 500" << std::endl;
+                // response.prepareError(500); // adapt to your API
+                return;
+            }
+        } catch (const std::exception &e)
+		{
+			std::cerr << "ERROR 500" << std::endl;
+            // response.prepareError(500); // log e.what() if desired
+            return;
+        }
+    }
+
+    // Fallback: normal static handling
+    response.prepare(request, srv);
 }
+
+
+
 
 // Debug: dump current server and client state
 void ServerLoop::dumpTopology(const std::vector<InitConfig> &servers)

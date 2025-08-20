@@ -289,7 +289,7 @@ const std::map<short, std::string> &InitConfig::getErrorPages() const
 	return (error_pages);
 }
 
-const std::vector<Location> &InitConfig::getLocations()
+const std::vector<Location> &InitConfig::getLocations() const
 {
 	return (locations);
 }

@@ -23,7 +23,7 @@ std::vector<char *> Cgi::makeEnv() const
 	return envp;
 }
 
-std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData)
+std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData, Location &loc)
 {
 	int inputPipe[2], outputPipe[2];
 	if(pipe(inputPipe) == -1 || pipe(outputPipe) == -1)
@@ -41,8 +41,12 @@ std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData)
 		close(outputPipe[0]);
 
 		auto envp =	makeEnv();
-        char *argv[] = { const_cast<char*>(scriptPath.c_str()), nullptr };
-        execve(scriptPath.c_str(), argv, envp.data());
+        // char *argv[] = { const_cast<char*>(scriptPath.c_str()), nullptr };
+        // execve(scriptPath.c_str(), argv, envp.data());
+
+		std::string interpreter = findExtension(scriptPath, loc.getCgiExt(), loc.getCgiPath());
+		char *argv[] = { const_cast<char*>(interpreter.c_str()), const_cast<char*>(scriptPath.c_str()), nullptr };
+		execve(interpreter.c_str(), argv, envp.data());
 
 		for (char *p : envp) if (p) free(p);
         exit(EXIT_FAILURE);
@@ -114,4 +118,20 @@ std::map<std::string,std::string> Cgi::buildEnv(const HttpRequest &req, Location
             env["CONTENT_TYPE"] = it->second;
 
     return env;
+}
+
+std::string	Cgi::findExtension(const std::string &scriptPath,const std::vector<std::string> &cgi_ext,const std::vector<std::string> &cgi_path)
+{
+	size_t dot = scriptPath.rfind('.');
+	if (dot == std::string::npos)
+		throw std::runtime_error("Script has no extension");
+
+	std::string ext = scriptPath.substr(dot);
+
+	for(size_t i = 0; i < cgi_ext.size(); ++i)
+	{
+		if (cgi_ext[i] == ext && i < cgi_ext.size())
+			return cgi_path[i];
+	}
+	throw std::runtime_error("No interpreter found for extension: " + ext);
 }

@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/08/20 11:22:38 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/20 17:16:52 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,12 +21,17 @@ void	testCgi()
 	std::map<std::string,std::string> env;
     env["REQUEST_METHOD"] = "GET";
     env["SCRIPT_FILENAME"] = "/Users/kkaratsi/Desktop/mak_branch/www/cgi-bin/script.py";
+	env["CONTENT_TYPE"] = "text/html";
 
     Cgi cgi("/Users/kkaratsi/Desktop/mak_branch/www/cgi-bin/script.py", env);
 
     try
 	{
-        auto [status, output] = cgi.execute("");
+		Location loc;
+		loc.setCgiPath("/usr/bin/python3 /bin/bash");
+        loc.setCgiExt(".py .sh");
+		
+		auto [status, output] = cgi.execute("", loc);
         if (status == CgiStatus::SUCCESS)
             std::cout << "CGI output:\n" << output << std::endl;
         else
@@ -40,7 +45,7 @@ void	testCgi()
 
 int main(int argc, char **argv)
 {
-	testCgi();
+	// testCgi();
 	
 	if (argc == 1 || argc == 2)
 	{
