@@ -1,4 +1,5 @@
 #include "../inc/HttpResponse.hpp"
+#include "../inc/Location.hpp"
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
@@ -198,6 +199,16 @@ std::string HttpResponse::makeAbsolute(const std::string &path)
 	if (!path.empty() && path[0] == '/')
 	{
 		return path;
+	}
+	if (!path.empty() && (path[0] == '.' || path.substr(0, 2) == "./"))
+	{
+		char buf[4096];
+		if (::getcwd(buf, sizeof(buf)) == NULL)
+			return (path);
+		std::string base(buf);
+		if (!base.empty() && base[base.size() -1] != '/')
+			base += "/";
+		return (base + path);
 	}
 	char buf[4096];
 	if (::getcwd(buf, sizeof(buf)) == NULL)
@@ -572,7 +583,7 @@ std::string HttpResponse::percentDecode(const std::string &in)
 	return out;
 }
 
-void HttpResponse::prepare(const HttpRequest &req, const InitConfig *server)
+void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 {
 	// Reset minimal defaults for each response
 	statusCode = "200 OK";
@@ -592,15 +603,40 @@ void HttpResponse::prepare(const HttpRequest &req, const InitConfig *server)
 	}
 
 	// 2) Server root / index / autoindex from config
-	const std::string serverRoot = (server ? server->getRoot() : ".");
-	const std::string indexName = (server ? server->getIndex() : "index.html");
-	const bool autoIndex = (server ? server->getAutoIndex() : false);
+	Location *loc = server->findLocationForPath(req.getPath());
+	std::string serverRoot;
+	std::string indexName;
+	bool autoIndex;
 
-	// 3) Resolve target path safely (guard against ".."traversal)
+	if (loc)
+	{
+		std::cout << "------indise loccccc-----" << std::endl;
+		serverRoot = loc->getRoot();
+		indexName = loc->getIndex();
+		autoIndex = loc->getAutoindex();
+	}
+	else
+	{
+		serverRoot = server->getRoot();
+		indexName = server->getIndex();
+		autoIndex = server->getAutoIndex();
+	}
+
+	// 3) Resolve target path safely (Beej: guard against ".." traversal). 
+	// const std::string target = req.getPath().empty() ? "/" : req.getPath();
+	std::string locationPath = loc ? loc->getPath() : "";
+
 	std::string rawTarget = req.getPath().empty() ? "/" : req.getPath();
 
 	// Decode percent-encoding so %2e%2e etc. can't bypass normalization
 	std::string decodedTarget = percentDecode(rawTarget);
+
+	if (!locationPath.empty() && decodedTarget.find(locationPath) == 0)
+	{
+		decodedTarget = decodedTarget.substr(locationPath.length());
+			if (decodedTarget.empty())
+			decodedTarget = "/";
+	}
 
 	// std::string full = joinUnderRoot(serverRoot, target);
 	std::string full = joinUnderRoot(serverRoot, decodedTarget);
@@ -631,29 +667,33 @@ void HttpResponse::prepare(const HttpRequest &req, const InitConfig *server)
 	//    - autoindex on  -> minimal 200 placeholder for now
 	if (isDirectory(absPath))
 	{
-		std::string withIndex = absPath;
-		if (withIndex.size() == 0 || withIndex[withIndex.size() - 1] != '/')
+		std::cout << indexName << "-------------------------" << std::endl;
+		if (!indexName.empty())
 		{
-			withIndex += "/";
-		}
-		withIndex += indexName;
-
-		off_t idxSz = 0;
-		if (isRegular(withIndex, idxSz))
-		{
-			std::string data = slurpFile(withIndex);
-			if (data.empty() && idxSz > 0)
+			std::string withIndex = absPath;
+			if (withIndex.size() == 0 || withIndex[withIndex.size() - 1] != '/')
 			{
-				// statusCode = "500 Internal Server Error";
-				// contentType = "text/html; charset=iso-8859-1";
-				// body = defaultErrorBody(500, "Internal Server Error");
-				renderError(500, "Internal Server Error", server);
+				withIndex += "/";
+			}
+			withIndex += indexName;
+	
+			off_t idxSz = 0;
+			if (isRegular(withIndex, idxSz))
+			{
+				std::string data = slurpFile(withIndex);
+				if (data.empty() && idxSz > 0)
+				{
+					// statusCode = "500 Internal Server Error";
+					// contentType = "text/html; charset=iso-8859-1";
+					// body = defaultErrorBody(500, "Internal Server Error");
+					renderError(500, "Internal Server Error", server);
+					return;
+				}
+				statusCode = "200 OK";
+				contentType = guessType(withIndex);
+				body = data;
 				return;
 			}
-			statusCode = "200 OK";
-			contentType = guessType(withIndex);
-			body = data;
-			return;
 		}
 
 		if (!autoIndex)
