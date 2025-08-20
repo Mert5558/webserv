@@ -359,9 +359,9 @@ void ParseConfig::validatePaths()				// change name
 		if (!pathExistsAndReadable(config.getRoot()))
 			throw ConfigError("Root path does not exist or is not readable!" + config.getRoot());
 		
-		std::string index_path = config.getRoot() + "/" + config.getIndex();
-		if (!pathExistsAndReadable(index_path))
-			throw ConfigError("Error: index does not exist or is not readable!" + index_path);
+		// std::string index_path = config.getRoot() + "/" + config.getIndex();
+		// if (!pathExistsAndReadable(index_path))
+		// 	throw ConfigError("Error: index does not exist or is not readable!" + index_path);
 		
 		std::map<short, std::string> errPages = config.getErrorPages();
 		for (std::map<short, std::string>::const_iterator it = errPages.begin(); it != errPages.end(); ++it)
