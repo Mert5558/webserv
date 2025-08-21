@@ -17,6 +17,7 @@ class InitConfig
 		std::vector<Location>			locations;
 		struct sockaddr_in				socket_address;
 		int								listen_fd;
+		std::string						allow_methods;
 
 	public:
 		InitConfig();
@@ -34,6 +35,7 @@ class InitConfig
 		unsigned long getClientMaxBodySize();
 		const std::map<short, std::string> &getErrorPages() const;
 		std::vector<Location> &getLocations();
+		const std::string &getAllowMethods() const;
 
 
 		void setPort(const std::string &port);
@@ -45,6 +47,7 @@ class InitConfig
 		void setClientMaxBodsize(const std::string &cmbs);
 		bool setErrorPage(const std::string &errorpage);
 		void setFd(int fd);
+		void setAllowMethods(const std::string &allow_methods);
 
 
 		void print() const;

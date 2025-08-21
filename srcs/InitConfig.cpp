@@ -1,4 +1,5 @@
 #include "../inc/Webserv.hpp"
+#include <string>
 #include "../inc/InitConfig.hpp"
 
 InitConfig::InitConfig()
@@ -30,6 +31,7 @@ InitConfig::InitConfig(const InitConfig &copy)
 	locations = copy.locations;
 	socket_address = copy.socket_address;
 	listen_fd = copy.listen_fd;
+	allow_methods = copy.allow_methods;
 }
 
 InitConfig &InitConfig::operator=(const InitConfig &copy)
@@ -47,6 +49,7 @@ InitConfig &InitConfig::operator=(const InitConfig &copy)
 		locations = copy.locations;
 		socket_address = copy.socket_address;
 		listen_fd = copy.listen_fd;
+		allow_methods = copy.allow_methods;
 	}
 	return (*this);
 }
@@ -252,6 +255,10 @@ void InitConfig::setFd(int fd)
 {
 	this->listen_fd = fd;
 }
+void InitConfig::setAllowMethods(const std::string &allow_methods)
+{
+	this->allow_methods = allow_methods;
+}
 
 void InitConfig::addLocation(Location &loc)
 {
@@ -286,6 +293,11 @@ const std::string &InitConfig::getIndex() const
 bool InitConfig::getAutoIndex() const
 {
 	return (autoindex);
+}
+
+const std::string &InitConfig::getAllowMethods() const
+{
+	return (allow_methods);
 }
 
 unsigned long InitConfig::getClientMaxBodySize()
@@ -379,7 +391,7 @@ Location *InitConfig::findLocationForPath(const std::string &path)
 
 void InitConfig::print() const
 {
-	std::cout << "---- Server Config ----" << std::endl;
+	std::cout << "---- Server Config ------------------" << std::endl;
 	std::cout << "Port: " << port << std::endl;
 	std::cout << "Host: " << host << std::endl;
 	std::cout << "Server Name: " << server_name << std::endl;
@@ -387,6 +399,7 @@ void InitConfig::print() const
 	std::cout << "Index: " << index << std::endl;
 	std::cout << "Autoindex: " << (autoindex ? "on" : "off") << std::endl;
 	std::cout << "Client Max Body Size: " << client_max_body_size << std::endl;
+	std::cout << "Allow Methods: " << allow_methods << std::endl;
 
 	std::cout << "Error Pages:\n";
 	if (error_pages.empty())
