@@ -1,6 +1,7 @@
 #include "../inc/Webserv.hpp"
 #include "../inc/ParseConfig.hpp"
 #include "../inc/InitConfig.hpp"
+#include <iostream>
 
 ParseConfig::ParseConfig()
 {
@@ -40,9 +41,19 @@ int ParseConfig::parseFile(std::string configfile)
 		std::vector<std::string> lines = splitIntoLines(blocks[i]);
 		InitConfig config;
 		parseServerSettings(lines, config);
+		std::cout << "===================>" << config.getAllowMethods() << "<====================================" << std::endl;
+		std::cout << "===================>" << config.getHost() << "<==================" << std::endl;
+		std::cout << "===================>" << config.getPort() << "<==================" << std::endl;
 		servers.push_back(config);
+		std::cout << "===================>       " << servers[0].getAllowMethods() << "          *************************" << std::endl;
+		std::cout << "===================>       " << servers[0].getHost() << "          *************************" << std::endl;
+		std::cout << "===================>       " << servers[0].getServerName() << "          *************************" << std::endl;
+		std::cout << "===================>       " << servers[0].getPort() << "          *************************" << std::endl;
 	}
-	// servers[0].print();		// Config print for debugging purposes
+	std::cout << "===================>" << servers[0].getAllowMethods() << "<========================================================" << std::endl;
+	std::cout << "===================>" << servers[0].getHost() << "<========================================================" << std::endl;
+	std::cout << "===================>" << servers[0].getPort() << "<========================================================" << std::endl;
+
 	// if (this->servers.empty())
 	// {
 	// 	throw ConfigError("Error: No valid server blocks found in config file!");
@@ -214,7 +225,7 @@ std::vector<std::string> ParseConfig::splitIntoLines(const std::string &oneBlock
 void ParseConfig::parseServerSettings(const std::vector<std::string> &lines, InitConfig &config)
 {
 	bool port_set = false, server_name_set = false, root_set = false, index_set = false;
-	bool autoindex_set = false, client_max_body_size_set = false, host_set = false;
+	bool autoindex_set = false, client_max_body_size_set = false, host_set = false, allow_methods_set = false;
 
 	std::set<short> error_codes_set;
 
@@ -315,7 +326,25 @@ void ParseConfig::parseServerSettings(const std::vector<std::string> &lines, Ini
 			if (!config.setErrorPage(value))
 				throw ConfigError("Error: 'error_page' is duplicated or not valid!");
 		}
+		else if (key == "allow_methods" )
+		{
+			if (allow_methods_set)
+				throw ConfigError("Error: 'allow_methods' is duplicated or not valid!");
+			std::cout << "Allow methods: ----------> " << value << std::endl;
+			config.setAllowMethods(value);
+			allow_methods_set = true;
+		}
 	}
+	std::cout << "----> Server block parsed <----------------------------" << std::endl;
+	std::cout << "---->     " << config.getAllowMethods() << "      <----" << std::endl;
+	std::cout << "---->     " << config.getHost() << "      <----" << std::endl;
+	std::cout << "---->     " << config.getPort() << "      <----" << std::endl;
+	std::cout << "---->     " << config.getRoot() << "      <----" << std::endl;
+	std::cout << "---->     " << config.getIndex() << "      <----" << std::endl;
+	std::cout << "---->     " << config.getAutoIndex() << "      <----" << std::endl;
+
+	// std::cout << "----> Server block parsed PRINT <----------------------------" << std::endl;
+	// config.print();		// Config print for debugging purposes
 }
 
 bool pathExistsAndReadable(const std::string &path)

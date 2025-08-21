@@ -55,6 +55,8 @@ void ServerLoop::serverSetup(std::vector<InitConfig> &servers)
 				  << " port=" << servers[i].getPort()
 				  << " fd=" << servers[i].getFd() << std::endl;
 	}
+	// std::cout << "++++++++++++++++++++++===================serverLoop::serverSetup called" << std::endl;
+	// servers[0].print(); // Debug print server config
 }
 
 // Initialize pollfd structures for each server socket.
@@ -92,6 +94,8 @@ void ServerLoop::removeFd(std::vector<pollfd> &fds, size_t index)
 void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
 {
 	InitConfig *srv = servers.empty() ? NULL : &servers[0];
+	// std::cout << "++++++++++++++++++++++===================serverLoop::parseHttp() called" << std::endl;
+	// srv->print(); // Debug print server config
 	response.prepare(request, srv);
 }
 

@@ -585,6 +585,18 @@ std::string HttpResponse::percentDecode(const std::string &in)
 
 void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 {
+	server->print(); // Debug print server config
+
+
+	std::cout << "----->" << "1)  WARUMMMMMMM" << "<-----" << std::endl;
+	std::cout << "---->" << server->getAllowMethods() << "<----" << std::endl;
+	std::cout << "---->" << server->getHost() << "<----" << std::endl;
+	std::cout << "---->" << server->getPort() << "<----" << std::endl;
+	std::cout << "---->" << server->getServerName() << "<----" << std::endl;
+	std::cout << "---->" << server->getRoot() << "<----" << std::endl;
+	std::cout << "---->" << server->getIndex() << "<----" << std::endl;
+	std::cout << "---->" << server->getAutoIndex() << "<----" << std::endl;
+
 	// Reset minimal defaults for each response
 	statusCode = "200 OK";
 	contentType = "text/plain";
@@ -599,6 +611,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	std::string serverRoot;
 	std::string indexName;
 	bool autoIndex;
+	
 
 	// If location is found, use its settings; otherwise use server defaults
 	if (loc)
@@ -652,8 +665,21 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		return;
 	}
 	std::cout << "----------------------------------------> " << req.getMethod() << std::endl;
+
+
 	// ============== DELETE ===================
-	if (req.getMethod() == "DELETE")
+	std::cout << "----->" << "WARUMMMMMMM" << "<-----" << std::endl;
+	std::cout << "---->" << server->getAllowMethods() << "<----" << std::endl;
+	std::cout << "---->" << server->getHost() << "<----" << std::endl;
+	std::cout << "---->" << server->getPort() << "<----" << std::endl;
+	std::cout << "---->" << server->getServerName() << "<----" << std::endl;
+	std::cout << "---->" << server->getRoot() << "<----" << std::endl;
+	std::cout << "---->" << server->getIndex() << "<----" << std::endl;
+	std::cout << "---->" << server->getAutoIndex() << "<----" << std::endl;
+
+
+	std::cout << "request method---->" << req.getMethod() << "<----" << std::endl;
+	if (req.getMethod() == "DELETE" && server->getAllowMethods().find("DELETE") != std::string::npos)
 	{
 		std::cout << "--------------------------> HELLLLLLLo" << std::endl;
 		off_t sizeTmp = 0;
