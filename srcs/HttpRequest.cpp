@@ -294,7 +294,7 @@ ParseResult HttpRequest::parse()
     {
         // debug state of parsing
         std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
-        
+
         switch (parseState)
         {
             case ParseState::START_LINE:
@@ -339,10 +339,30 @@ ParseResult HttpRequest::parse()
                 }
                 if (method == Method::POST)
                 {
+					bool chunked = false;
+                    std::unordered_map<std::string,std::string>::const_iterator te = headers.find("transfer-encoding");
+                    if (te != headers.end() && te->second.find("chunked") != std::string::npos)
+                        chunked = true;
+
+                    if (!bodyFile.is_open())
+                        setBody("./http_request_body.txt");
+
+                    if (chunked)
+                    {
+                        parseState = ParseState::CHUNK_SIZE;
+                        return handleChunkSize(rawRequest); // may still be INCOMPLETE
+                    }
+
+                    if (headers.find("content-length") == headers.end())
+                    {
+                        std::cerr << "POST without Content-Length or chunked\n";
+                        parseState = ParseState::ERROR;
+                        return ParseResult::ERROR;
+                    }
+                    
                     parseState = ParseState::BODY;
                     std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
                 }
-                break;
             }
 
             case ParseState::BODY:
@@ -355,7 +375,10 @@ ParseResult HttpRequest::parse()
                         return ParseResult::INCOMPLETE;
 
                     if (bodyFile.is_open())
+					{
                         bodyFile.write(rawRequest.data(), contentLength);
+						bodySize = contentLength;
+					}
                     
                     rawRequest.erase(0, contentLength);
                     parseState = ParseState::COMPLETE;
