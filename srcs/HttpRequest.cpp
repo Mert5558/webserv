@@ -6,7 +6,7 @@
 /*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/20 17:31:00 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/21 16:01:07 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -191,6 +191,11 @@ std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
     return (headers);
 }
 
+std::string HttpRequest::getQueryString() const
+{
+    return this->queryString;
+}
+
 
 // ======================================================
 // Parsing functions for Header block and request line                          
@@ -199,12 +204,24 @@ std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
 bool    HttpRequest::parseStartLine(const std::string &line)
 {
     std::istringstream requestLine(line);
-    std::string methodStr, versionStr;
+    std::string methodStr, versionStr , fullPath;
     
     requestLine >> methodStr >> path >> versionStr;
 
     method = toMethodEnum(methodStr);
     version = toVersionEnum(versionStr);
+
+    size_t query = path.find('?');
+    if (query == std::string::npos)
+    {
+        queryString.clear();
+    }
+    else
+    {
+        fullPath = path.substr(0, query);
+        queryString = path.substr(query + 1);
+        path = fullPath;
+    }
     
     if ( method == Method::INVALID || version == Version::INVALID)
     {

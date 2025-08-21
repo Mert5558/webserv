@@ -122,7 +122,8 @@ static const Location* findLocation(const InitConfig &srv, const std::string &re
 void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
 {
     InitConfig *srv = servers.empty() ? NULL : &servers[0];
-    if (!srv) {
+    if (!srv)
+	{
         response.prepare(request, NULL);
         return;
     }
@@ -134,7 +135,8 @@ void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &reques
     const Location *cgiLoc = NULL;
     std::string scriptFsPath;
 
-    if (loc) {
+    if (loc)
+	{
         // Check extension against configured CGI extensions
         const std::vector<std::string> &exts = loc->getCgiExt();
         if (!exts.empty())
@@ -172,7 +174,7 @@ void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &reques
             // Prepare environment
             Location locCopy = *cgiLoc; // buildEnv wants non-const ref
             Client dummyClient;         // if you later store real client info, pass it
-            std::map<std::string,std::string> env = Cgi::buildEnv(request, locCopy, dummyClient, scriptFsPath);
+			std::map<std::string,std::string> env = Cgi::buildEnv(request, locCopy, dummyClient, *srv, scriptFsPath);
 
             Cgi cgi(scriptFsPath, env);
             auto res = cgi.execute("", locCopy);

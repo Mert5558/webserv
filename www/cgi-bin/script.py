@@ -1,15 +1,30 @@
 #!/usr/bin/env python3
-
 import os
 
+# Required CGI headers
+print("Status: 200 OK")
+print("Content-Type: text/plain")
+print()
+
 print("Hello from CGI script!")
+print("===== REQUEST ===== ")
 print(f"REQUEST_METHOD = {os.environ.get('REQUEST_METHOD')}")
+print(f"SERVER_PROTOCOL = {os.environ.get('SERVER_PROTOCOL')}")
+print(f"REDIRECT_STATUS = {os.environ.get('REDIRECT_STATUS')}")
 print(f"SCRIPT_FILENAME = {os.environ.get('SCRIPT_FILENAME')}")
+print()
+print("=====  SCRIPT ===== ")
+print(f"SCRIPT_NAME = {os.environ.get('SCRIPT_NAME')}")
 print(f"QUERY_STRING = {os.environ.get('QUERY_STRING')}")
-print("")
+print()
+print("=====  CONTENT ===== ")
 print(f"CONTENT_TYPE = {os.environ.get('CONTENT_TYPE')}")
 print(f"CONTENT_LENGTH = {os.environ.get('CONTENT_LENGTH')}")
+print()
+print("===== SERVER ===== ")
 print(f"SERVER_PORT = {os.environ.get('SERVER_PORT')}")
 print(f"SERVER_NAME = {os.environ.get('SERVER_NAME')}")
-print(f"REDIRECT_STATUS = {os.environ.get('REDIRECT_STATUS')}")
 print(f"REQUEST_URI = {os.environ.get('REQUEST_URI')}")
+print()
+print("===== CLIENT ===== ")
+print(f"CLIENT_MAX_BODY_SIZE = {os.environ.get('CLIENT_MAX_BODY_SIZE')}")

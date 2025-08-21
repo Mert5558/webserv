@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/19 00:29:27 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/21 15:58:21 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ class	HttpRequest
 	Version												version;
 	std::unordered_map<std::string, std::string> 		headers;
 	std::string											path;
+	std::string											queryString;
 	std::string											rawRequest;
 	
 	// internal state
@@ -63,6 +64,7 @@ class	HttpRequest
 		std::string getVersion() const;
 		size_t		getBodySize() const { return bodySize; }
 		std::string	getBodyFilePath() const;
+		std::string	getQueryString() const;
 		std::unordered_map<std::string, std::string> getHeaders() const;
 		
 		

@@ -40,6 +40,7 @@ std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData, Loc
 		close(inputPipe[1]);
 		close(outputPipe[0]);
 
+
 		auto envp =	makeEnv();
         // char *argv[] = { const_cast<char*>(scriptPath.c_str()), nullptr };
         // execve(scriptPath.c_str(), argv, envp.data());
@@ -76,7 +77,7 @@ std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData, Loc
 		return {CgiStatus::EXECUTION_ERROR, ""};
 }
 
-std::map<std::string,std::string> Cgi::buildEnv(const HttpRequest &req, Location &loc, const Client &client, const std::string &scriptPath)
+std::map<std::string,std::string> Cgi::buildEnv(const HttpRequest &req, Location &loc, const Client &client, InitConfig &server, const std::string &scriptPath)
 {
     std::map<std::string,std::string> env;
 	(void)client;
@@ -85,14 +86,19 @@ std::map<std::string,std::string> Cgi::buildEnv(const HttpRequest &req, Location
     env["REQUEST_METHOD"]		= req.getMethod();
     env["SERVER_PROTOCOL"]   	= req.getVersion();
     env["SCRIPT_FILENAME"]   	= scriptPath;
+	env["SCRIPT_NAME"]       	= req.getPath();
     
 	
-	env["SCRIPT_NAME"]       	= req.getPath();
-    env["PATH_INFO"]         	= "";
-    env["QUERY_STRING"]      	= "";
-    env["SERVER_NAME"]       	= "localhost"; //<<< hardcoded
-    env["SERVER_PORT"]       	= "80";			//<<< hardcoded
-    env["REQUEST_URI"]       	= req.getPath();
+    env["SERVER_NAME"]       	= server.getServerName();
+    env["SERVER_PORT"]       	= std::to_string(server.getPort());
+	
+	if (req.getQueryString().empty())
+		env["REQUEST_URI"] = req.getPath();
+	else
+		env["REQUEST_URI"] = req.getPath() + "?" + req.getQueryString();
+    
+	env["PATH_INFO"]        	= "";
+    env["QUERY_STRING"]      	= req.getQueryString();
 	env["REDIRECT_STATUS"]      = "200"; 
     // env["REMOTE_ADDR"]       	= client.getRemoteAddress();
     // env["REMOTE_PORT"]       	= std::to_string(client.getRemotePort());
