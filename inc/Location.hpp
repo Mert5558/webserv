@@ -2,6 +2,7 @@
 
 #include "Webserv.hpp"
 
+
 class Location
 {
 	private:
@@ -9,7 +10,7 @@ class Location
 		std::string						root;
 		std::string						index;
 		bool							autoindex;
-		std::vector<short>				methods;	// 0:GET, 1:POST, 3:DELETE
+		std::vector<short>				methods;	// 0:GET, 1:POST, 2:DELETE
 		std::string						_return;
 		std::string						alias;
 		std::vector<std::string>		cgi_path;
@@ -44,5 +45,7 @@ class Location
 		const std::string &getAlias();
 		const std::vector<std::string> &getCgiPath();
 		const std::vector<std::string> &getCgiExt();
-	
+
+		bool isMethodAllowed(const std::vector<short> &methods, short method);
+
 };

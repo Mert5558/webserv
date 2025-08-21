@@ -202,3 +202,9 @@ void Location::print() const
 		std::cout << cgi_ext[k] << " ";
 	std::cout << std::endl;
 }
+
+
+bool Location::isMethodAllowed(const std::vector<short> &methods, short method)
+{
+	return std::find(methods.begin(), methods.end(), method) != methods.end();
+}

@@ -41,18 +41,8 @@ int ParseConfig::parseFile(std::string configfile)
 		std::vector<std::string> lines = splitIntoLines(blocks[i]);
 		InitConfig config;
 		parseServerSettings(lines, config);
-		std::cout << "===================>" << config.getAllowMethods() << "<====================================" << std::endl;
-		std::cout << "===================>" << config.getHost() << "<==================" << std::endl;
-		std::cout << "===================>" << config.getPort() << "<==================" << std::endl;
 		servers.push_back(config);
-		std::cout << "===================>       " << servers[0].getAllowMethods() << "          *************************" << std::endl;
-		std::cout << "===================>       " << servers[0].getHost() << "          *************************" << std::endl;
-		std::cout << "===================>       " << servers[0].getServerName() << "          *************************" << std::endl;
-		std::cout << "===================>       " << servers[0].getPort() << "          *************************" << std::endl;
 	}
-	std::cout << "===================>" << servers[0].getAllowMethods() << "<========================================================" << std::endl;
-	std::cout << "===================>" << servers[0].getHost() << "<========================================================" << std::endl;
-	std::cout << "===================>" << servers[0].getPort() << "<========================================================" << std::endl;
 
 	// if (this->servers.empty())
 	// {
@@ -335,16 +325,6 @@ void ParseConfig::parseServerSettings(const std::vector<std::string> &lines, Ini
 			allow_methods_set = true;
 		}
 	}
-	std::cout << "----> Server block parsed <----------------------------" << std::endl;
-	std::cout << "---->     " << config.getAllowMethods() << "      <----" << std::endl;
-	std::cout << "---->     " << config.getHost() << "      <----" << std::endl;
-	std::cout << "---->     " << config.getPort() << "      <----" << std::endl;
-	std::cout << "---->     " << config.getRoot() << "      <----" << std::endl;
-	std::cout << "---->     " << config.getIndex() << "      <----" << std::endl;
-	std::cout << "---->     " << config.getAutoIndex() << "      <----" << std::endl;
-
-	// std::cout << "----> Server block parsed PRINT <----------------------------" << std::endl;
-	// config.print();		// Config print for debugging purposes
 }
 
 bool pathExistsAndReadable(const std::string &path)

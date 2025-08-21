@@ -10,6 +10,14 @@
 #include <cstring>		// std::strncmp, std::strlen
 #include <cstdlib>		// realpath decl on some libcs
 
+
+enum HttpMethod {
+	GET = 0,
+	POST = 1,
+	DELETE = 2
+};
+
+
 // ========== Constructor / Destructor ==========
 
 HttpResponse::HttpResponse() : statusCode("200 OK"), contentType("text/plain"), body("") {}
@@ -587,16 +595,6 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 {
 	server->print(); // Debug print server config
 
-
-	std::cout << "----->" << "1)  WARUMMMMMMM" << "<-----" << std::endl;
-	std::cout << "---->" << server->getAllowMethods() << "<----" << std::endl;
-	std::cout << "---->" << server->getHost() << "<----" << std::endl;
-	std::cout << "---->" << server->getPort() << "<----" << std::endl;
-	std::cout << "---->" << server->getServerName() << "<----" << std::endl;
-	std::cout << "---->" << server->getRoot() << "<----" << std::endl;
-	std::cout << "---->" << server->getIndex() << "<----" << std::endl;
-	std::cout << "---->" << server->getAutoIndex() << "<----" << std::endl;
-
 	// Reset minimal defaults for each response
 	statusCode = "200 OK";
 	contentType = "text/plain";
@@ -610,6 +608,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 
 	std::string serverRoot;
 	std::string indexName;
+	std::vector<short> allowedMethods;
 	bool autoIndex;
 	
 
@@ -620,6 +619,17 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		serverRoot = loc->getRoot();
 		indexName = loc->getIndex();
 		autoIndex = loc->getAutoindex();
+		allowedMethods = loc->getMethods();
+		std::cout << "=======Location path: " << loc->getPath() << std::endl;
+		std::cout << "========Location root: " << serverRoot << std::endl;
+		std::cout << "=======Location index: " << indexName << std::endl;
+		
+		std::cout << "Allowed methods:-----------------------> " << std::endl;
+		for (size_t i = 0; i < allowedMethods.size(); ++i)
+		{
+			std::cout << allowedMethods[i] << " ";
+		}
+		std::cout << std::endl;
 	}
 	else
 	{
@@ -664,24 +674,49 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		renderError(404, "Not Found", server);
 		return;
 	}
-	std::cout << "----------------------------------------> " << req.getMethod() << std::endl;
-
 
 	// ============== DELETE ===================
-	std::cout << "----->" << "WARUMMMMMMM" << "<-----" << std::endl;
-	std::cout << "---->" << server->getAllowMethods() << "<----" << std::endl;
-	std::cout << "---->" << server->getHost() << "<----" << std::endl;
-	std::cout << "---->" << server->getPort() << "<----" << std::endl;
-	std::cout << "---->" << server->getServerName() << "<----" << std::endl;
-	std::cout << "---->" << server->getRoot() << "<----" << std::endl;
-	std::cout << "---->" << server->getIndex() << "<----" << std::endl;
-	std::cout << "---->" << server->getAutoIndex() << "<----" << std::endl;
 
-
-	std::cout << "request method---->" << req.getMethod() << "<----" << std::endl;
-	if (req.getMethod() == "DELETE" && server->getAllowMethods().find("DELETE") != std::string::npos)
+	// bool deleteAllowed = false;
+	// if (std::find(allowedMethods.begin(), allowedMethods.end(), "DELETE") != allowedMethods.end())
+	// {
+	// 	std::cout << "DELETE method is allowed." << std::endl;
+	// 	deleteAllowed = true;
+	// }
+	// else
+	// {
+	// 	std::cout << "DELETE method is not allowed." << std::endl;
+	// }
+	std::cout << "Allowed methods:----------> " << std::endl;
+	for (size_t i = 0; i < allowedMethods.size(); ++i)
 	{
-		std::cout << "--------------------------> HELLLLLLLo" << std::endl;
+		std::cout << allowedMethods[i] << " ";
+	}
+
+	if (req.getMethod() == "DELETE" && (loc->isMethodAllowed(allowedMethods, DELETE)))
+	{
+		std::cout << "DELETE method is allowed." << std::endl;
+		// Check if the path is under the root
+		if (!isUnderRootAbs(absPath, absRoot))
+		{
+			renderError(403, "Forbidden", server);
+			return;
+		}
+
+		if (absPath == absRoot)
+		{
+			renderError(403, "Forbidden", server); // do not allow deleting root directory
+			return;
+		}
+
+		if (absPath.empty() || absPath == "/")
+		{
+			renderError(403, "Forbidden", server); // do not allow deleting root directory
+			return;
+		}
+	}
+	else if (req.getMethod() == "DELETE")
+	{
 		off_t sizeTmp = 0;
 		if (!isRegular(absPath, sizeTmp))
 		{
@@ -727,10 +762,6 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		body = "Deleted\n";
 		return;
 	}
-
-	
-
-
 
 	// ============== INVALID ===================
 	if (req.getMethod() != "GET")
