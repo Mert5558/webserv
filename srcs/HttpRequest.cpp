@@ -174,6 +174,11 @@ std::unordered_map<std::string, std::string> HttpRequest::getHeaders() const
     return (headers);
 }
 
+std::string HttpRequest::getUploadedFilename() const
+{
+	return (uploadedFilename);
+}
+
 
 // ======================================================
 // Parsing functions for Header block and request line                          
@@ -377,10 +382,15 @@ ParseResult HttpRequest::parse()
                     if (bodyFile.is_open())
 					{
                         bodyFile.write(rawRequest.data(), contentLength);
+						bodyFile.flush();
 						bodySize = contentLength;
 					}
                     
                     rawRequest.erase(0, contentLength);
+
+					if (method == Method::POST)
+						parseMultipartFilename(bodyFilePath);
+
                     parseState = ParseState::COMPLETE;
                     return ParseResult::COMPLETE;
                 }
@@ -412,6 +422,81 @@ ParseResult HttpRequest::parse()
     }
 }
 
+
+void HttpRequest::parseMultipartFilename(const std::string &bodyFilePath)
+{
+    std::ifstream file(bodyFilePath, std::ios::binary);
+    if (!file.is_open()) {
+        uploadedFilename.clear();
+        return;
+    }
+
+    std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+
+    std::string boundary;
+    auto it = headers.find("content-type");
+    if (it != headers.end()) {
+        std::string ct = it->second;
+        size_t bpos = ct.find("boundary=");
+        if (bpos != std::string::npos)
+            boundary = "--" + ct.substr(bpos + 9);
+    }
+    if (boundary.empty()) {
+        uploadedFilename.clear();
+        return;
+    }
+
+    size_t partStart = body.find(boundary);
+    if (partStart == std::string::npos) {
+        uploadedFilename.clear();
+        return;
+    }
+    partStart += boundary.size() + 2; // skip boundary and CRLF
+
+    size_t headersEnd = body.find("\r\n\r\n", partStart);
+    if (headersEnd == std::string::npos) {
+        uploadedFilename.clear();
+        return;
+    }
+
+    std::string partHeaders = body.substr(partStart, headersEnd - partStart);
+
+    // Find filename in Content-Disposition
+    std::string filename;
+    size_t fnPos = partHeaders.find("filename=\"");
+    if (fnPos != std::string::npos) {
+        size_t fnEnd = partHeaders.find("\"", fnPos + 10);
+        if (fnEnd != std::string::npos)
+            filename = partHeaders.substr(fnPos + 10, fnEnd - (fnPos + 10));
+    }
+    if (filename.empty()) {
+        uploadedFilename.clear();
+        return;
+    }
+
+    // File data starts after headers
+    size_t dataStart = headersEnd + 4;
+    size_t dataEnd = body.find(boundary, dataStart);
+    if (dataEnd == std::string::npos || dataEnd < 2) {
+        uploadedFilename.clear();
+        return;
+    }
+    dataEnd -= 2; // minus CRLF before boundary
+
+    std::string fileData = body.substr(dataStart, dataEnd - dataStart);
+
+    // Save fileData to disk
+    std::ofstream ofs("./www/uploads/" + filename, std::ios::binary);
+    if (!ofs.is_open()) {
+        uploadedFilename.clear();
+        return;
+    }
+    ofs.write(fileData.c_str(), fileData.size());
+    ofs.close();
+
+    uploadedFilename = filename;
+}
 
 
 // ================== NEED TO SEE =====================
@@ -625,34 +710,83 @@ std::string_view    HttpRequest::trim(std::string_view str)
     return str.substr(wspace_start, wspace_end - wspace_start);
 }
 
-bool    HttpRequest::receiveReq(int client_fd)
+bool HttpRequest::receiveReq(int client_fd)
 {
-    char buf[4096];
-    while (true)
-    {
-        ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
-        if (bytes > 0)
-        {
-            rawRequest.append(buf, buf + bytes);
-            continue;
-        }
-        else if (bytes == 0)
-        {
-            disconnect = true;
-            return false;
-        }
-        else
-        {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-            {
-                break;
-            }
-            if (errno == EINTR)
+	char buf[4096];
+	ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
+	if (bytes <= 0)
+	{
+		disconnect = true;
+		return (true);
+	}
+
+	rawRequest.append(buf, bytes);
+
+	if (!header_received)
+	{
+		header_received = true;
+		size_t header_end = rawRequest.find("\r\n\r\n");
+
+		if (header_end != std::string::npos)
+		{
+			header_str = rawRequest.substr(0, header_end + 4);
+
+			size_t cl_pos = header_str.find("Content-Length:");
+			if (cl_pos != std::string::npos)
 			{
-				continue;
+				size_t value_start = header_str.find_first_not_of(" ", cl_pos + 15);
+				size_t value_end = header_str.find("\r\n", value_start);
+				std::string str_len = header_str.substr(value_start, value_end - value_start);
+				expected_len = std::atoi(str_len.c_str());
 			}
-            return false;
-        }
-    }
-    return true;
+			else
+				expected_len = 0;
+			
+			body_start = header_end + 4;
+		}
+	}
+
+	if (header_received && !body_received)
+	{
+		size_t total_body_size = rawRequest.size() - body_start;
+		if (expected_len == 0 || total_body_size >= expected_len)
+		{
+			body_received = true;
+			isComplete = true;
+		}
+	}
+
+	return (isComplete);
 }
+
+// bool    HttpRequest::receiveReq(int client_fd)
+// {
+//     char buf[4096];
+//     while (true)
+//     {
+//         ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
+//         if (bytes > 0)
+//         {
+//             rawRequest.append(buf, buf + bytes);
+//             continue;
+//         }
+//         else if (bytes == 0)
+//         {
+//             disconnect = true;
+//             return false;
+//         }
+//         else
+//         {
+//             if (errno == EAGAIN || errno == EWOULDBLOCK)
+//             {
+//                 break;
+//             }
+//             if (errno == EINTR)
+// 			{
+// 				continue;
+// 			}
+//             return false;
+//         }
+//     }
+//     return true;
+// }
