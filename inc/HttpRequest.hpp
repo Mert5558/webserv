@@ -41,6 +41,7 @@ class	HttpRequest
 	std::ofstream										bodyFile;
 	size_t												bodySize;
 	std::string											bodyFilePath;
+	std::string											uploadedFilename;
 		
 
 	public:
@@ -64,6 +65,7 @@ class	HttpRequest
 		size_t		getBodySize() const { return bodySize; }
 		std::string	getBodyFilePath() const;
 		std::unordered_map<std::string, std::string> getHeaders() const;
+		std::string getUploadedFilename() const;
 		
 		
 		
@@ -87,6 +89,7 @@ class	HttpRequest
 		void				log_headers();
 		void				log_first_line();
 		void				reset();
+		void parseMultipartFilename(const std::string &bodyFilePath);
 		
 		// From String to enum 
 		Method		toMethodEnum(const std::string &methodStr);
@@ -99,6 +102,13 @@ class	HttpRequest
 		bool receiveReq(int client_fd);
 
 		bool disconnect;
+		size_t 												expected_len;
+		size_t 												received_len;
+		bool 												isComplete;
+		bool 												header_received;
+		bool 												body_received;
+		std::string											header_str;
+		size_t												body_start;
 		
 
 	};
