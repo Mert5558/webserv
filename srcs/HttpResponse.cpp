@@ -604,6 +604,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	// Server root / index / autoindex from config
 
 	//Find location for request path
+	std::cout << "------PATHHHHHHHHHHHHHHHHHHH----- " << req.getPath() <<std::endl;
 	Location *loc = server->findLocationForPath(req.getPath());
 
 	std::string serverRoot;
@@ -620,16 +621,6 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		indexName = loc->getIndex();
 		autoIndex = loc->getAutoindex();
 		allowedMethods = loc->getMethods();
-		std::cout << "=======Location path: " << loc->getPath() << std::endl;
-		std::cout << "========Location root: " << serverRoot << std::endl;
-		std::cout << "=======Location index: " << indexName << std::endl;
-		
-		std::cout << "Allowed methods:-----------------------> " << std::endl;
-		for (size_t i = 0; i < allowedMethods.size(); ++i)
-		{
-			std::cout << allowedMethods[i] << " ";
-		}
-		std::cout << std::endl;
 	}
 	else
 	{
@@ -666,34 +657,13 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 
 	if (!isUnderRootAbs(absPath, absRoot))
 	{
-		// std::cout << "----------------------------------------> " << std::endl;
-		// statusCode = "403 Forbidden";
-		// std::cout << "Forbidden access to: " << absPath << std::endl;
-		// contentType = "text/html; charset=iso-8859-1";
-		// body = defaultErrorBody(403, "Forbidden");
 		renderError(404, "Not Found", server);
 		return;
 	}
 
-	// ============== DELETE ===================
-
-	// bool deleteAllowed = false;
-	// if (std::find(allowedMethods.begin(), allowedMethods.end(), "DELETE") != allowedMethods.end())
-	// {
-	// 	std::cout << "DELETE method is allowed." << std::endl;
-	// 	deleteAllowed = true;
-	// }
-	// else
-	// {
-	// 	std::cout << "DELETE method is not allowed." << std::endl;
-	// }
-	std::cout << "Allowed methods:----------> " << std::endl;
-	for (size_t i = 0; i < allowedMethods.size(); ++i)
-	{
-		std::cout << allowedMethods[i] << " ";
-	}
-
-	if (req.getMethod() == "DELETE" && (loc->isMethodAllowed(allowedMethods, DELETE)))
+	// ============================== DELETE ==============================
+	bool isDeleteAllowed = req.getMethod() == "DELETE" && loc->isMethodAllowed(allowedMethods, DELETE);
+	if (isDeleteAllowed)
 	{
 		std::cout << "DELETE method is allowed." << std::endl;
 		// Check if the path is under the root
@@ -709,14 +679,6 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 			return;
 		}
 
-		if (absPath.empty() || absPath == "/")
-		{
-			renderError(403, "Forbidden", server); // do not allow deleting root directory
-			return;
-		}
-	}
-	else if (req.getMethod() == "DELETE")
-	{
 		off_t sizeTmp = 0;
 		if (!isRegular(absPath, sizeTmp))
 		{
@@ -727,9 +689,9 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 				return;
 			}
 			renderError(404, "Not Found", server);
+			return;
 		}
-
-		if (::unlink(absPath.c_str()) == !0)
+		if (::unlink(absPath.c_str()) != 0)
 		{
 			switch (errno)
 			{
