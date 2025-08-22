@@ -101,13 +101,14 @@ void ServerLoop::removeFd(std::vector<pollfd> &fds, size_t index)
 
 static const Location* findLocation(const InitConfig &srv, const std::string &reqPath)
 {
-	const std::vector<Location> &locs = srv.getLocations(); // assumes this exists
+	const std::vector<Location> &locs = srv.getLocations();
     const Location *best = NULL;
     size_t bestLen = 0;
     for (size_t i = 0; i < locs.size(); ++i)
 	{
         const std::string &lp = locs[i].getPath();
-        if (!lp.empty() && reqPath.rfind(lp, 0) == 0) { // prefix
+        if (!lp.empty() && reqPath.rfind(lp, 0) == 0)
+		{ // prefix
             if (lp.size() > bestLen)
 			{
                 best = &locs[i];
@@ -119,6 +120,45 @@ static const Location* findLocation(const InitConfig &srv, const std::string &re
 }
 
 
+
+static void applyCgiOutputToResponse(const std::string &out, HttpResponse &response)
+{
+    // Try CRLF first, then LF fallback
+    std::string::size_type sep = out.find("\r\n\r\n");
+    if (sep == std::string::npos) sep = out.find("\n\n");
+
+    std::string head = (sep == std::string::npos) ? std::string() : out.substr(0, sep);
+    std::string body = (sep == std::string::npos) ? out : out.substr(sep + (out.compare(sep, 4, "\r\n\r\n") == 0 ? 4 : 2));
+
+    std::string status = "200 OK";
+    bool hasContentType = false;
+
+    std::istringstream hs(head);
+    std::string line;
+    while (std::getline(hs, line)) {
+        if (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
+        if (line.empty()) continue;
+        std::string::size_type colon = line.find(':');
+        if (colon == std::string::npos) continue;
+        std::string key = line.substr(0, colon);
+        std::string val = line.substr(colon + 1);
+        while (!val.empty() && (val[0] == ' ' || val[0] == '\t')) val.erase(0,1);
+        if (key == "Status") status = val;
+        else {
+            if (key == "Content-Type") hasContentType = true;
+            response.addHeader(key, val);
+        }
+    }
+
+    if (!hasContentType)
+        response.addHeader("Content-Type", "text/html; charset=utf-8");
+
+    response.setStatusCode(status);
+    response.setBody(body);
+}
+
+
+
 void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
 {
     InitConfig *srv = servers.empty() ? NULL : &servers[0];
@@ -128,12 +168,12 @@ void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &reques
         return;
     }
 
-    const std::string reqPath = request.getPath();
-    const Location *loc = findLocation(*srv, reqPath);
+    const std::string requestPath = request.getPath();
+    const Location *loc = findLocation(*srv, requestPath);
 
     bool isCgi = false;
     const Location *cgiLoc = NULL;
-    std::string scriptFsPath;
+    std::string cgiRootPath;
 
     if (loc)
 	{
@@ -141,10 +181,10 @@ void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &reques
         const std::vector<std::string> &exts = loc->getCgiExt();
         if (!exts.empty())
 		{
-            size_t dot = reqPath.rfind('.');
+            size_t dot = requestPath.rfind('.');
             if (dot != std::string::npos)
 			{
-                std::string ext = reqPath.substr(dot);
+                std::string ext = requestPath.substr(dot);
                 for (size_t i = 0; i < exts.size(); ++i)
 				{
                     if (exts[i] == ext)
@@ -162,42 +202,51 @@ void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &reques
 	{
         try {
             // Build filesystem path: root + remainder after location prefix
-            std::string locPrefix = cgiLoc->getPath();          // e.g. "/cgi-bin"
-            std::string rel = reqPath.substr(locPrefix.size()); // may be "/script.py"
-            if (!rel.empty() && rel[0] == '/')
-                rel.erase(0,1);
-            scriptFsPath = cgiLoc->getRoot();
-            if (!scriptFsPath.empty() && scriptFsPath.back() != '/')
-                scriptFsPath += '/';
-            scriptFsPath += rel;
+            std::string locPrefix = cgiLoc->getPath();          // "cgi-bin"
+			std::string relativePath = requestPath.substr(locPrefix.size()); // "/script.py"
+            if (!relativePath.empty() && relativePath[0] == '/')
+                relativePath.erase(0,1);
+            cgiRootPath = cgiLoc->getRoot();
+            if (!cgiRootPath.empty() && cgiRootPath.back() != '/')
+                cgiRootPath += '/';
+            cgiRootPath += relativePath;
 
             // Prepare environment
-            Location locCopy = *cgiLoc; // buildEnv wants non-const ref
+            Location locCopy = *cgiLoc;
             Client dummyClient;         // if you later store real client info, pass it
-			std::map<std::string,std::string> env = Cgi::buildEnv(request, locCopy, dummyClient, *srv, scriptFsPath);
+			std::map<std::string,std::string> env = Cgi::buildEnv(request, locCopy, dummyClient, *srv, cgiRootPath);
 
-            Cgi cgi(scriptFsPath, env);
-            auto res = cgi.execute("", locCopy);
+			// Read request body (if any) to feed CGI stdin
+			std::string cgiInput;
+			if (request.getMethod() == "POST")
+			{
+				const std::string bodyPath = request.getBodyFilePath();
+				if (!bodyPath.empty())
+				{
+					std::ifstream ifs(bodyPath.c_str(), std::ios::binary);
+					std::ostringstream ss;
+					ss << ifs.rdbuf();
+					cgiInput = ss.str();
+				}
+			}
+
+            Cgi cgi(cgiRootPath, env);
+            auto res = cgi.execute(cgiInput, locCopy);
             if (res.first == CgiStatus::SUCCESS)
 			{
-                // If CGI output already contains headers (e.g. "Content-Type: ...\r\n\r\n")
-                // you could parse them. For now wrap as plain text.
-                // response.clear(); // ensure a clean slate (implement if needed)
-                response.setStatusCode("OK");        // adapt to your HttpResponse API
-                response.addHeader("Content-Type", "text/plain");
-                response.setBody(res.second);
+              
+				applyCgiOutputToResponse(res.second, response);
                 return;
             }
 			else
 			{
 				std::cerr << "ERROR 500" << std::endl;
-                // response.prepareError(500); // adapt to your API
                 return;
             }
-        } catch (const std::exception &e)
+        }
+		catch (const std::exception &e)
 		{
 			std::cerr << "ERROR 500" << std::endl;
-            // response.prepareError(500); // log e.what() if desired
             return;
         }
     }

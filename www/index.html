@@ -1,30 +1,42 @@
 <!DOCTYPE html>
 <html>
-
-<style>
-body
-{
-    background-color: #f0f0f0;
-    color: #333;
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-</style>
-
-
-
 <head>
     <title>Welcome</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #555;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <div>
-        <h1 style="margin: 0;">Hello, World!</h1>
-        <p style="margin: 0;">This is a static HTML page served by your C++ server.</p>
-    </div>
+    <h1>Hello, World!</h1>
+    <p>This is a static HTML page served by <strong>Bucket hats</strong> C++ server.</p>
+    <button onclick="location.href='/cgi-bin/calc.py'">Calculator</button>
 </body>
 </html>
