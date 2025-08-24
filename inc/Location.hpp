@@ -35,17 +35,17 @@ class Location
 		void setCgiExt(const std::string &cgiExt);
 		void print() const;
 
-		const std::string &getPath();
-		const std::string &getRoot();
+		const std::string &getPath() const;
+		const std::string &getRoot() const;
 		const std::string &getIndex();
 		bool getAutoindex();
 		unsigned long getClientMaxBodySize();
 		const std::vector<short> &getMethods();
 		const std::string &getReturn();
 		const std::string &getAlias();
-		const std::vector<std::string> &getCgiPath();
-		const std::vector<std::string> &getCgiExt();
 
+		const std::vector<std::string> &getCgiPath() const;
+		const std::vector<std::string> &getCgiExt() const;
+	
 		bool isMethodAllowed(const std::vector<short> &methods, short method);
-
 };

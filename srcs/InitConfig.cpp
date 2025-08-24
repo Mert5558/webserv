@@ -310,7 +310,7 @@ const std::map<short, std::string> &InitConfig::getErrorPages() const
 	return (error_pages);
 }
 
-std::vector<Location> &InitConfig::getLocations()
+const std::vector<Location> &InitConfig::getLocations() const
 {
 	return (locations);
 }
@@ -368,9 +368,9 @@ bool InitConfig::createAndBindSocket()
 	return (true);
 }
 
-Location *InitConfig::findLocationForPath(const std::string &path)
+Location *InitConfig::findLocationForPath(const std::string &path) const
 {
-	std::vector<Location> &locs = getLocations();
+	const std::vector<Location> &locs = getLocations();
 	Location *best = nullptr;
 	size_t bestlen = 0;
 
@@ -381,7 +381,7 @@ Location *InitConfig::findLocationForPath(const std::string &path)
 		{
 			if (locPath.size() > bestlen)
 			{
-				best = &locs[i];
+				best = const_cast<Location*>(&locs[i]);
 				bestlen = locPath.size();
 			}
 		}
