@@ -42,6 +42,7 @@ class	HttpRequest
 	size_t												bodySize;
 	std::string											bodyFilePath;
 	std::string											uploadedFilename;
+	std::string											uploadedFileData;
 		
 
 	public:
@@ -66,6 +67,7 @@ class	HttpRequest
 		std::string	getBodyFilePath() const;
 		std::unordered_map<std::string, std::string> getHeaders() const;
 		std::string getUploadedFilename() const;
+		std::string getUploadedFileData() const;
 		
 		
 		
