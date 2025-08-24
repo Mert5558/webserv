@@ -593,7 +593,8 @@ std::string HttpResponse::percentDecode(const std::string &in)
 
 void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 {
-	server->print(); // Debug print server config
+	// Debug
+	// server->print();
 
 	// Reset minimal defaults for each response
 	statusCode = "200 OK";
@@ -601,30 +602,27 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	body.clear();
 	headers.clear();
 	
-	// Server root / index / autoindex from config
-
 	//Find location for request path
-	std::cout << "------PATHHHHHHHHHHHHHHHHHHH----- " << req.getPath() <<std::endl;
-	// 1) Methods: we fully implement GET here.
-	// Others will be 405 for now (spec requires GET, POST, DELETE later). 
-	if (req.getMethod() != "GET" && req.getMethod() != "POST")
+	// std::cout << "------PATHHHHHHHHHHHHHHHHHHH----- " << req.getPath() <<std::endl;
+
+	// ============== INVALID METHOD ===================
+	if (req.getMethod() != "GET" && req.getMethod() != "POST" && req.getMethod() != "DELETE")
 	{
-		// statusCode = "405 Method Not Allowed";
-		// contentType = "text/html; charset=iso-8859-1";
-		// body = defaultErrorBody(405, "Method Not Allowed");
 		headers["Allow"] = "GET, POST, DELETE";
 		renderError(405, "Method Not Allowed", server);
 		return;
 	}
 
-	// 2) Server root / index / autoindex from config
+	//--------------------------
+	// 0) Choose location/config
+	//--------------------------
 	Location *loc = server->findLocationForPath(req.getPath());
 
 	std::string serverRoot;
 	std::string indexName;
 	std::vector<short> allowedMethods;
-	bool autoIndex;
-	
+	// std::string allowMethodsServerUniversal;
+	bool autoIndex = false;
 
 	// If location is found, use its settings; otherwise use server defaults
 	if (loc)
@@ -642,15 +640,21 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		autoIndex = server->getAutoIndex();
 	}
 
+	// allowMethodsServerUniversal = server->getAllowMethods();
+
+	// ---------------------------
+	// 1) Normalize and resolve path
+	// ---------------------------
+
 	// Location path for relative target resolution
 	std::string locationPath = loc ? loc->getPath() : "";
-	
 	// Resolve target path safely 
 	std::string rawTarget = req.getPath().empty() ? "/" : req.getPath();
 
 	// Decode percent-encoding so %2e%2e etc. can't bypass normalization
 	std::string decodedTarget = percentDecode(rawTarget);
 
+	// Request path relative to the matched location prefix
 	if (!locationPath.empty() && decodedTarget.find(locationPath) == 0)
 	{
 		decodedTarget = decodedTarget.substr(locationPath.length());
@@ -658,27 +662,119 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 			decodedTarget = "/";
 	}
 
-	// std::string full = joinUnderRoot(serverRoot, target);
-	std::string full = joinUnderRoot(serverRoot, decodedTarget);
+	// Map to filesystem under serverRoot
+	std::string fullFSPath = joinUnderRoot(serverRoot, decodedTarget);
 
 	const std::string absRoot = makeAbsolute(serverRoot);
-	const std::string absPath = makeAbsolute(full);
+	const std::string absPath = makeAbsolute(fullFSPath);
 
-	if (req.getMethod() == "POST")
+	std::cout << "[DBG] absRoot=" << absRoot << "\n";
+	std::cout << "[DBG] absPath=" << absPath << "\n";
+
+	if (!isUnderRootAbs(absPath, absRoot))
 	{
-		
-		std::cout << "--------------------" << req.getBodyFilePath() << std::endl;
+		renderError(404, "Not Found", server);
+		return;
+	}
 
+	// ---------------------------
+	// 2) Branch by method :
+	//    DELETE → POST → GET → otherwise 405
+	// ---------------------------
+
+	const std::string method = req.getMethod();
+	
+	// ============================== DELETE ==============================
+	if (method == "DELETE")
+	{
+
+		// bool isDeleteAllowed = req.getMethod() == "DELETE" && loc->isMethodAllowed(allowedMethods, DELETE);
+		if (loc && !loc->isMethodAllowed(allowedMethods, DELETE))
+		{
+			headers["Allow"] = "GET, POST, DELETE";
+			renderError(405, "Method Not Allowed", server);
+			return;
+		}
+
+		// // Check if the path is under the root
+		// if (!isUnderRootAbs(absPath, absRoot))
+		// {
+		// 	renderError(403, "Forbidden", server);
+		// 	return;
+		// }
+		// Check if the path is the root directory
+		if (absPath == absRoot)
+		{
+			renderError(403, "Forbidden", server); // do not allow deleting root directory
+			return;
+		}
+		// Only regular files can be deleted
+		off_t sizeTmp = 0;
+		if (!isRegular(absPath, sizeTmp))
+		{
+			// if is directory or if not found
+			if (isDirectory(absPath))
+			{
+				renderError(403, "Forbidden", server); // do not allow dlt directory
+				return;
+			}
+			renderError(404, "Not Found", server);
+			return;
+		}
+
+		if (::unlink(absPath.c_str()) != 0)
+		{
+			switch (errno)
+			{
+				case EACCES:
+				case EPERM:
+					renderError(403, "Forbidden", server);
+					return;
+				case ENOENT:
+					renderError(404, "Not Found", server);
+					return;
+				case ENOTDIR:
+					renderError(404, "Not Found", server);
+					return;
+				case EISDIR:
+					renderError(403, "Forbidden", server); // do not allow dlt directory
+					return;
+				case EBUSY:
+				case ETXTBSY:
+				case EROFS:
+					renderError(409, "Conflict", server);
+					return;
+				default:
+					renderError(500, "Internal Server Error", server);
+					return;
+			}
+		}
+
+		statusCode = "200 OK";
+		contentType = "text/plain; charset=iso-8859-1";
+		body = "Deleted\n";
+		return;
+	}
+	// ============================== POST ==============================
+	if (method == "POST")
+	{
+		if (loc && !loc->isMethodAllowed(allowedMethods, POST))
+		{
+			headers["Allow"] = "GET, POST, DELETE";
+			renderError(405, "Method Not Allowed", server);
+			return;
+		}
+
+		std::cout << "[DBG] Body temp file: " << req.getBodyFilePath() << std::endl;
+
+		// Choose upload dir (here: serverRoot directly; you can switch to serverRoot + "/uploads")
 		std::string uploadsDir = serverRoot;
-
-		// Ensure uploadsDir exists (optional: create if not exists)
-		// if (uploadsDir.size() >= 7 && uploadsDir.substr(uploadsDir.size() - 7) != "/uploads")
-		// 	uploadsDir += "/uploads";
 
 		struct stat st;
 		if (stat(uploadsDir.c_str(), &st) != 0)
 			mkdir(uploadsDir.c_str(), 0755);
 	
+		// Sanitize filename (strip any path)
 		std::string filename = req.getUploadedFilename();
 		if (filename.find('/') != std::string::npos)
 			filename = filename.substr(filename.find_last_of('/') + 1);
@@ -709,8 +805,8 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		ofs.write(fileData.c_str(), fileData.size());
 		ofs.close();
 	
-		std::cout << "Expected body size: " << req.getBodySize() << std::endl;
-		std::cout << "fileDATA size: " << fileData.size() << std::endl;
+		std::cout << "[DBG] Expected body size: " << req.getBodySize() << std::endl;
+		std::cout << "[DBG] fileData size: " << fileData.size() << std::endl;
 		
 		// Check if file was written and size matches
 		off_t writtenSize = 0;
@@ -727,173 +823,88 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		return;
 	}
 
-
-	// std::cout << "--------------> " << isUnderRootAbs(absPath, absRoot) << std::endl;
-	std::cout << "[DBG] absRoot=" << absRoot << "\n";
-	std::cout << "[DBG] absPath=" << absPath << "\n";
-
-	if (!isUnderRootAbs(absPath, absRoot))
+	// ========== GET ==========
+	if (method == "GET")
 	{
+		// Respect method policy
+		if (loc && !loc->isMethodAllowed(allowedMethods, GET))
+		{
+			headers["Allow"] = "GET, POST, DELETE";
+			renderError(405, "Method Not Allowed", server);
+			return;
+		}
+
+		// If directory, try index.html (or configured index). If still a dir:
+		//    - autoindex off -> 403 (we'll add actual listing later)
+		//    - autoindex on  -> minimal 200 placeholder for now
+		if (isDirectory(absPath))
+		{
+			std::cout << "[DBG] index configured: " << indexName << "\n";
+
+			if (!indexName.empty())
+			{
+				std::string withIndex = absPath;
+				if (withIndex.size() == 0 || withIndex[withIndex.size() - 1] != '/')
+				{
+					withIndex += "/";
+				}
+				withIndex += indexName;
+			
+				off_t idxSz = 0;
+				if (isRegular(withIndex, idxSz))
+				{
+					std::string data = slurpFile(withIndex);
+					if (data.empty() && idxSz > 0)
+					{
+						renderError(500, "Internal Server Error", server);
+						return;
+					}
+					statusCode = "200 OK";
+					contentType = guessType(withIndex);
+					body = data;
+					return;
+				}
+			}
+
+			if (!autoIndex)
+			{
+				renderError(403, "Forbidden", server);
+				return;
+			}
+			// Ensure requestPath ends with '/'
+			std::string requestPath = rawTarget;
+			if (requestPath.empty() || requestPath[requestPath.size() - 1] != '/')
+			{
+				requestPath += "/";
+			}
+			// Build listing HTML relative to request path (not the filesystem path)
+			contentType = "text/html; charset=iso-8859-1";
+			statusCode = "200 OK";
+			body = buildAutoindexHtml(serverRoot, absPath, requestPath);
+			return;
+		}
+
+		// If regular file, serve it
+		off_t size = 0;
+		if (isRegular(absPath, size))
+		{
+			std::string data = slurpFile(absPath);
+			if (data.empty() && size > 0)
+			{
+				renderError(500, "Internal Server Error", server);
+				return;
+			}
+			statusCode = "200 OK";
+			contentType = guessType(absPath);
+			body = data;
+			return;
+		}
+		// Not found
 		renderError(404, "Not Found", server);
 		return;
 	}
-
-	// ============================== DELETE ==============================
-	bool isDeleteAllowed = req.getMethod() == "DELETE" && loc->isMethodAllowed(allowedMethods, DELETE);
-	if (isDeleteAllowed)
-	{
-		std::cout << "DELETE method is allowed." << std::endl;
-		// Check if the path is under the root
-		if (!isUnderRootAbs(absPath, absRoot))
-		{
-			renderError(403, "Forbidden", server);
-			return;
-		}
-
-		if (absPath == absRoot)
-		{
-			renderError(403, "Forbidden", server); // do not allow deleting root directory
-			return;
-		}
-
-		off_t sizeTmp = 0;
-		if (!isRegular(absPath, sizeTmp))
-		{
-			// if is directory or if not found
-			if (isDirectory(absPath))
-			{
-				renderError(403, "Forbidden", server); // do not allow dlt directory
-				return;
-			}
-			renderError(404, "Not Found", server);
-			return;
-		}
-		if (::unlink(absPath.c_str()) != 0)
-		{
-			switch (errno)
-			{
-				case EACCES:
-				case EPERM:
-					renderError(403, "Forbidden", server);
-					break;
-				case ENOENT:
-					renderError(404, "Not Found", server);
-					break;
-				case ENOTDIR:
-					renderError(404, "Not Found", server);
-					break;
-				case EISDIR:
-					renderError(403, "Forbidden", server); // do not allow dlt directory
-					break;
-				case EBUSY:
-				case ETXTBSY:
-				case EROFS:
-					renderError(409, "Conflict", server);
-					break;
-				default:
-					renderError(500, "Internal Server Error", server);
-					return;
-			}
-		}
-
-		statusCode = "200 OK";
-		contentType = "text/plain; charset=iso-8859-1";
-		body = "Deleted\n";
-		return;
-	}
-
-	// ============== INVALID ===================
-	if (req.getMethod() != "GET")
-	{
-		// statusCode = "405 Method Not Allowed";
-		// contentType = "text/html; charset=iso-8859-1";
-		// body = defaultErrorBody(405, "Method Not Allowed");
-		headers["Allow"] = "GET, POST, DELETE";
-		renderError(405, "Method Not Allowed", server);
-		return;
-	}
-
-	// ============== GET ===================
-	// 4) If directory, try index.html (or configured index). If still a dir:
-	//    - autoindex off -> 403 (we'll add actual listing later)
-	//    - autoindex on  -> minimal 200 placeholder for now
-	if (isDirectory(absPath))
-	{
-		std::cout << indexName << "-------------------------" << std::endl;
-		if (!indexName.empty())
-		{
-			std::string withIndex = absPath;
-			if (withIndex.size() == 0 || withIndex[withIndex.size() - 1] != '/')
-			{
-				withIndex += "/";
-			}
-			withIndex += indexName;
-	
-			off_t idxSz = 0;
-			if (isRegular(withIndex, idxSz))
-			{
-				std::string data = slurpFile(withIndex);
-				if (data.empty() && idxSz > 0)
-				{
-					// statusCode = "500 Internal Server Error";
-					// contentType = "text/html; charset=iso-8859-1";
-					// body = defaultErrorBody(500, "Internal Server Error");
-					renderError(500, "Internal Server Error", server);
-					return;
-				}
-				statusCode = "200 OK";
-				contentType = guessType(withIndex);
-				body = data;
-				return;
-			}
-		}
-
-		if (!autoIndex)
-		{
-			// statusCode = "403 Forbidden";
-			// contentType = "text/html; charset=iso-8859-1";
-			// body = defaultErrorBody(403, "Forbidden");
-			renderError(403, "Forbidden", server);
-			return;
-		}
-		// Build listing HTML relative to request path (not the filesystem path)
-		contentType = "text/html; charset=iso-8859-1";
-		statusCode = "200 OK";
-		// Ensure requestPath ends with '/'
-		std::string requestPath = rawTarget;
-		if (requestPath.empty() || requestPath[requestPath.size() - 1] != '/')
-		{
-			requestPath += "/";
-		}
-		body = buildAutoindexHtml(serverRoot, absPath, requestPath);
-		return;
-
-	}
-
-	// 5) If regular file, serve it
-	off_t size = 0;
-	if (isRegular(absPath, size))
-	{
-		std::string data = slurpFile(absPath);
-		if (data.empty() && size > 0)
-		{
-			// statusCode = "500 Internal Server Error";
-			// contentType = "text/html; charset=iso-8859-1";
-			// body = defaultErrorBody(500, "Internal Server Error");
-			renderError(500, "Internal Server Error", server);
-			return;
-		}
-		statusCode = "200 OK";
-		contentType = guessType(absPath);
-		body = data;
-		return;
-	}
-
-	// 6) Not found
-	// statusCode = "404 Not Found";
-	// contentType = "text/html; charset=iso-8859-1";
-	// body = defaultErrorBody(404, "Not Found");
-	renderError(404, "Not Found", server);
+	renderError(405, "Method Not Allowed", server);
+	return;
 }
 
 // Setters
