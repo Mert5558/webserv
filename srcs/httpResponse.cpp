@@ -568,7 +568,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 
 	// 1) Methods: we fully implement GET here.
 	// Others will be 405 for now (spec requires GET, POST, DELETE later). 
-	if (req.getMethod() != "GET")
+	if (req.getMethod() != "GET" && req.getMethod() != "POST")
 	{
 		// statusCode = "405 Method Not Allowed";
 		// contentType = "text/html; charset=iso-8859-1";
@@ -620,6 +620,80 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 
 	const std::string absRoot = makeAbsolute(serverRoot);
 	const std::string absPath = makeAbsolute(full);
+
+	if (req.getMethod() == "POST")
+	{
+		
+		std::cout << "--------------------" << req.getBodyFilePath() << std::endl;
+
+		std::string uploadsDir = serverRoot;
+
+		// Ensure uploadsDir exists (optional: create if not exists)
+		// if (uploadsDir.size() >= 7 && uploadsDir.substr(uploadsDir.size() - 7) != "/uploads")
+		// 	uploadsDir += "/uploads";
+
+		struct stat st;
+		if (stat(uploadsDir.c_str(), &st) != 0)
+			mkdir(uploadsDir.c_str(), 0755);
+	
+		std::string filename = req.getUploadedFilename();
+		if (filename.find('/') != std::string::npos)
+			filename = filename.substr(filename.find_last_of('/') + 1);
+	
+		std::string uploadPath = uploadsDir + "/" + filename;
+
+		std::ifstream bodyFile(req.getBodyFilePath().c_str(), std::ios::in | std::ios::binary);
+		if (!bodyFile) {
+			renderError(500, "Failed to open POST body file", server);
+			return;
+		}
+		
+		if (isDirectory(uploadPath)) {
+			renderError(403, "Cannot POST to a directory", server);
+			return;
+		}
+	
+
+		std::streamsize fileSize = std::filesystem::file_size(req.getBodyFilePath());
+		std::string postBody(fileSize, '\0');
+		if (!bodyFile.read(&postBody[0], fileSize)) {
+			renderError(500, "Failed to read POST body file", server);
+			return;
+		}
+		bodyFile.close();
+		
+		if (postBody.size() == 0)
+		{
+			renderError(400, "Empty POST body", server);
+			return;
+		}
+
+		// Write the POST body to the uploads folder
+		std::ofstream ofs(uploadPath.c_str(), std::ios::out | std::ios::binary);
+		if (!ofs) {
+			renderError(500, "Failed to open file for POST", server);
+			return;
+		}
+		ofs.write(postBody.c_str(), postBody.size());
+		ofs.close();
+	
+		std::cout << "POST body size: " << postBody.size() << std::endl;
+		std::cout << "Expected body size: " << req.getBodySize() << std::endl;
+		
+		// Check if file was written and size matches
+		off_t writtenSize = 0;
+		if (!isRegular(uploadPath, writtenSize) || static_cast<size_t>(writtenSize) != req.getBodySize()) {
+			renderError(500, "Failed to write POST body", server);
+			return;
+		}
+		std::cout << "Written file size: " << writtenSize << std::endl;
+	
+		statusCode = "201 Created";
+		contentType = "text/plain";
+		body = "Resource created in uploads.\n";
+		return;
+	}
+
 
 	// std::cout << "--------------> " << isUnderRootAbs(absPath, absRoot) << std::endl;
 	std::cout << "[DBG] absRoot=" << absRoot << "\n";
