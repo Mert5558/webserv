@@ -642,47 +642,37 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	
 		std::string uploadPath = uploadsDir + "/" + filename;
 
-		std::ifstream bodyFile(req.getBodyFilePath().c_str(), std::ios::in | std::ios::binary);
-		if (!bodyFile) {
-			renderError(500, "Failed to open POST body file", server);
-			return;
-		}
-		
-		if (isDirectory(uploadPath)) {
-			renderError(403, "Cannot POST to a directory", server);
-			return;
-		}
-	
+		const std::string &fileData = req.getUploadedFileData();
 
-		std::streamsize fileSize = std::filesystem::file_size(req.getBodyFilePath());
-		std::string postBody(fileSize, '\0');
-		if (!bodyFile.read(&postBody[0], fileSize)) {
-			renderError(500, "Failed to read POST body file", server);
-			return;
-		}
-		bodyFile.close();
-		
-		if (postBody.size() == 0)
+		if (fileData.empty())
 		{
 			renderError(400, "Empty POST body", server);
 			return;
 		}
 
+		if (isDirectory(uploadPath))
+		{
+			renderError(403, "Cannot POST to a directory", server);
+			return;
+		}
+
 		// Write the POST body to the uploads folder
 		std::ofstream ofs(uploadPath.c_str(), std::ios::out | std::ios::binary);
-		if (!ofs) {
+		if (!ofs)
+		{
 			renderError(500, "Failed to open file for POST", server);
 			return;
 		}
-		ofs.write(postBody.c_str(), postBody.size());
+		ofs.write(fileData.c_str(), fileData.size());
 		ofs.close();
 	
-		std::cout << "POST body size: " << postBody.size() << std::endl;
 		std::cout << "Expected body size: " << req.getBodySize() << std::endl;
+		std::cout << "fileDATA size: " << fileData.size() << std::endl;
 		
 		// Check if file was written and size matches
 		off_t writtenSize = 0;
-		if (!isRegular(uploadPath, writtenSize) || static_cast<size_t>(writtenSize) != req.getBodySize()) {
+		if (!isRegular(uploadPath, writtenSize) || static_cast<size_t>(writtenSize) != fileData.size())
+		{
 			renderError(500, "Failed to write POST body", server);
 			return;
 		}

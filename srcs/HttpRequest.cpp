@@ -179,6 +179,11 @@ std::string HttpRequest::getUploadedFilename() const
 	return (uploadedFilename);
 }
 
+std::string HttpRequest::getUploadedFileData() const
+{
+	return (uploadedFileData);
+}
+
 
 // ======================================================
 // Parsing functions for Header block and request line                          
@@ -425,77 +430,57 @@ ParseResult HttpRequest::parse()
 
 void HttpRequest::parseMultipartFilename(const std::string &bodyFilePath)
 {
-    std::ifstream file(bodyFilePath, std::ios::binary);
-    if (!file.is_open()) {
-        uploadedFilename.clear();
-        return;
-    }
+	uploadedFilename.clear();
+	uploadedFileData.clear();
 
-    std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    file.close();
+	std::ifstream file(bodyFilePath, std::ios::binary);
+	if (!file.is_open())
+		return;
+	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	file.close();
 
-    std::string boundary;
-    auto it = headers.find("content-type");
-    if (it != headers.end()) {
-        std::string ct = it->second;
-        size_t bpos = ct.find("boundary=");
-        if (bpos != std::string::npos)
-            boundary = "--" + ct.substr(bpos + 9);
-    }
-    if (boundary.empty()) {
-        uploadedFilename.clear();
-        return;
-    }
+	std::string boundary;
+	auto it = headers.find("content-type");
+	if (it != headers.end())
+	{
+		std::string ct = it->second;
+		size_t bpos = ct.find("boundary=");
+		if (bpos != std::string::npos)
+			boundary = ct.substr(bpos + 9);
+	}
+	if (boundary.empty())
+		return;
 
-    size_t partStart = body.find(boundary);
-    if (partStart == std::string::npos) {
-        uploadedFilename.clear();
-        return;
-    }
-    partStart += boundary.size() + 2; // skip boundary and CRLF
+	std::string boundaryMarker = "--" + boundary;
+	size_t partStart = body.find(boundaryMarker);
+	if (partStart == std::string::npos)
+		return;
+	partStart += boundaryMarker.size();
 
-    size_t headersEnd = body.find("\r\n\r\n", partStart);
-    if (headersEnd == std::string::npos) {
-        uploadedFilename.clear();
-        return;
-    }
+	if (body.substr(partStart, 2) == "\r\n")
+		partStart += 2;
 
-    std::string partHeaders = body.substr(partStart, headersEnd - partStart);
+	size_t headersEnd = body.find("\r\n\r\n", partStart);
+	if (headersEnd == std::string::npos)
+		return;
 
-    // Find filename in Content-Disposition
-    std::string filename;
-    size_t fnPos = partHeaders.find("filename=\"");
-    if (fnPos != std::string::npos) {
-        size_t fnEnd = partHeaders.find("\"", fnPos + 10);
-        if (fnEnd != std::string::npos)
-            filename = partHeaders.substr(fnPos + 10, fnEnd - (fnPos + 10));
-    }
-    if (filename.empty()) {
-        uploadedFilename.clear();
-        return;
-    }
+	std::string partHeaders = body.substr(partStart, headersEnd - partStart);
 
-    // File data starts after headers
-    size_t dataStart = headersEnd + 4;
-    size_t dataEnd = body.find(boundary, dataStart);
-    if (dataEnd == std::string::npos || dataEnd < 2) {
-        uploadedFilename.clear();
-        return;
-    }
-    dataEnd -= 2; // minus CRLF before boundary
+	size_t fnPos = partHeaders.find("filename=\"");
+	if (fnPos != std::string::npos)
+	{
+		size_t fnEnd = partHeaders.find("\"", fnPos + 10);
+		if (fnEnd != std::string::npos)
+			uploadedFilename = partHeaders.substr(fnPos + 10, fnEnd - (fnPos + 10));
+	}
 
-    std::string fileData = body.substr(dataStart, dataEnd - dataStart);
+	size_t dataStart = headersEnd + 4;
+	std::string endBoundary = "\r\n--" + boundary;
+	size_t dataEnd = body.find(endBoundary, dataStart);
+	if (dataEnd == std::string::npos)
+		return;
 
-    // Save fileData to disk
-    std::ofstream ofs("./www/uploads/" + filename, std::ios::binary);
-    if (!ofs.is_open()) {
-        uploadedFilename.clear();
-        return;
-    }
-    ofs.write(fileData.c_str(), fileData.size());
-    ofs.close();
-
-    uploadedFilename = filename;
+	uploadedFileData = body.substr(dataStart, dataEnd - dataStart);
 }
 
 
