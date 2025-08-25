@@ -650,6 +650,14 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 			return;
 		}
 
+		size_t maxBodySize = server->getClientMaxBodySize();
+		std::cout << "----- this is maxBody size------: " << server->getClientMaxBodySize() << std::endl;
+		if (req.getBodySize() > maxBodySize)
+		{
+			renderError(413, "Payload to large!", server);
+			return;
+		}
+
 		if (isDirectory(uploadPath))
 		{
 			renderError(403, "Cannot POST to a directory", server);
