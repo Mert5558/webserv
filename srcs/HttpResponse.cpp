@@ -675,21 +675,49 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		// if (uploadsDir.size() >= 7 && uploadsDir.substr(uploadsDir.size() - 7) != "/uploads")
 		// 	uploadsDir += "/uploads";
 
+		
+		std::string filename = req.getUploadedFilename();
+		
+		std::string fileData;
+		
+		if (!filename.empty())
+		{
+			if (filename.find('/') != std::string::npos)
+			filename = filename.substr(filename.find_last_of('/') + 1);
+			fileData = req.getUploadedFileData();
+		}
+		else
+		{
+			uploadsDir = serverRoot + "/uploads";
+			filename = "upload.txt";
+			std::ifstream bodyFile(req.getBodyFilePath().c_str(), std::ios::in | std::ios::binary);
+			if (bodyFile)
+			{
+				std::ostringstream ss;
+				ss << bodyFile.rdbuf();
+				fileData = ss.str();
+			}
+			else
+			fileData = "";
+		}
+		
 		struct stat st;
 		if (stat(uploadsDir.c_str(), &st) != 0)
 			mkdir(uploadsDir.c_str(), 0755);
-	
-		std::string filename = req.getUploadedFilename();
-		if (filename.find('/') != std::string::npos)
-			filename = filename.substr(filename.find_last_of('/') + 1);
-	
-		std::string uploadPath = uploadsDir + "/" + filename;
 
-		const std::string &fileData = req.getUploadedFileData();
+		std::string uploadPath = uploadsDir + "/" + filename;
 
 		if (fileData.empty())
 		{
 			renderError(400, "Empty POST body", server);
+			return;
+		}
+
+		size_t maxBodySize = server->getClientMaxBodySize();
+		std::cout << "----- this is maxBody size------: " << server->getClientMaxBodySize() << std::endl;
+		if (req.getBodySize() > maxBodySize)
+		{
+			renderError(413, "Payload to large!", server);
 			return;
 		}
 
