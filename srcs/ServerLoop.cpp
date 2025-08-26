@@ -161,9 +161,10 @@ static void applyCgiOutputToResponse(const std::string &out, HttpResponse &respo
 
 
 
-void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
+// void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
+void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &response)
 {
-    InitConfig *srv = servers.empty() ? NULL : &servers[0];
+    // InitConfig *srv = servers.empty() ? NULL : &servers[0];
     if (!srv)
 	{
         response.prepare(request, NULL);
@@ -453,7 +454,8 @@ void ServerLoop::startServer(ParseConfig parse)
 				if (parseRes == ParseResult::COMPLETE)
 				{
 					std::cout << "[READ] Request complete on fd=" << fd << std::endl;
-					parseHttp(servers, cl.request, cl.response);
+					InitConfig *srv = &servers[cl.server_index];
+					parseHttp(srv, cl.request, cl.response);
 					cl.outBuf = cl.response.buildResponse();
 					cl.outOff = 0;
 					pfd.events = POLLOUT;

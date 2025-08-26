@@ -671,6 +671,8 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	std::cout << "[DBG] absRoot=" << absRoot << "\n";
 	std::cout << "[DBG] absPath=" << absPath << "\n";
 
+	std::cout << "[DBG] Server root: " << serverRoot << " for server at " << server->getPort() << std::endl;
+
 	if (!isUnderRootAbs(absPath, absRoot))
 	{
 		renderError(404, "Not Found", server);
