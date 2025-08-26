@@ -57,7 +57,10 @@ void Location::setPath(const std::string &path)
 
 void Location::setRoot(const std::string &root)
 {
-	this->root = root;
+	std::string cleanRoot = root;
+	if (cleanRoot.compare(0, 2, "./") == 0)
+		cleanRoot = cleanRoot.substr(2);
+	this->root = cleanRoot;
 }
 
 void Location::setIndex(const std::string &index)

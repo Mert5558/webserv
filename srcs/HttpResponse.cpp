@@ -355,7 +355,7 @@ std::string HttpResponse::loadConfiguredErrorPage(int code, const InitConfig *se
 	}
 
 	// Build absolute path under root and read it
-	std::string abs = joinUnderRoot(server->getRoot(), rel);
+	std::string abs = rel;
 	std::cout << "[DBG------] Absolute error page path: " << abs << std::endl;
 	std::string absNorm = makeAbsolute(abs);
 	std::cout << "[DBG------] Normalized absolute error page path: " << absNorm << std::endl;
@@ -717,7 +717,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		std::cout << "----- this is maxBody size------: " << server->getClientMaxBodySize() << std::endl;
 		if (req.getBodySize() > maxBodySize)
 		{
-			renderError(413, "Payload to large!", server);
+			renderError(413, "Payload to large amk!", server);
 			return;
 		}
 

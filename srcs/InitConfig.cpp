@@ -194,7 +194,10 @@ void InitConfig::setServerName(const std::string &serverName)
 
 void InitConfig::setRoot(const std::string &root)
 {
-	this->root = root;
+	std::string clean_root = root;
+	if (clean_root.compare(0, 2, "./") == 0)
+		clean_root = clean_root.substr(2);
+	this->root = clean_root;
 }
 
 void InitConfig::setIndex(const std::string &index)
@@ -239,6 +242,9 @@ bool InitConfig::setErrorPage(const std::string &errorpage)
 		return (false);
 	if (!path.empty())
 	{
+		if (path.compare(0, 2, "./") == 0)
+			path = path.substr(2);
+
 		std::string full_path;
 		if (!this->root.empty() && this->root.back() == '/' && path.front() == '/')
 			full_path = this->root + path.substr(1);
