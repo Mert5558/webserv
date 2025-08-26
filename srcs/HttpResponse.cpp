@@ -769,25 +769,57 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 
 		std::cout << "[DBG] Body temp file: " << req.getBodyFilePath() << std::endl;
 
-		// Choose upload dir (here: serverRoot directly; you can switch to serverRoot + "/uploads")
+		std::cout << "--------------------" << req.getBodyFilePath() << std::endl;
+
 		std::string uploadsDir = serverRoot;
 
+		// Ensure uploadsDir exists (optional: create if not exists)
+		// if (uploadsDir.size() >= 7 && uploadsDir.substr(uploadsDir.size() - 7) != "/uploads")
+		// 	uploadsDir += "/uploads";
+
+		
+		std::string filename = req.getUploadedFilename();
+		
+		std::string fileData;
+		
+		if (!filename.empty())
+		{
+			if (filename.find('/') != std::string::npos)
+			filename = filename.substr(filename.find_last_of('/') + 1);
+			fileData = req.getUploadedFileData();
+		}
+		else
+		{
+			uploadsDir = serverRoot + "/uploads";
+			filename = "upload.txt";
+			std::ifstream bodyFile(req.getBodyFilePath().c_str(), std::ios::in | std::ios::binary);
+			if (bodyFile)
+			{
+				std::ostringstream ss;
+				ss << bodyFile.rdbuf();
+				fileData = ss.str();
+			}
+			else
+			fileData = "";
+		}
+		
 		struct stat st;
 		if (stat(uploadsDir.c_str(), &st) != 0)
 			mkdir(uploadsDir.c_str(), 0755);
-	
-		// Sanitize filename (strip any path)
-		std::string filename = req.getUploadedFilename();
-		if (filename.find('/') != std::string::npos)
-			filename = filename.substr(filename.find_last_of('/') + 1);
-	
-		std::string uploadPath = uploadsDir + "/" + filename;
 
-		const std::string &fileData = req.getUploadedFileData();
+		std::string uploadPath = uploadsDir + "/" + filename;
 
 		if (fileData.empty())
 		{
 			renderError(400, "Empty POST body", server);
+			return;
+		}
+
+		size_t maxBodySize = server->getClientMaxBodySize();
+		std::cout << "----- this is maxBody size------: " << server->getClientMaxBodySize() << std::endl;
+		if (req.getBodySize() > maxBodySize)
+		{
+			renderError(413, "Payload to large amk!", server);
 			return;
 		}
 
@@ -807,8 +839,8 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		ofs.write(fileData.c_str(), fileData.size());
 		ofs.close();
 	
-		std::cout << "[DBG] Expected body size: " << req.getBodySize() << std::endl;
-		std::cout << "[DBG] fileData size: " << fileData.size() << std::endl;
+		std::cout << "Expected body size: " << req.getBodySize() << std::endl;
+		std::cout << "fileDATA size: " << fileData.size() << std::endl;
 		
 		// Check if file was written and size matches
 		off_t writtenSize = 0;
