@@ -130,12 +130,12 @@ void Location::setCgiExt(const std::string &cgiExt)
 		this->cgi_ext.push_back(ext);
 }
 
-const std::string &Location::getPath()
+const std::string &Location::getPath() const
 {
 	return (path);
 }
 
-const std::string &Location::getRoot()
+const std::string &Location::getRoot() const
 {
 	return (root);
 }
@@ -170,12 +170,12 @@ const std::string &Location::getAlias()
 	return (alias);
 }
 
-const std::vector<std::string> &Location::getCgiPath()
+const std::vector<std::string> &Location::getCgiPath() const
 {
 	return (cgi_path);
 }
 
-const std::vector<std::string> &Location::getCgiExt()
+const std::vector<std::string> &Location::getCgiExt() const
 {
 	return (cgi_ext);
 }

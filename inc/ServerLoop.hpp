@@ -18,7 +18,9 @@ class ServerLoop
 		void initPollfd(std::vector<InitConfig> &servers);
 
 		// Parse HTTP requests and send responses - Must be moved
-		void parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response); //to be moved to parseHttp.hpp
+		// void parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response); //to be moved to parseHttp.hpp
+		void parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &response);
+
 
 		// Remove a file descriptor from the pollfd vector
 		void removeFd(std::vector<pollfd> &fds, size_t index);

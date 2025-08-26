@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/18 20:50:47 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/24 18:42:18 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,19 +103,21 @@ void HttpRequest::setVersion(Version version)
 	this->version = version;
 }
 
-void HttpRequest::setBody(const std::string &filePath)
+void    HttpRequest::setBody(const std::string &filePath)
 {
-	if(this->bodyFile.is_open())
-        this->bodyFile.close();
+    if (bodyFile.is_open())
+        return;
 
-    this->bodyFile.open(filePath, std::ios::out | std::ios::trunc);
-    if (!bodyFile.is_open())
+    bodyFile.open(filePath.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
+    if(!bodyFile.is_open())
     {
+        std::cerr << "Failed to open body file: " << filePath
+                    << " (errno=" << errno << " : " << std::strerror(errno) << ")\n";
         throw std::runtime_error("Failed to open file: " + filePath);
     }
-    this->bodyFilePath = filePath;
-
+    bodyFilePath = filePath;
     std::cout << "Body file set to: " << filePath << std::endl;
+    
 }
 
 // void HttpRequest::setHeaders(const std::unordered_map<std::string, std::string> &headers)
@@ -183,6 +185,10 @@ std::string HttpRequest::getUploadedFileData() const
 {
 	return (uploadedFileData);
 }
+std::string HttpRequest::getQueryString() const
+{
+    return this->queryString;
+}
 
 
 // ======================================================
@@ -192,12 +198,24 @@ std::string HttpRequest::getUploadedFileData() const
 bool    HttpRequest::parseStartLine(const std::string &line)
 {
     std::istringstream requestLine(line);
-    std::string methodStr, versionStr;
+    std::string methodStr, versionStr , fullPath;
     
     requestLine >> methodStr >> path >> versionStr;
 
     method = toMethodEnum(methodStr);
     version = toVersionEnum(versionStr);
+
+    size_t query = path.find('?');
+    if (query == std::string::npos)
+    {
+        queryString.clear();
+    }
+    else
+    {
+        fullPath = path.substr(0, query);
+        queryString = path.substr(query + 1);
+        path = fullPath;
+    }
     
     if ( method == Method::INVALID || version == Version::INVALID)
     {
@@ -349,7 +367,7 @@ ParseResult HttpRequest::parse()
                 }
                 if (method == Method::POST)
                 {
-					bool chunked = false;
+                    bool chunked = false;
                     std::unordered_map<std::string,std::string>::const_iterator te = headers.find("transfer-encoding");
                     if (te != headers.end() && te->second.find("chunked") != std::string::npos)
                         chunked = true;
@@ -374,6 +392,7 @@ ParseResult HttpRequest::parse()
                     std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
                 }
             }
+            [[fallthrough]];
 
             case ParseState::BODY:
             {
@@ -385,11 +404,22 @@ ParseResult HttpRequest::parse()
                         return ParseResult::INCOMPLETE;
 
                     if (bodyFile.is_open())
-					{
-                        bodyFile.write(rawRequest.data(), contentLength);
-						bodyFile.flush();
-						bodySize = contentLength;
-					}
+					// {
+                    //     bodyFile.write(rawRequest.data(), contentLength);
+					// 	bodyFile.flush();
+					// 	bodySize = contentLength;
+					// }
+                    {
+                        bodyFile.write(rawRequest.data(), contentLength); 
+                        bodyFile.flush();
+                        bodySize = contentLength;
+                        if (!bodyFile)
+                        {
+                            std::cerr << "Body write failed\n";
+                            parseState = ParseState::ERROR;
+                            return ParseResult::ERROR;
+                        } 
+                    }
                     
                     rawRequest.erase(0, contentLength);
 
@@ -482,82 +512,6 @@ void HttpRequest::parseMultipartFilename(const std::string &bodyFilePath)
 
 	uploadedFileData = body.substr(dataStart, dataEnd - dataStart);
 }
-
-
-// ================== NEED TO SEE =====================
-// bool    HttpRequest::parseRequestFromCompleteBuffer()
-// {
-//     std::istringstream raw(rawRequest);
-//     std::string line;
-
-//     // Clear previous data
-//     reset();
-
-//     setBody("./http_request_body.txt");
-    
-//     while (std::getline(raw, line))
-//     {
-//         // log the parsing state
-//         //std::cout << "Processing line: " << line << std::endl;
-//         //std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
-        
-//         switch (parseState)
-//         {
-//             case ParseState::START_LINE:
-//                 if (!parseStartLine(line))
-//                 {
-//                     parseState = ParseState::ERROR;
-//                     return false;
-//                 }    
-//                 parseState = ParseState::HEADERS;
-//                 break;
-                
-//                 case ParseState::HEADERS:  
-//                 if (line.empty() || line == "\r") // End of headers
-//                 {
-//                     std::cout << "\nEnd of headers detected." << std::endl;
-//                     // Skip BODY state if the method does not support a body
-//                     if (method == Method::GET || method == Method::DELETE)
-//                     {
-//                         parseState = ParseState::COMPLETE;
-//                         //std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (it is not Method::POST)" << std::endl;
-//                         return true;
-//                     }
-//                     parseState = ParseState::BODY;
-//                 }  
-//                 else if (!parseHeaders(line))
-//                 {
-//                     parseState = ParseState::ERROR;
-//                     return false;
-//                 }    
-//                 break;
-                
-//                 case ParseState::BODY:
-//                 std::cout << "i am in the BODY state " << std::endl;  
-//                 if (bodyFile.is_open())
-//                 {
-//                     std::cout << "Writing line to body file: " << line << std::endl;
-//                     bodyFile << line << "\n";
-//                     bodySize += line.size() + 1;
-//                 }
-//                 else
-//                 {
-//                     std::cerr << "Body file is not open!" << std::endl;
-//                 }
-//                 break;
-                
-//                 default:    
-//                 parseState = ParseState::ERROR;
-//                 return false;
-//         }        
-        
-//     } 
-//     //log_first_line();  
-//     //log_headers();
-
-//     parseState = ParseState::COMPLETE;
-//     return true;
-// }    
 
 
 // ======================================================

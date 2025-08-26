@@ -4,6 +4,8 @@
 #include "../inc/HttpRequest.hpp"
 #include "../inc/HttpResponse.hpp"
 #include "../inc/Client.hpp"
+#include "../inc/InitConfig.hpp"
+#include "../inc/Cgi.hpp"
 
 #include <cerrno>     // for errno
 #include <signal.h>   // for signal(SIGPIPE, SIG_IGN)
@@ -91,13 +93,173 @@ void ServerLoop::removeFd(std::vector<pollfd> &fds, size_t index)
 }
 
 // Build HTTP response based on request and server config
-void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
+// void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
+// {
+// 	InitConfig *srv = servers.empty() ? NULL : &servers[0];
+// 	response.prepare(request, srv);
+// }
+
+
+
+static const Location* findLocation(const InitConfig &srv, const std::string &reqPath)
 {
-	InitConfig *srv = servers.empty() ? NULL : &servers[0];
-	// std::cout << "++++++++++++++++++++++===================serverLoop::parseHttp() called" << std::endl;
-	// srv->print(); // Debug print server config
-	response.prepare(request, srv);
+	const std::vector<Location> &locs = srv.getLocations();
+    const Location *best = NULL;
+    size_t bestLen = 0;
+    for (size_t i = 0; i < locs.size(); ++i)
+	{
+        const std::string &lp = locs[i].getPath();
+        if (!lp.empty() && reqPath.rfind(lp, 0) == 0)
+		{ // prefix
+            if (lp.size() > bestLen)
+			{
+                best = &locs[i];
+                bestLen = lp.size();
+            }
+        }
+    }
+    return best;
 }
+
+
+
+static void applyCgiOutputToResponse(const std::string &out, HttpResponse &response)
+{
+    // Try CRLF first, then LF fallback
+    std::string::size_type sep = out.find("\r\n\r\n");
+    if (sep == std::string::npos) sep = out.find("\n\n");
+
+    std::string head = (sep == std::string::npos) ? std::string() : out.substr(0, sep);
+    std::string body = (sep == std::string::npos) ? out : out.substr(sep + (out.compare(sep, 4, "\r\n\r\n") == 0 ? 4 : 2));
+
+    std::string status = "200 OK";
+    bool hasContentType = false;
+
+    std::istringstream hs(head);
+    std::string line;
+    while (std::getline(hs, line)) {
+        if (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
+        if (line.empty()) continue;
+        std::string::size_type colon = line.find(':');
+        if (colon == std::string::npos) continue;
+        std::string key = line.substr(0, colon);
+        std::string val = line.substr(colon + 1);
+        while (!val.empty() && (val[0] == ' ' || val[0] == '\t')) val.erase(0,1);
+        if (key == "Status") status = val;
+        else {
+            if (key == "Content-Type") hasContentType = true;
+            response.addHeader(key, val);
+        }
+    }
+
+    if (!hasContentType)
+        response.addHeader("Content-Type", "text/html; charset=utf-8");
+
+    response.setStatusCode(status);
+    response.setBody(body);
+}
+
+
+
+// void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
+void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &response)
+{
+    // InitConfig *srv = servers.empty() ? NULL : &servers[0];
+    if (!srv)
+	{
+        response.prepare(request, NULL);
+        return;
+    }
+
+    const std::string requestPath = request.getPath();
+    const Location *loc = findLocation(*srv, requestPath);
+
+    bool isCgi = false;
+    const Location *cgiLoc = NULL;
+    std::string cgiRootPath;
+
+    if (loc)
+	{
+        // Check extension against configured CGI extensions
+        const std::vector<std::string> &exts = loc->getCgiExt();
+        if (!exts.empty())
+		{
+            size_t dot = requestPath.rfind('.');
+            if (dot != std::string::npos)
+			{
+                std::string ext = requestPath.substr(dot);
+                for (size_t i = 0; i < exts.size(); ++i)
+				{
+                    if (exts[i] == ext)
+					{
+                        isCgi = true;
+                        cgiLoc = loc;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (isCgi && cgiLoc)
+	{
+        try {
+            // Build filesystem path: root + remainder after location prefix
+            std::string locPrefix = cgiLoc->getPath();          // "cgi-bin"
+			std::string relativePath = requestPath.substr(locPrefix.size()); // "/script.py"
+            if (!relativePath.empty() && relativePath[0] == '/')
+                relativePath.erase(0,1);
+            cgiRootPath = cgiLoc->getRoot();
+            if (!cgiRootPath.empty() && cgiRootPath.back() != '/')
+                cgiRootPath += '/';
+            cgiRootPath += relativePath;
+
+            // Prepare environment
+            Location locCopy = *cgiLoc;
+            Client dummyClient;         // if you later store real client info, pass it
+			std::map<std::string,std::string> env = Cgi::buildEnv(request, locCopy, dummyClient, *srv, cgiRootPath);
+
+			// Read request body (if any) to feed CGI stdin
+			std::string cgiInput;
+			if (request.getMethod() == "POST")
+			{
+				const std::string bodyPath = request.getBodyFilePath();
+				if (!bodyPath.empty())
+				{
+					std::ifstream ifs(bodyPath.c_str(), std::ios::binary);
+					std::ostringstream ss;
+					ss << ifs.rdbuf();
+					cgiInput = ss.str();
+				}
+			}
+
+            Cgi cgi(cgiRootPath, env);
+            auto res = cgi.execute(cgiInput, locCopy);
+			if (res.first == CgiStatus::SUCCESS)
+			{
+              
+				applyCgiOutputToResponse(res.second, response);
+                return;
+            }
+			else
+			{
+				std::cerr << "ERROR 500" << std::endl;
+                return;
+            }
+        }
+		catch (const std::exception &e)
+		{
+			std::cerr << "ERROR 500" << std::endl;
+            return;
+        }
+    }
+
+    // Fallback: normal static handling
+    response.prepare(request, srv);
+}
+
+
+
 
 // Debug: dump current server and client state
 void ServerLoop::dumpTopology(const std::vector<InitConfig> &servers)
@@ -292,7 +454,8 @@ void ServerLoop::startServer(ParseConfig parse)
 				if (parseRes == ParseResult::COMPLETE)
 				{
 					std::cout << "[READ] Request complete on fd=" << fd << std::endl;
-					parseHttp(servers, cl.request, cl.response);
+					InitConfig *srv = &servers[cl.server_index];
+					parseHttp(srv, cl.request, cl.response);
 					cl.outBuf = cl.response.buildResponse();
 					cl.outOff = 0;
 					pfd.events = POLLOUT;

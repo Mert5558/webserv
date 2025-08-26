@@ -2,15 +2,265 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Uploads Location Index</title>
+  <title>File Upload and Management - Bucket Hats</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* Global styles */
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #f9f9f9;
+      color: #222;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Header */
+    header {
+      padding: 1rem 2rem;
+      background-color: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    nav a {
+      margin-left: 1.5rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    nav a:hover {
+      color: #007BFF;
+    }
+
+    /* Main content */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    main h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    main p {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 2rem;
+      max-width: 400px;
+    }
+
+    form {
+      background-color: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.07);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 2rem;
+    }
+
+    label {
+      width: 100%;
+      font-weight: 500;
+      color: #333;
+      font-size: 1rem;
+      text-align: left;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: #007BFF;
+      color: #fff;
+      transition: background 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+      margin-left: 10px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+    }
+
+    .delete-btn:hover {
+      background-color: #a71d2a;
+    }
+
+    .home-btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 500;
+      border-radius: 6px;
+      background-color: #007BFF;
+      color: #fff;
+      transition: background 0.3s ease;
+    }
+
+    .home-btn:hover {
+      background-color: #0056b3;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    li {
+      margin: 8px 0;
+      background-color: #fff;
+      padding: 12px 16px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      font-size: 1rem;
+    }
+
+    /* Footer */
+    footer {
+      background-color: #ffffff;
+      padding: 1rem 2rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #555;
+      box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+    }
+
+    footer a {
+      color: #007BFF;
+      margin: 0 0.5rem;
+      font-weight: 500;
+    }
+  </style>
 </head>
 <body>
-  <h1>Uploads Location Index</h1>
-  <p>This is the index page for the uploads location.</p>
-  <form action="/uploads" method="POST" enctype="multipart/form-data">
-    <label for="file">Select file to upload:</label>
-    <input type="file" id="file" name="file" required>
-    <button type="submit">Upload</button>
-  </form>
+  <header>
+    <h1>Bucket Hats</h1>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/cgi-bin/calc.py">Calculator</a>
+      <a href="uploads">Post</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>File Management</h2>
+    <p>Upload new files and manage existing ones.</p>
+
+    <form action="/cgi-bin/files.py" method="POST" enctype="multipart/form-data">
+      <label for="file">Select file to upload:</label>
+      <input type="file" id="file" name="file" required>
+      <button type="submit" class="btn">Upload</button>
+    </form>
+
+    <ul id="file-list"></ul>
+
+  </main>
+
+  <footer>
+    &copy; 2025 Bucket Hats. 
+    <a href="/">Home</a> | 
+    <a href="/cgi-bin/calc.py">Calculator</a> | 
+    <a href="uploads">Post</a>
+  </footer>
+
+  <script>
+    async function loadFiles() {
+      try {
+        const res = await fetch("/cgi-bin/files.py");
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const files = await res.json();
+        const list = document.getElementById("file-list");
+        list.innerHTML = "";
+
+        if (files.length === 0) {
+          list.innerHTML = "<li>No files uploaded yet.</li>";
+          return;
+        }
+
+        files.forEach(file => {
+          if (file === "index.html") return;
+          const li = document.createElement("li");
+
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = file;
+          li.appendChild(nameSpan);
+
+          const btn = document.createElement("button");
+          btn.textContent = "Delete";
+          btn.className = "delete-btn";
+          btn.onclick = async () => {
+            if (!confirm(`Are you sure you want to delete ${file}?`)) return;
+            try {
+              const res = await fetch(`/cgi-bin/files.py?delete=1&name=${encodeURIComponent(file)}`);
+              const msg = await res.text();
+              if (msg.trim() === "OK") loadFiles();
+              else alert("Delete failed: " + msg);
+            } catch (err) {
+              alert("Error during deletion: " + err);
+            }
+          };
+
+          li.appendChild(btn);
+          list.appendChild(li);
+        });
+      } catch (err) {
+        const list = document.getElementById("file-list");
+        list.innerHTML = `<li>Error loading files: ${err.message}</li>`;
+        console.error("Error loading files:", err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadFiles);
+  </script>
 </body>
 </html>

@@ -34,8 +34,9 @@ class InitConfig
 		bool getAutoIndex() const;
 		unsigned long getClientMaxBodySize();
 		const std::map<short, std::string> &getErrorPages() const;
-		std::vector<Location> &getLocations();
+		// std::vector<Location> &getLocations();
 		const std::string &getAllowMethods() const;
+		const std::vector<Location> &getLocations() const;
 
 
 		void setPort(const std::string &port);
@@ -54,6 +55,6 @@ class InitConfig
 		void parseLocation(std::vector<std::string> &location_lines, Location &loc);
 		void addLocation(Location &loc);
 		bool createAndBindSocket();
-		Location* findLocationForPath(const std::string &path);
+		Location* findLocationForPath(const std::string &path) const;
 
 };
