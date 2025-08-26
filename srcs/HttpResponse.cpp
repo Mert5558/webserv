@@ -53,7 +53,7 @@ std::string HttpResponse::guessType(const std::string &path)
 
 	if (ext == "html" || ext == "htm")
 	{
-		return "text/html; charset=iso-8859-1";
+		return "text/html; charset=utf-8";
 	}
 	if (ext == "txt")
 	{
@@ -818,8 +818,17 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		std::cout << "Written file size: " << writtenSize << std::endl;
 	
 		statusCode = "201 Created";
-		contentType = "text/plain";
-		body = "Resource created in uploads.\n";
+		contentType = "text/html; charset=iso-8859-1";
+		body = "<!DOCTYPE html>\n"
+			   "<html>\n"
+			   "<head>\n"
+			   "<title>Resource Created</title>\n"
+			   "</head>\n"
+			   "<body>\n"
+			   "<h1>Resource created in uploads.</h1>\n"
+			   "<button onclick=\"window.history.back();\">Return</button>\n"
+			   "</body>\n"
+			   "</html>\n";
 		return;
 	}
 

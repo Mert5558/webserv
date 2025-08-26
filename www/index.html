@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <title>Welcome</title>
@@ -38,5 +38,205 @@
     <h1>Hello, World!</h1>
     <p>This is a static HTML page served by <strong>Bucket hats</strong> C++ server.</p>
     <button onclick="location.href='/cgi-bin/calc.py'">Calculator</button>
+    <button onclick="location.href='uploads'">Post</button>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #fafafa;
+      color: #222;
+      text-align: center;
+    }
+
+    h1 {
+      font-weight: 600;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      font-weight: 400;
+      font-size: 1.1rem;
+      color: #555;
+      margin-bottom: 2rem;
+      max-width: 400px;
+    }
+
+    .btn {
+      margin: 0.5rem;
+      padding: 12px 28px;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #fff;
+      background-color: #007BFF;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hello, World!</h1>
+  <p>This is a static HTML page served by <strong>Bucket hats</strong> C++ server.</p>
+  <a href="/cgi-bin/calc.py" class="btn">Calculator</a>
+  <a href="uploads" class="btn">Post</a>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome - Bucket Hats</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* Global styles */
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #f9f9f9;
+      color: #222;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Header */
+    header {
+      padding: 1rem 2rem;
+      background-color: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    nav a {
+      margin-left: 1.5rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    nav a:hover {
+      color: #007BFF;
+    }
+
+    /* Main content */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    main h2 {
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    main p {
+      font-size: 1.1rem;
+      color: #555;
+      margin-bottom: 2rem;
+      max-width: 400px;
+    }
+
+    .btn {
+      margin: 0.5rem;
+      padding: 10px 24px;
+      font-size: 1rem;
+      font-weight: 500;
+      background-color: #007BFF;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    /* Footer */
+    footer {
+      background-color: #ffffff;
+      padding: 1rem 2rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #555;
+      box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+    }
+
+    footer a {
+      color: #007BFF;
+      margin: 0 0.5rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bucket Hats</h1>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/cgi-bin/calc.py">Calculator</a>
+      <a href="uploads">Post</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Welcome!</h2>
+    <p>This is the homepage for our server.</p>
+    <!-- <div> -->
+      <!-- <a href="/cgi-bin/calc.py" class="btn">Calculator</a>
+      <a href="uploads" class="btn">Post</a> -->
+    <!-- </div> -->
+  </main>
+
+  <footer>
+    &copy; 2025 Bucket Hats. All rights reserved.
+    <br>
+    <a href="/">Home</a> | 
+    <a href="/cgi-bin/calc.py">Calculator</a> | 
+    <a href="uploads">Post</a>
+  </footer>
 </body>
 </html>
