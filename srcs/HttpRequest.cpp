@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/26 17:00:37 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/27 14:07:41 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -340,7 +340,7 @@ ParseResult HttpRequest::parse()
     while (true)
     {
         // debug state of parsing
-        std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
+        // std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
 
         switch (parseState)
         {
@@ -381,7 +381,6 @@ ParseResult HttpRequest::parse()
                 if (method == Method::GET || method == Method::DELETE)
                 {
                     parseState = ParseState::COMPLETE; // Transition to COMPLETE state
-                    std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " COMPLETE (not a Method::POST)" << std::endl;
                     return ParseResult::COMPLETE;
                 }
                 if (method == Method::POST)
@@ -445,7 +444,6 @@ ParseResult HttpRequest::parse()
                     }
                     
                     parseState = ParseState::BODY;
-                    std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
                 }
 
 				// if (method == Method::POST)
