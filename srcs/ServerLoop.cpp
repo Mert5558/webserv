@@ -412,6 +412,9 @@ void ServerLoop::startServer(ParseConfig parse)
 
 						fds.push_back(pollfd{cfd, POLLIN, 0});
 						clients[cfd] = Client(cfd, serverIdx);
+						// Set the limit once when the client connects
+						clients[cfd].request.setBodyLimit(servers[serverIdx].getClientMaxBodySize());
+						std::cout << "[DBG] Set client body LIMIT to " << servers[serverIdx].getClientMaxBodySize() << " bytes" << std::endl;
 						clientTimeouts[cfd] = now;
 
 						std::cout << "[ACCEPT] New client: fd=" << cfd << " from server " << serverIdx << std::endl;

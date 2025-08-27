@@ -5,6 +5,7 @@
 #include <cerrno>
 #include <iostream>
 #include <limits.h>		// PATH_MAX
+#include <ostream>
 #include <unistd.h>		// getcwd, realpath
 #include <sys/stat.h>	// stat
 #include <cstring>		// std::strncmp, std::strlen
@@ -595,6 +596,11 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 {
 	// Debug
 	// server->print();
+	if (req.isTooLarge())
+	{
+		renderError(413, "Payload Too Large", server);
+		return;
+	}
 
 	// Reset minimal defaults for each response
 	statusCode = "200 OK";
@@ -689,7 +695,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	// ============================== DELETE ==============================
 	if (method == "DELETE")
 	{
-
+		std::cout << " I AM INSIDE DELETEEEEEEEEEEEEE :D " << std::endl;
 		// bool isDeleteAllowed = req.getMethod() == "DELETE" && loc->isMethodAllowed(allowedMethods, DELETE);
 		if (loc && !loc->isMethodAllowed(allowedMethods, DELETE))
 		{
@@ -760,6 +766,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	// ============================== POST ==============================
 	if (method == "POST")
 	{	
+		std::cout << " I AM INSIDE POSSSSSSSSSTTTTTTTTTTTTTT :D " << std::endl;
 		if (loc && !loc->isMethodAllowed(allowedMethods, POST))
 		{
 			headers["Allow"] = "GET, POST, DELETE";
@@ -869,6 +876,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	// ========== GET ==========
 	if (method == "GET")
 	{
+		std::cout << " I AM INSIDE GETTTTTTTTTTTTTT :D " << std::endl;
 		// Respect method policy
 		if (loc && !loc->isMethodAllowed(allowedMethods, GET))
 		{

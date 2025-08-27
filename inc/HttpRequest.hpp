@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/21 15:58:21 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/26 17:02:10 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,10 +44,15 @@ class	HttpRequest
 	std::string											bodyFilePath;
 	std::string											uploadedFilename;
 	std::string											uploadedFileData;
-		
 
+	size_t												bodyLimit; // 0 if unlimited
+	bool												tooLarge; // if true->413
+
+	
+	
 	public:
-		// OCF
+		bool												disconnect;
+	// OCF
 		HttpRequest();
 		HttpRequest(const HttpRequest &copy);
 		HttpRequest &operator=(const HttpRequest &copy);
@@ -105,7 +110,7 @@ class	HttpRequest
 
 		bool receiveReq(int client_fd);
 
-		bool disconnect;
+
 		size_t 												expected_len;
 		size_t 												received_len;
 		bool 												isComplete;
@@ -114,6 +119,8 @@ class	HttpRequest
 		std::string											header_str;
 		size_t												body_start;
 		
+		void setBodyLimit(size_t limit);
+		bool isTooLarge() const;
 
 	};
 

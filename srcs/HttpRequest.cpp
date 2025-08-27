@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/24 18:42:18 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/26 17:00:37 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,9 @@ HttpRequest::HttpRequest()
     bodyFile(),
     bodySize(0),
     bodyFilePath(),
-    disconnect(false)	
+	bodyLimit(0),
+	tooLarge(false),
+    disconnect(false)
 {
   // finish init the variables
 }
@@ -45,6 +47,8 @@ HttpRequest::HttpRequest(const HttpRequest &copy)
 	  chunk_remain_bytes(copy.chunk_remain_bytes),
 	  bodySize(copy.bodySize),
 	  bodyFilePath(copy.bodyFilePath),
+	  bodyLimit(copy.bodyLimit),
+	  tooLarge(copy.tooLarge),
 	  disconnect(copy.disconnect)
 {
 
@@ -68,6 +72,8 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &copy)
         bodySize = copy.bodySize;
         bodyFilePath = copy.bodyFilePath;
 
+		bodyLimit = copy.bodyLimit;
+		tooLarge = copy.tooLarge;
         disconnect = copy.disconnect;
     }
     return (*this);
@@ -281,6 +287,19 @@ ParseResult HttpRequest::handleChunkSize(std::string &rawRequest)
 
 ParseResult HttpRequest::handleChunkData(std::string &rawRequest)
 {
+	if (bodyLimit > 0)
+	{
+		// If this chunk would push us over the limit, stop now.
+		if (chunk_remain_bytes > bodyLimit || bodySize > bodyLimit - chunk_remain_bytes)
+		{
+			tooLarge   = true;          // mark for 413
+			isComplete = true;          // stop parsing this request
+			parseState = ParseState::COMPLETE;
+			return ParseResult::COMPLETE;
+		}
+	}
+
+
     if (rawRequest.size() < chunk_remain_bytes + 2)
         return ParseResult::INCOMPLETE;
 
@@ -367,6 +386,43 @@ ParseResult HttpRequest::parse()
                 }
                 if (method == Method::POST)
                 {
+					// Find Content-Length (case-insensitive map? adjust as needed)
+					std::string clStr;
+					{
+						// simple lookup; adapt to your headers map API
+						std::unordered_map<std::string, std::string>::const_iterator it = headers.find("Content-Length");
+						if (it != headers.end())
+						{
+							clStr = it->second;
+						}
+					}
+				
+					if (!clStr.empty())
+					{
+						char *endp = NULL;
+						unsigned long long cl = std::strtoull(clStr.c_str(), &endp, 10);
+						if (endp == NULL || *endp != '\0')
+						{
+							// bad Content-Length -> if you already handle 400 somewhere, you can just mark error.
+							// Keep it simple: treat as error.
+							parseState = ParseState::ERROR;
+							parseResult = ParseResult::ERROR;
+							return ParseResult::ERROR;
+						}
+				
+						if (bodyLimit > 0 && cl > static_cast<unsigned long long>(bodyLimit))
+						{
+							// EARLY 413: do not read the body at all
+							tooLarge   = true;
+							isComplete = true;
+							parseState = ParseState::COMPLETE;
+							return ParseResult::COMPLETE;
+						}
+					}
+
+
+
+				
                     bool chunked = false;
                     std::unordered_map<std::string,std::string>::const_iterator te = headers.find("transfer-encoding");
                     if (te != headers.end() && te->second.find("chunked") != std::string::npos)
@@ -391,9 +447,45 @@ ParseResult HttpRequest::parse()
                     parseState = ParseState::BODY;
                     std::cout << "\nCurrent parse state: " << static_cast<int>(parseState) << " (Method::POST)" << std::endl;
                 }
-            }
-            [[fallthrough]];
 
+				// if (method == Method::POST)
+				// {
+				// 	// Find Content-Length (case-insensitive map? adjust as needed)
+				// 	std::string clStr;
+				// 	{
+				// 		// simple lookup; adapt to your headers map API
+				// 		std::unordered_map<std::string, std::string>::const_iterator it = headers.find("Content-Length");
+				// 		if (it != headers.end())
+				// 		{
+				// 			clStr = it->second;
+				// 		}
+				// 	}
+				
+				// 	if (!clStr.empty())
+				// 	{
+				// 		char *endp = NULL;
+				// 		unsigned long long cl = std::strtoull(clStr.c_str(), &endp, 10);
+				// 		if (endp == NULL || *endp != '\0')
+				// 		{
+				// 			// bad Content-Length -> if you already handle 400 somewhere, you can just mark error.
+				// 			// Keep it simple: treat as error.
+				// 			parseState = ParseState::ERROR;
+				// 			parseResult = ParseResult::ERROR;
+				// 			return ParseResult::ERROR;
+				// 		}
+				
+				// 		if (bodyLimit > 0 && cl > static_cast<unsigned long long>(bodyLimit))
+				// 		{
+				// 			// EARLY 413: do not read the body at all
+				// 			tooLarge   = true;
+				// 			isComplete = true;
+				// 			parseState = ParseState::COMPLETE;
+				// 			return ParseResult::COMPLETE;
+				// 		}
+				// 	}
+				// }
+            	[[fallthrough]];
+			}
             case ParseState::BODY:
             {
                 std::unordered_map<std::string, std::string>::const_iterator it = headers.find("content-length");
@@ -432,7 +524,6 @@ ParseResult HttpRequest::parse()
                 
                 return ParseResult::ERROR;
             }
-            
             case ParseState::CHUNK_SIZE:
             {
                 return handleChunkSize(rawRequest);
@@ -449,13 +540,17 @@ ParseResult HttpRequest::parse()
             }
 
             case ParseState::ERROR:
+			{
                 return ParseResult::ERROR;
-
+			}
             case ParseState::COMPLETE:
+			{
                 return ParseResult::COMPLETE;
+			}
         }
     }
 }
+
 
 
 void HttpRequest::parseMultipartFilename(const std::string &bodyFilePath)
@@ -697,6 +792,17 @@ bool HttpRequest::receiveReq(int client_fd)
 
 	return (isComplete);
 }
+
+void HttpRequest::setBodyLimit(size_t limit)
+{
+	content_length = limit;
+}
+
+bool HttpRequest::isTooLarge() const
+{
+	return tooLarge;
+}
+
 
 // bool    HttpRequest::receiveReq(int client_fd)
 // {
