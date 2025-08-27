@@ -28,7 +28,8 @@ HttpRequest::HttpRequest()
     bodyFile(),
     bodySize(0),
     bodyFilePath(),
-    disconnect(false)	
+    disconnect(false),	
+	isBodyToBig(false)
 {
   // finish init the variables
 }
@@ -635,6 +636,7 @@ void    HttpRequest::reset()
 	chunk_remain_bytes = 0;
 	bodySize = 0;
 	bodyFilePath.clear();
+	isBodyToBig = false;
 
 	rawRequest.clear();
 	disconnect = false;	
@@ -663,10 +665,10 @@ bool HttpRequest::receiveReq(int client_fd, size_t cmbs)
 
 	if (!header_received)
 	{
-		header_received = true;
 		size_t header_end = rawRequest.find("\r\n\r\n");
-
+		
 		if (header_end != std::string::npos)
+		header_received = true;
 		{
 			header_str = rawRequest.substr(0, header_end + 4);
 

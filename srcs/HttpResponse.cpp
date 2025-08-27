@@ -761,6 +761,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	if (method == "POST")
 	{	
 		std::cout << "we ----- are ----- inside ---- POST ----" << std::endl;
+		std::cout << "----this is CMBS ------: " << server->getClientMaxBodySize() << std::endl;
 		if (loc && !loc->isMethodAllowed(allowedMethods, POST))
 		{
 			headers["Allow"] = "GET, POST, DELETE";
