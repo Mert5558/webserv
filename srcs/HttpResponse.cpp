@@ -867,7 +867,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 			   "</head>\n"
 			   "<body>\n"
 			   "<h1>Resource created in uploads.</h1>\n"
-			   "<button onclick=\"window.history.back();\">Return</button>\n"
+			   "<a href=\"/uploads\">Return</a>\n"
 			   "</body>\n"
 			   "</html>\n";
 		return;

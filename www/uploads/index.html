@@ -243,8 +243,11 @@
             try {
               const res = await fetch(`/uploads/${encodeURIComponent(file)}`, { method: "DELETE" });
               const msg = await res.text();
-              if (msg.trim() === "OK") loadFiles();
-              else alert("Delete failed: " + msg);
+              // console.log("MSG: ", msg);
+              if (msg.trim() === "Deleted")
+                loadFiles();
+              else
+                alert("Delete failed: " + msg);
             } catch (err) {
               alert("Error during deletion: " + err);
             }
