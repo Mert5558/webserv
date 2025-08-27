@@ -103,7 +103,7 @@ class	HttpRequest
 		std::string buildResponse();
 
 
-		bool receiveReq(int client_fd);
+		bool receiveReq(int client_fd, size_t cmbs);
 
 		bool disconnect;
 		size_t 												expected_len;
@@ -113,6 +113,7 @@ class	HttpRequest
 		bool 												body_received;
 		std::string											header_str;
 		size_t												body_start;
+		bool												isBodyToBig;
 		
 
 	};

@@ -760,6 +760,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	// ============================== POST ==============================
 	if (method == "POST")
 	{	
+		std::cout << "we ----- are ----- inside ---- POST ----" << std::endl;
 		if (loc && !loc->isMethodAllowed(allowedMethods, POST))
 		{
 			headers["Allow"] = "GET, POST, DELETE";
@@ -817,7 +818,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 
 		size_t maxBodySize = server->getClientMaxBodySize();
 		std::cout << "----- this is maxBody size------: " << server->getClientMaxBodySize() << std::endl;
-		if (req.getBodySize() > maxBodySize)
+		if (req.getBodySize() > maxBodySize || req.isBodyToBig)
 		{
 			renderError(413, "Payload to large amk!", server);
 			return;

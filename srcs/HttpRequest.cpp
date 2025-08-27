@@ -649,7 +649,7 @@ std::string_view    HttpRequest::trim(std::string_view str)
     return str.substr(wspace_start, wspace_end - wspace_start);
 }
 
-bool HttpRequest::receiveReq(int client_fd)
+bool HttpRequest::receiveReq(int client_fd, size_t cmbs)
 {
 	char buf[4096];
 	ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
@@ -677,12 +677,24 @@ bool HttpRequest::receiveReq(int client_fd)
 				size_t value_end = header_str.find("\r\n", value_start);
 				std::string str_len = header_str.substr(value_start, value_end - value_start);
 				expected_len = std::atoi(str_len.c_str());
+				if (expected_len > cmbs)
+				{
+					isBodyToBig = true;
+					isComplete = true;
+					return (isComplete);
+				}
 			}
 			else
 				expected_len = 0;
 			
 			body_start = header_end + 4;
 		}
+	}
+
+	if (isBodyToBig)
+	{
+		isComplete = true;
+		return (isComplete);
 	}
 
 	if (header_received && !body_received)

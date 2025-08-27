@@ -430,7 +430,7 @@ void ServerLoop::startServer(ParseConfig parse)
 				Client &cl = clients[fd];
 
 				// FIX: Treat EAGAIN/EWOULDBLOCK as non-fatal (keep the connection)
-				bool ok = cl.request.receiveReq(fd);
+				bool ok = cl.request.receiveReq(fd, servers[cl.server_index].getClientMaxBodySize());
 				if (!ok)
 				{
 					if (errno == EAGAIN || errno == EWOULDBLOCK)
