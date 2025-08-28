@@ -180,33 +180,6 @@ const std::vector<std::string> &Location::getCgiExt() const
 	return (cgi_ext);
 }
 
-void Location::print() const
-{
-	std::cout << "    Path: " << path << std::endl;
-	std::cout << "    Root: " << root << std::endl;
-	std::cout << "    Index: " << index << std::endl;
-	std::cout << "    Autoindex: " << (autoindex ? "on" : "off") << std::endl;
-	std::cout << "    Client Max Body Size: " << client_max_body_size << std::endl;
-	std::cout << "    Methods: ";
-	for (size_t j = 0; j < methods.size(); ++j)
-		std::cout << methods[j] << " ";
-	std::cout << std::endl;
-	std::cout << "    Return: " << _return << std::endl;
-	std::cout << "    Alias: " << alias << std::endl;
-
-	// Print CGI path(s) and ext(s) if you have them as vectors:
-	std::cout << "    CGI Paths: ";
-	for (size_t k = 0; k < cgi_path.size(); ++k)
-		std::cout << cgi_path[k] << " ";
-	std::cout << std::endl;
-
-	std::cout << "    CGI Exts: ";
-	for (size_t k = 0; k < cgi_ext.size(); ++k)
-		std::cout << cgi_ext[k] << " ";
-	std::cout << std::endl;
-}
-
-
 bool Location::isMethodAllowed(const std::vector<short> &methods, short method)
 {
 	return std::find(methods.begin(), methods.end(), method) != methods.end();

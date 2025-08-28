@@ -33,7 +33,6 @@ class Location
 		void setAlias(const std::string &alias);
 		void setCgiPath(const std::string &cgiPath);
 		void setCgiExt(const std::string &cgiExt);
-		void print() const;
 
 		const std::string &getPath() const;
 		const std::string &getRoot() const;

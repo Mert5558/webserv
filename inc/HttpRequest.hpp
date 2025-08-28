@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 15:19:17 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/26 17:02:10 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/28 13:31:35 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,6 @@ enum class Method {GET,POST,DELETE, INVALID};
 enum class Version {HTTP_1_0, HTTP_1_1, HTTP_2, INVALID};
 enum class ParseState {START_LINE, HEADERS, BODY, CHUNK_SIZE, CHUNK_DATA, CHUNK_CRLF, COMPLETE, ERROR};      // CHUNK_CRLF = Chunk Carriage Return Line Feed (\r\n)
 enum class ParseResult {COMPLETE, INCOMPLETE, ERROR};
-
-// i can do a ConnectionState also CLOSED/OPEN/PENDING
-
 
 class	HttpRequest
 {
@@ -51,77 +48,60 @@ class	HttpRequest
 	
 	
 	public:
-		bool												disconnect;
+	bool												disconnect;
+	bool 												isComplete;
 	// OCF
-		HttpRequest();
-		HttpRequest(const HttpRequest &copy);
-		HttpRequest &operator=(const HttpRequest &copy);
-		~HttpRequest();
+	HttpRequest();
+	HttpRequest(const HttpRequest &copy);
+	HttpRequest &operator=(const HttpRequest &copy);
+	~HttpRequest();
 
-		// setter
-		void setMethod(Method method);
-		void setPath(const std::string &path);
-		void setVersion(Version version);
-		void setBody(const std::string &filePath);
-		// void setHeaders(const std::unordered_map<std::string, std::string> &headers);
+	// setter
+	void setMethod(Method method);
+	void setPath(const std::string &path);
+	void setVersion(Version version);
+	void setBody(const std::string &filePath);
 
-		// getter
-		std::string	getMethod() const;
-		std::string	getPath() const;
-		std::string getVersion() const;
-		size_t		getBodySize() const { return bodySize; }
-		std::string	getBodyFilePath() const;
-		std::string	getQueryString() const;
-		std::unordered_map<std::string, std::string> getHeaders() const;
-		std::string getUploadedFilename() const;
-		std::string getUploadedFileData() const;
-		
-		
-		
-		// Parsing
-		bool		parseStartLine(const std::string &line);
-		bool    	parseHeadersBlock(const std::string &headerBlocks);
-		ParseResult	parse();
-		
-		ParseResult handleChunkSize(std::string &rawRequest);
-		ParseResult handleChunkData(std::string &rawRequest);
-		ParseResult handleChunkCRLF(std::string &rawRequest);
-		
-		
-		// Validation
-		bool isValidMethod() const;
-		bool isValidVersion() const;
-		bool isValidPath();
-		
-		// Helper
-		std::string_view	trim(std::string_view str);
-		void				log_headers();
-		void				log_first_line();
-		void				reset();
-		void parseMultipartFilename(const std::string &bodyFilePath);
-		
-		// From String to enum 
-		Method		toMethodEnum(const std::string &methodStr);
-		Version		toVersionEnum(const std::string &versionStr);
-		
-		std::string readFile(const std::string& filePath) const;
-		std::string buildResponse();
+	// getter
+	std::string	getMethod() const;
+	std::string	getPath() const;
+	std::string getVersion() const;
+	size_t		getBodySize() const { return bodySize; }
+	std::string	getBodyFilePath() const;
+	std::string	getQueryString() const;
+	std::unordered_map<std::string, std::string> getHeaders() const;
+	std::string getUploadedFilename() const;
+	std::string getUploadedFileData() const;
+	
+	
+	
+	// Parsing
+	bool		parseStartLine(const std::string &line);
+	bool    	parseHeadersBlock(const std::string &headerBlocks);
+	ParseResult	parse();
+	
+	ParseResult handleChunkSize(std::string &rawRequest);
+	ParseResult handleChunkData(std::string &rawRequest);
+	ParseResult handleChunkCRLF(std::string &rawRequest);
+	
+	// Helper
+	std::string_view	trim(std::string_view str);
+	void				log_headers();
+	void				log_first_line();
+	void				reset();
+	void parseMultipartFilename(const std::string &bodyFilePath);
+	
+	// From String to enum 
+	Method		toMethodEnum(const std::string &methodStr);
+	Version		toVersionEnum(const std::string &versionStr);
+	
+	std::string readFile(const std::string& filePath) const;
+	std::string buildResponse();
 
 
-		bool receiveReq(int client_fd);
+	bool receiveReq(int client_fd);
+	
+	void setBodyLimit(size_t limit);
+	bool isTooLarge() const;
 
-
-		size_t 												expected_len;
-		size_t 												received_len;
-		bool 												isComplete;
-		bool 												header_received;
-		bool 												body_received;
-		std::string											header_str;
-		size_t												body_start;
-		
-		void setBodyLimit(size_t limit);
-		bool isTooLarge() const;
-
-	};
-
-std::ostream &operator<<(std::ostream &os, const HttpRequest &request);
+};

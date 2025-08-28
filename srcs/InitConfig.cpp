@@ -331,14 +331,14 @@ bool InitConfig::createAndBindSocket()
 	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listen_fd == -1)
 	{
-		std::cout << "Error: socket() failed" << std::endl;         //logger
+		std::cout << "Error: socket() failed" << std::endl;
 		return (false);
 	}
 
 	int opt = 1;
 	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
 	{
-		std::cout << "Error: setsocketopt() failed" << std::endl;     //logger
+		std::cout << "Error: setsocketopt() failed" << std::endl;
 		close(listen_fd);
 		return (false);
 	}
@@ -393,33 +393,4 @@ Location *InitConfig::findLocationForPath(const std::string &path) const
 		}
 	}
 	return (best);
-}
-
-void InitConfig::print() const
-{
-	std::cout << "---- Server Config ------------------" << std::endl;
-	std::cout << "Port: " << port << std::endl;
-	std::cout << "Host: " << host << std::endl;
-	std::cout << "Server Name: " << server_name << std::endl;
-	std::cout << "Root: " << root << std::endl;
-	std::cout << "Index: " << index << std::endl;
-	std::cout << "Autoindex: " << (autoindex ? "on" : "off") << std::endl;
-	std::cout << "Client Max Body Size: " << client_max_body_size << std::endl;
-	std::cout << "Allow Methods: " << allow_methods << std::endl;
-
-	std::cout << "Error Pages:\n";
-	if (error_pages.empty())
-		std::cout << "  (none)\n";
-	else
-	{
-		for (std::map<short, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it)
-			std::cout << "  " << it->first << " -> " << it->second << std::endl;
-	}
-
-	std::cout << "Locations: " << locations.size() << std::endl;
-	for (size_t i = 0; i < locations.size(); ++i)
-	{
-		std::cout << "  --- Location #" << (i+1) << " ---" << std::endl;
-		locations[i].print(); // Assumes you have a print() function in Location
-	}
 }
