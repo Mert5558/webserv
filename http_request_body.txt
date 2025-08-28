@@ -1,0 +1,13 @@
+--------------------------d66bf826c1331b60
+Content-Disposition: form-data; name="file"; filename="hosts"
+Content-Type: application/octet-stream
+
+127.0.0.1       localhost
+255.255.255.255 broadcasthost
+::1             localhost
+# Added by Docker Desktop
+# To allow the same kube context to work on the host and the container:
+127.0.0.1 kubernetes.docker.internal
+# End of section
+
+--------------------------d66bf826c1331b60--
