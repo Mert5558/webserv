@@ -704,12 +704,6 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 			return;
 		}
 
-		// // Check if the path is under the root
-		// if (!isUnderRootAbs(absPath, absRoot))
-		// {
-		// 	renderError(403, "Forbidden", server);
-		// 	return;
-		// }
 		// Check if the path is the root directory
 		if (absPath == absRoot)
 		{

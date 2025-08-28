@@ -14,10 +14,7 @@ ParseConfig::~ParseConfig()
 int ParseConfig::parseFile(std::string configfile)
 {
 	std::cout << configfile << std::endl;
-	// if (!isRegularFile(configfile))
-	// {
-	// 	throw ConfigError("Error: not a regular file or it does not exist!");
-	// }
+
 	if (!isFileReadable(configfile))
 	{
 		throw ConfigError("Error: cannot read config file!");
@@ -44,10 +41,6 @@ int ParseConfig::parseFile(std::string configfile)
 		servers.push_back(config);
 	}
 
-	// if (this->servers.empty())
-	// {
-	// 	throw ConfigError("Error: No valid server blocks found in config file!");
-	// }
 	this->validatePaths();
 	this->checkDupServers();
 
@@ -61,17 +54,6 @@ bool ParseConfig::isFileReadable(const std::string &filename)
 	return (file.is_open());
 }
 
-// bool ParseConfig::isRegularFile(const std::string &filename)
-// {
-// 	std::ifstream file(filename.c_str());
-// 	if (!file.is_open())
-// 	return (false);
-	
-// 	char c;
-// 	file.get(c);
-// 	return (true);
-// }
-
 bool ParseConfig::isFileEmpty(const std::string& filename)
 {
 	std::ifstream file(filename.c_str());
@@ -84,16 +66,6 @@ bool ParseConfig::isFileEmpty(const std::string& filename)
 	return !file;
 }
 
-// bool ParseConfig::isFileEmpty(const std::string &filename)
-// {
-// 	std::ifstream file(filename.c_str());
-// 	if (!file.is_open())
-// 	return (true);
-	
-// 	char c;
-// 	file.get(c);
-// 	return (file.eof());
-// }
 void ParseConfig::removeComments(std::string &content)
 {
 	size_t pos = 0;
@@ -356,7 +328,7 @@ bool isValidCgiExt(const std::string ext)
 	return (true);
 }
 
-void ParseConfig::validatePaths()				// change name
+void ParseConfig::validatePaths()
 {
 	for (size_t i = 0; i < servers.size(); i++)
 	{
@@ -367,10 +339,6 @@ void ParseConfig::validatePaths()				// change name
 
 		if (!pathExistsAndReadable(config.getRoot()))
 			throw ConfigError("Root path does not exist or is not readable!" + config.getRoot());
-		
-		// std::string index_path = config.getRoot() + "/" + config.getIndex();
-		// if (!pathExistsAndReadable(index_path))
-		// 	throw ConfigError("Error: index does not exist or is not readable!" + index_path);
 		
 		std::map<short, std::string> errPages = config.getErrorPages();
 		for (std::map<short, std::string>::const_iterator it = errPages.begin(); it != errPages.end(); ++it)
@@ -392,9 +360,6 @@ void ParseConfig::validatePaths()				// change name
 
 			std::string loc_root = loc.getRoot().empty() ? config.getRoot() : loc.getRoot();
 			std::string loc_index = loc_root + "/" + loc.getIndex();
-
-			// if (!pathExistsAndReadable(loc_index))
-			// 	throw ConfigError("Location indexx file missing or not readable: " + loc_index);
 			
 			if (!loc.getAlias().empty() && !pathExistsAndReadable(loc.getAlias()))
 				throw ConfigError("Alias is not readable " + loc.getAlias());

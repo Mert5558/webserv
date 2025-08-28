@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/27 14:59:49 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/28 13:28:22 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,7 +89,6 @@ HttpRequest::~HttpRequest()
 }
 
 
-
 // ======================================================
 // Setter                           
 // ======================================================
@@ -125,12 +124,6 @@ void    HttpRequest::setBody(const std::string &filePath)
     std::cout << "Body file set to: " << filePath << std::endl;
     
 }
-
-// void HttpRequest::setHeaders(const std::unordered_map<std::string, std::string> &headers)
-// {
-//     this->headers = headers;
-// }
-
 
 
 // ======================================================
@@ -339,9 +332,6 @@ ParseResult HttpRequest::parse()
 {
     while (true)
     {
-        // debug state of parsing
-        // std::cout << "Current parse state: " << static_cast<int>(parseState) << std::endl;
-
         switch (parseState)
         {
             case ParseState::START_LINE:
@@ -419,9 +409,6 @@ ParseResult HttpRequest::parse()
 						}
 					}
 
-
-
-				
                     bool chunked = false;
                     std::unordered_map<std::string,std::string>::const_iterator te = headers.find("transfer-encoding");
                     if (te != headers.end() && te->second.find("chunked") != std::string::npos)
@@ -445,43 +432,6 @@ ParseResult HttpRequest::parse()
                     
                     parseState = ParseState::BODY;
                 }
-
-				// if (method == Method::POST)
-				// {
-				// 	// Find Content-Length (case-insensitive map? adjust as needed)
-				// 	std::string clStr;
-				// 	{
-				// 		// simple lookup; adapt to your headers map API
-				// 		std::unordered_map<std::string, std::string>::const_iterator it = headers.find("Content-Length");
-				// 		if (it != headers.end())
-				// 		{
-				// 			clStr = it->second;
-				// 		}
-				// 	}
-				
-				// 	if (!clStr.empty())
-				// 	{
-				// 		char *endp = NULL;
-				// 		unsigned long long cl = std::strtoull(clStr.c_str(), &endp, 10);
-				// 		if (endp == NULL || *endp != '\0')
-				// 		{
-				// 			// bad Content-Length -> if you already handle 400 somewhere, you can just mark error.
-				// 			// Keep it simple: treat as error.
-				// 			parseState = ParseState::ERROR;
-				// 			parseResult = ParseResult::ERROR;
-				// 			return ParseResult::ERROR;
-				// 		}
-				
-				// 		if (bodyLimit > 0 && cl > static_cast<unsigned long long>(bodyLimit))
-				// 		{
-				// 			// EARLY 413: do not read the body at all
-				// 			tooLarge   = true;
-				// 			isComplete = true;
-				// 			parseState = ParseState::COMPLETE;
-				// 			return ParseResult::COMPLETE;
-				// 		}
-				// 	}
-				// }
             	[[fallthrough]];
 			}
             case ParseState::BODY:
@@ -494,11 +444,6 @@ ParseResult HttpRequest::parse()
                         return ParseResult::INCOMPLETE;
 
                     if (bodyFile.is_open())
-					// {
-                    //     bodyFile.write(rawRequest.data(), contentLength);
-					// 	bodyFile.flush();
-					// 	bodySize = contentLength;
-					// }
                     {
                         bodyFile.write(rawRequest.data(), contentLength); 
                         bodyFile.flush();
@@ -655,44 +600,6 @@ void    HttpRequest::log_first_line()
     std::cout << "\n" << getMethod() << " " << path << " " << getVersion() << std::endl;
 }
 
-bool    HttpRequest::isValidMethod() const
-{
-    return method != Method::INVALID;
-}
-
-bool HttpRequest::isValidVersion() const
-{
-    return version != Version::INVALID;
-}
-
-bool HttpRequest::isValidPath()
-{
-    // Check if the path is empty
-    if (path.empty())
-    {
-        std::cout << "------- Invalid Path: Path is empty -------" << std::endl;
-        return false;
-    }
-
-    // Check if the path starts with a '/'
-    if (path[0] != '/')
-    {
-        std::cout << "------- Invalid Path: Path does not start with '/' -------" << std::endl;
-        return false;
-    }
-
-    // Check for invalid characters (e.g., spaces)
-    if (path.find(' ') != std::string::npos)
-    {
-        std::cout << "------- Invalid Path: Path contains spaces -------" << std::endl;
-        return false;
-    }
-
-    // Additional checks can be added here (e.g., length, specific patterns, etc.)
-    std::cout << "------- Valid Path: " << path << " -------" << std::endl;
-    return true;
-}
-
 std::string HttpRequest::readFile(const std::string& filePath) const
 {
     std::ifstream file(filePath, std::ios::binary);
@@ -741,55 +648,6 @@ std::string_view    HttpRequest::trim(std::string_view str)
     while (wspace_end > wspace_start && isspace(static_cast<unsigned char>(str[wspace_end - 1]))) wspace_end--;
     return str.substr(wspace_start, wspace_end - wspace_start);
 }
-
-// bool HttpRequest::receiveReq(int client_fd)
-// {
-// 	char buf[4096];
-// 	ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
-// 	if (bytes <= 0)
-// 	{
-// 		disconnect = true;
-// 		return (true);
-// 	}
-
-// 	rawRequest.append(buf, bytes);
-
-// 	if (!header_received)
-// 	{
-// 		header_received = true;
-// 		size_t header_end = rawRequest.find("\r\n\r\n");
-
-// 		if (header_end != std::string::npos)
-// 		{
-// 			header_str = rawRequest.substr(0, header_end + 4);
-
-// 			size_t cl_pos = header_str.find("Content-Length:");
-// 			if (cl_pos != std::string::npos)
-// 			{
-// 				size_t value_start = header_str.find_first_not_of(" ", cl_pos + 15);
-// 				size_t value_end = header_str.find("\r\n", value_start);
-// 				std::string str_len = header_str.substr(value_start, value_end - value_start);
-// 				expected_len = std::atoi(str_len.c_str());
-// 			}
-// 			else
-// 				expected_len = 0;
-			
-// 			body_start = header_end + 4;
-// 		}
-// 	}
-
-// 	if (header_received && !body_received)
-// 	{
-// 		size_t total_body_size = rawRequest.size() - body_start;
-// 		if (expected_len == 0 || total_body_size >= expected_len)
-// 		{
-// 			body_received = true;
-// 			isComplete = true;
-// 		}
-// 	}
-
-// 	return (isComplete);
-// }
 
 void HttpRequest::setBodyLimit(size_t limit)
 {

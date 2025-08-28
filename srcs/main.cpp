@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 15:30:19 by merdal            #+#    #+#             */
-/*   Updated: 2025/08/24 18:39:17 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/28 13:00:37 by kkaratsi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,33 +15,6 @@
 #include "../inc/ServerLoop.hpp"
 #include "../inc/HttpRequest.hpp"
 #include "../inc/Cgi.hpp"
-
-void	testCgi()
-{
-	std::map<std::string,std::string> env;
-    env["REQUEST_METHOD"] = "GET";
-    env["SCRIPT_FILENAME"] = "/Users/kkaratsi/Desktop/mak_branch/www/cgi-bin/script.py";
-	env["CONTENT_TYPE"] = "text/html";
-
-    Cgi cgi("/Users/kkaratsi/Desktop/mak_branch/www/cgi-bin/script.py", env);
-
-    try
-	{
-		Location loc;
-		loc.setCgiPath("/usr/bin/python3 /bin/bash");
-        loc.setCgiExt(".py .sh");
-		
-		auto [status, output] = cgi.execute("", loc);
-        if (status == CgiStatus::SUCCESS)
-            std::cout << "CGI output:\n" << output << std::endl;
-        else
-            std::cerr << "CGI execution failed" << std::endl;
-    }
-	catch (const std::exception &e)
-	{
-        std::cerr << "CGI error: " << e.what() << std::endl;
-    }
-}
 
 int main(int argc, char **argv)
 {

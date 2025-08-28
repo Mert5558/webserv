@@ -67,7 +67,6 @@ void ServerLoop::serverSetup(std::vector<InitConfig> &servers)
 				  << " port=" << servers[i].getPort()
 				  << " fd=" << servers[i].getFd() << std::endl;
 	}
-	// std::cout << "++++++++++++++++++++++===================serverLoop::serverSetup called" << std::endl;
 	// servers[0].print(); // Debug print server config
 }
 
@@ -102,14 +101,6 @@ void ServerLoop::removeFd(std::vector<pollfd> &fds, size_t index)
 	std::cout << "(-) Removed fd at index: " << index << std::endl;
 }
 
-// Build HTTP response based on request and server config
-// void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
-// {
-// 	InitConfig *srv = servers.empty() ? NULL : &servers[0];
-// 	response.prepare(request, srv);
-// }
-
-
 
 static const Location* findLocation(const InitConfig &srv, const std::string &reqPath)
 {
@@ -130,7 +121,6 @@ static const Location* findLocation(const InitConfig &srv, const std::string &re
     }
     return best;
 }
-
 
 
 static void applyCgiOutputToResponse(const std::string &out, HttpResponse &response)

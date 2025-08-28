@@ -50,8 +50,6 @@ class InitConfig
 		void setFd(int fd);
 		void setAllowMethods(const std::string &allow_methods);
 
-
-		void print() const;
 		void parseLocation(std::vector<std::string> &location_lines, Location &loc);
 		void addLocation(Location &loc);
 		bool createAndBindSocket();
