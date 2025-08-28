@@ -71,16 +71,6 @@ def upload_file():
     with open(filepath, 'wb') as f:
         f.write(fileitem.file.read())
 
-    print("Content-Type: text/html")
-    print()
-    print("<!DOCTYPE html><html><head><title>Upload Status</title>")
-    print('<meta http-equiv="refresh" content="3;url=/uploads/index.html" />')
-    print("</head><body>")
-    print(f"<h2>File '{html.escape(filename)}' uploaded successfully.</h2>")
-    print("<p>Redirecting back to uploads page in 3 seconds...</p>")
-    print("</body></html>")
-
-
 # --- CGI entry point ---
 method = os.environ.get("REQUEST_METHOD", "GET")
 
