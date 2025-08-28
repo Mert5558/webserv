@@ -33,3 +33,6 @@ webserv
 
 # Ignore Icon i use in my folder
 Icon*
+
+# Ignore Uploads
+uploads/

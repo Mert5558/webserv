@@ -80,6 +80,10 @@ std::string HttpResponse::guessType(const std::string &path)
 	{
 		return "image/gif";
 	}
+	if (ext == "ico")
+	{
+		return "image/x-icon";
+	}
 
 	return "application/octet-stream";
 }
