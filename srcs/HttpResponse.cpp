@@ -886,6 +886,20 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		{
 			std::cout << "[DBG] index configured: " << indexName << "\n";
 
+			// Trailing-slash redirect to canonicalize directory URLs
+			const std::string &origPath = req.getPath();
+			if (!origPath.empty() && origPath[origPath.size() - 1] != '/')
+			{
+				statusCode = "301 Moved Permanently";
+				headers["Location"] = origPath + "/";
+				contentType = "text/html; charset=iso-8859-1";
+				body = "<!DOCTYPE html>\n"
+				       "<html><head><meta charset=\"utf-8\"><title>301 Moved</title></head>"
+				       "<body><h1>Moved Permanently</h1><p>Redirecting...</p></body></html>";
+				return;
+			}
+
+
 			if (!indexName.empty())
 			{
 				std::string withIndex = absPath;
