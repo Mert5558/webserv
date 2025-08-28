@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kkaratsi <kkaratsi@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/28 13:28:22 by kkaratsi         ###   ########.fr       */
+/*   Updated: 2025/08/28 16:11:49 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -663,31 +663,21 @@ bool HttpRequest::isTooLarge() const
 bool    HttpRequest::receiveReq(int client_fd)
 {
     char buf[4096];
-    while (true)
+    ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
+
+    if (bytes > 0)
     {
-        ssize_t bytes = recv(client_fd, buf, sizeof(buf), 0);
-        if (bytes > 0)
-        {
-            rawRequest.append(buf, buf + bytes);
-            continue;
-        }
-        else if (bytes == 0)
-        {
-            disconnect = true;
-            return false;
-        }
-        else
-        {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-            {
-                break;
-            }
-            if (errno == EINTR)
-			{
-				continue;
-			}
-            return false;
-        }
+        // Append received data to rawRequest
+        rawRequest.append(buf, buf + bytes);
+
+        return true;
     }
-    return true;
+	
+	if (bytes == 0)
+    {
+        disconnect = true;
+        return false;
+    }
+	// if bytes < 0 the caller will handle the error (EAGAIN / EWOULDBLOCK)
+	return false;
 }
