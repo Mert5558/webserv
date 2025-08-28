@@ -43,6 +43,16 @@ void ServerLoop::serverSetup(std::vector<InitConfig> &servers)
 
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
+		for (size_t j = 0; j < i; j++)
+		{
+			if (servers[j].getHost() == servers[i].getHost() &&
+				servers[j].getPort() == servers[i].getPort())
+			{
+				throw ConfigError("Error: do not support virtual host!");
+				break;
+			}
+		}
+
 		if (!servers[i].createAndBindSocket())
 			throw ConfigError("Failed to setup server socket!");
 
