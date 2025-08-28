@@ -851,20 +851,25 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 			return;
 		}
 		std::cout << "Written file size: " << writtenSize << std::endl;
-	
-		statusCode = "201 Created";
-		contentType = "text/html; charset=iso-8859-1";
-		body = "<!DOCTYPE html>\n"
-			   "<html>\n"
-			   "<head>\n"
-			   "<title>Resource Created</title>\n"
-			   "</head>\n"
-			   "<body>\n"
-			   "<h1>Resource created in uploads.</h1>\n"
-			   "<a href=\"/uploads\">Return</a>\n"
-			   "</body>\n"
-			   "</html>\n";
+		statusCode = "303 See Other";
+		headers["Location"] = "/uploads/";
+		contentType = "text/plain; charset=iso-8859-1";
+		body.clear();
 		return;
+		
+		// statusCode = "201 Created";
+		// contentType = "text/html; charset=iso-8859-1";
+		// body = "<!DOCTYPE html>\n"
+		// 	   "<html>\n"
+		// 	   "<head>\n"
+		// 	   "<title>Resource Created</title>\n"
+		// 	   "</head>\n"
+		// 	   "<body>\n"
+		// 	   "<h1>Resource created in uploads.</h1>\n"
+		// 	   "<a href=\"/uploads\">Return</a>\n"
+		// 	   "</body>\n"
+		// 	   "</html>\n";
+		// return;
 	}
 
 	// ========== GET ==========
