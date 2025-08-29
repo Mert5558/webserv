@@ -633,7 +633,6 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	// If location is found, use its settings; otherwise use server defaults
 	if (loc)
 	{
-		std::cout << "------indise loccccc-----" << std::endl;
 		serverRoot = loc->getRoot();
 		indexName = loc->getIndex();
 		autoIndex = loc->getAutoindex();
@@ -760,17 +759,13 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	// ============================== POST ==============================
 	if (method == "POST")
 	{	
-		std::cout << " I AM INSIDE POSSSSSSSSSTTTTTTTTTTTTTT :D " << std::endl;
+		//std::cout << " I AM INSIDE POSSSSSSSSSTTTTTTTTTTTTTT :D " << std::endl;
 		if (loc && !loc->isMethodAllowed(allowedMethods, POST))
 		{
 			headers["Allow"] = "GET, POST, DELETE";
 			renderError(405, "Method Not Allowed", server);
 			return;
 		}
-
-		std::cout << "[DBG] Body temp file: " << req.getBodyFilePath() << std::endl;
-
-		std::cout << "--------------------" << req.getBodyFilePath() << std::endl;
 
 		std::string uploadsDir = serverRoot;
 
@@ -817,10 +812,9 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		}
 
 		size_t maxBodySize = server->getClientMaxBodySize();
-		std::cout << "----- this is maxBody size------: " << server->getClientMaxBodySize() << std::endl;
 		if (req.getBodySize() > maxBodySize)
 		{
-			renderError(413, "Payload to large amk!", server);
+			renderError(413, "Payload to large", server);
 			return;
 		}
 
@@ -834,15 +828,17 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		std::ofstream ofs(uploadPath.c_str(), std::ios::out | std::ios::binary);
 		if (!ofs)
 		{
-			renderError(500, "Failed to open file for POST", server);
+			renderError(500, "Internal Server Error", server);
 			return;
 		}
 		ofs.write(fileData.c_str(), fileData.size());
+		if (ofs.fail() || fileData.size() == 0)
+		{
+			renderError(500, "Internal Server Error", server);
+			return;
+		}
 		ofs.close();
-	
-		std::cout << "Expected body size: " << req.getBodySize() << std::endl;
-		std::cout << "fileDATA size: " << fileData.size() << std::endl;
-		
+
 		// Check if file was written and size matches
 		off_t writtenSize = 0;
 		if (!isRegular(uploadPath, writtenSize) || static_cast<size_t>(writtenSize) != fileData.size())
