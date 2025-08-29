@@ -58,15 +58,49 @@ std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData, Loc
 	close(outputPipe[1]);
 
 	if (!inputData.empty())
-		write(inputPipe[1], inputData.c_str(), inputData.size());
+	{
+		const char *buffer = inputData.c_str();
+		size_t	left = inputData.size();
+		while (left > 0)
+		{
+			ssize_t bytesWritten = write(inputPipe[1], buffer, left);
+			if (bytesWritten > 0)
+			{
+				buffer += bytesWritten;
+				left -= static_cast<size_t>(bytesWritten);
+				continue;
+			}
+			if (bytesWritten == -1)
+			{
+				if (errno == EINTR) continue; // retry on signal
+				throw std::runtime_error(std::string("write() failed: ") + strerror(errno));
+			}
+			if (bytesWritten == 0)
+				throw std::runtime_error("write() returned 0 before sending all data");
+		} 
+	}
 	close(inputPipe[1]);
 
 	// read cgi
 	std::string output;
 	char buffer[4096];
-	ssize_t bytesRead;
-	while ((bytesRead = read(outputPipe[0], buffer, sizeof(buffer))) > 0)
-		output.append(buffer, bytesRead);
+	while (true)
+	{
+		ssize_t bytesRead = read(outputPipe[0], buffer, sizeof(buffer));
+		if (bytesRead > 0)
+		{
+			output.append(buffer, static_cast<size_t>(bytesRead));
+			continue;
+		}
+		if (bytesRead == 0)
+			break;
+		if (bytesRead < 0)
+		{
+			if (errno == EINTR) continue; // retry on signal
+			throw std::runtime_error(std::string("read() failed: ") + strerror(errno));
+		}
+
+	}
 	close(outputPipe[0]);
 
 	int status = 0;
