@@ -434,16 +434,7 @@ void ServerLoop::startServer(ParseConfig parse)
 
 				// FIX: Treat EAGAIN/EWOULDBLOCK as non-fatal (keep the connection)
 				bool ok = cl.request.receiveReq(fd);
-				// if (!ok)
-				// {
-				// 	if (errno == EAGAIN || errno == EWOULDBLOCK)
-				// 	{
-				// 		// Nothing to read right now—try again later
-				// 		++i;
-				// 		continue;
-				// 	}
-				// }
-
+		
 				if (!ok || cl.request.disconnect)
 				{
 					std::cout << "[READ] EOF or hard error on fd=" << fd << ", closing." << std::endl;
