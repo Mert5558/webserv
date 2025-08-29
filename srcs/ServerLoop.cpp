@@ -434,16 +434,7 @@ void ServerLoop::startServer(ParseConfig parse)
 
 				// FIX: Treat EAGAIN/EWOULDBLOCK as non-fatal (keep the connection)
 				bool ok = cl.request.receiveReq(fd);
-				if (!ok)
-				{
-					if (errno == EAGAIN || errno == EWOULDBLOCK)
-					{
-						// Nothing to read right now—try again later
-						++i;
-						continue;
-					}
-				}
-
+		
 				if (!ok || cl.request.disconnect)
 				{
 					std::cout << "[READ] EOF or hard error on fd=" << fd << ", closing." << std::endl;
@@ -459,6 +450,7 @@ void ServerLoop::startServer(ParseConfig parse)
 					std::cout << "[READ] Request complete on fd=" << fd << std::endl;
 					InitConfig *srv = &servers[cl.server_index];
 					parseHttp(srv, cl.request, cl.response);
+
 					cl.outBuf = cl.response.buildResponse();
 					cl.outOff = 0;
 					pfd.events = POLLOUT;
@@ -477,17 +469,13 @@ void ServerLoop::startServer(ParseConfig parse)
 			if (pfd.revents & POLLOUT)
 			{
 				Client &cl = clients[fd];
+				// Send remaining data
 				size_t left = cl.outBuf.size() - cl.outOff;
 				const char *data = cl.outBuf.data() + cl.outOff;
-				ssize_t n = send(fd, data, left, 0);
 
-				if (n < 0)
+				ssize_t n = send(fd, data, left, 0);
+				if (n <= 0)
 				{
-					if (errno == EAGAIN || errno == EWOULDBLOCK)
-					{
-						++i;
-						continue;
-					}
 					std::cout << "[WRITE] Hard error on fd=" << fd << ", closing." << std::endl;
 					clients.erase(fd);
 					clientTimeouts.erase(fd);
@@ -495,7 +483,8 @@ void ServerLoop::startServer(ParseConfig parse)
 					continue;
 				}
 
-				cl.outOff += n;
+				cl.outOff += static_cast<size_t>(n);
+
 				if (cl.outOff >= cl.outBuf.size())
 				{
 					std::cout << "[WRITE] Full response sent on fd=" << fd << ", closing." << std::endl;

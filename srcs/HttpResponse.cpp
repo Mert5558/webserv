@@ -80,6 +80,10 @@ std::string HttpResponse::guessType(const std::string &path)
 	{
 		return "image/gif";
 	}
+	if (ext == "ico")
+	{
+		return "image/x-icon";
+	}
 
 	return "application/octet-stream";
 }
@@ -847,20 +851,25 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 			return;
 		}
 		std::cout << "Written file size: " << writtenSize << std::endl;
-	
-		statusCode = "201 Created";
-		contentType = "text/html; charset=iso-8859-1";
-		body = "<!DOCTYPE html>\n"
-			   "<html>\n"
-			   "<head>\n"
-			   "<title>Resource Created</title>\n"
-			   "</head>\n"
-			   "<body>\n"
-			   "<h1>Resource created in uploads.</h1>\n"
-			   "<a href=\"/uploads\">Return</a>\n"
-			   "</body>\n"
-			   "</html>\n";
+		statusCode = "303 See Other";
+		headers["Location"] = "/uploads/";
+		contentType = "text/plain; charset=iso-8859-1";
+		body.clear();
 		return;
+		
+		// statusCode = "201 Created";
+		// contentType = "text/html; charset=iso-8859-1";
+		// body = "<!DOCTYPE html>\n"
+		// 	   "<html>\n"
+		// 	   "<head>\n"
+		// 	   "<title>Resource Created</title>\n"
+		// 	   "</head>\n"
+		// 	   "<body>\n"
+		// 	   "<h1>Resource created in uploads.</h1>\n"
+		// 	   "<a href=\"/uploads\">Return</a>\n"
+		// 	   "</body>\n"
+		// 	   "</html>\n";
+		// return;
 	}
 
 	// ========== GET ==========
@@ -881,6 +890,20 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		if (isDirectory(absPath))
 		{
 			std::cout << "[DBG] index configured: " << indexName << "\n";
+
+			// Trailing-slash redirect to canonicalize directory URLs
+			const std::string &origPath = req.getPath();
+			if (!origPath.empty() && origPath[origPath.size() - 1] != '/')
+			{
+				statusCode = "301 Moved Permanently";
+				headers["Location"] = origPath + "/";
+				contentType = "text/html; charset=iso-8859-1";
+				body = "<!DOCTYPE html>\n"
+				       "<html><head><meta charset=\"utf-8\"><title>301 Moved</title></head>"
+				       "<body><h1>Moved Permanently</h1><p>Redirecting...</p></body></html>";
+				return;
+			}
+
 
 			if (!indexName.empty())
 			{
