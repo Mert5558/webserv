@@ -195,7 +195,6 @@
   <main>
     <h2>File Management</h2>
     <p>Upload new files and manage existing ones.</p>
-
     <form action="/uploads" method="POST" enctype="multipart/form-data">
       <label for="file">Select file to upload:</label>
       <input type="file" id="file" name="file" required>
@@ -242,6 +241,10 @@
             if (!confirm(`Are you sure you want to delete ${file}?`)) return;
             try {
               const res = await fetch(`/uploads/${encodeURIComponent(file)}`, { method: "DELETE" });
+              if (res.ok)
+              {
+                console.log(`file deleted ${file}`);
+              }
               const msg = await res.text();
               // console.log("MSG: ", msg);
               if (msg.trim() === "Deleted")

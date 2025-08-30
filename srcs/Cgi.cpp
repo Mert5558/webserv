@@ -72,7 +72,6 @@ std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData, Loc
 			}
 			if (bytesWritten == -1)
 			{
-				if (errno == EINTR) continue; // retry on signal
 				throw std::runtime_error(std::string("write() failed: ") + strerror(errno));
 			}
 			if (bytesWritten == 0)
@@ -96,7 +95,6 @@ std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData, Loc
 			break;
 		if (bytesRead < 0)
 		{
-			if (errno == EINTR) continue; // retry on signal
 			throw std::runtime_error(std::string("read() failed: ") + strerror(errno));
 		}
 
@@ -156,9 +154,14 @@ std::map<std::string,std::string> Cgi::buildEnv(const HttpRequest &req, Location
 	// content-type
 	it = headers.find("content-type");
 	if (it != headers.end() && !it->second.empty())
-            env["CONTENT_TYPE"] = it->second;
+			env["CONTENT_TYPE"] = it->second;
 
-    return env;
+	// cookie
+	it = headers.find("cookie");
+	if (it != headers.end() && !it->second.empty())
+			env["HTTP_COOKIE"] = it->second;
+
+	return env;
 }
 
 std::string	Cgi::findExtension(const std::string &scriptPath,const std::vector<std::string> &cgi_ext,const std::vector<std::string> &cgi_path)

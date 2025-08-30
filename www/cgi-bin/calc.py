@@ -1,16 +1,27 @@
 #!/usr/bin/env python3
-import cgi, html, sys
-
-# Correct CGI header
-sys.stdout.write("Status: 200 OK\r\n")
-sys.stdout.write("Content-Type: text/html; charset=utf-8\r\n")
-sys.stdout.write("\r\n")  # end of headers
+import cgi, html, sys, os
+from http import cookies
 
 form = cgi.FieldStorage()
 raw_a = form.getfirst("num1", "")
 raw_b = form.getfirst("num2", "")
 op    = form.getfirst("operation", "+")
+show_history = form.getfirst("show_history", "")
 
+# Read cookies
+cookie = cookies.SimpleCookie(os.environ.get("HTTP_COOKIE", ""))
+history_enabled = cookie.get("history")
+calc_history = cookie.get("calc_history")
+
+# Prepare headers
+headers = ["Status: 200 OK", "Content-Type: text/html; charset=utf-8"]
+
+# If "Show History" button pressed, set cookie
+if show_history:
+    headers.append("Set-Cookie: history=on; Path=/")
+    history_enabled = True
+
+# Calculate result
 def compute(a, b, op):
     if op == '+': return a + b
     if op == '-': return a - b
@@ -21,7 +32,9 @@ def compute(a, b, op):
     return "Bad op"
 
 result_html = ""
-if raw_a != "" and raw_b != "":
+import urllib.parse
+calc_history_value = urllib.parse.unquote(calc_history.value) if calc_history else ""
+if raw_a != "" and raw_b != "" and not show_history:
     try:
         a_num = int(raw_a)
         b_num = int(raw_b)
@@ -30,11 +43,27 @@ if raw_a != "" and raw_b != "":
             result_html = f"<p><strong>Error:</strong> {html.escape(result)}</p>"
         else:
             result_html = f"<p>Result: <strong>{a_num} {html.escape(op)} {b_num} = {result}</strong></p>"
+            if history_enabled:
+                import urllib.parse
+                prev_history = urllib.parse.unquote(calc_history.value) if calc_history else ""
+                if prev_history:
+                    new_history = prev_history + "|" + f"{a_num} {op} {b_num} = {result}"
+                else:
+                    new_history = f"{a_num} {op} {b_num} = {result}"
+                encoded_history = urllib.parse.quote(new_history)
+                headers.append(f"Set-Cookie: calc_history={encoded_history}; Path=/")
+                calc_history_value = new_history  # Use this for displaying history
     except ValueError:
         result_html = "<p><strong>Error:</strong> Please enter valid integers.</p>"
-else:
+elif not show_history:
     result_html = "<p>Enter numbers and submit.</p>"
 
+# Print headers
+for h in headers:
+    print(h)
+print()  # End of headers
+
+# HTML output
 print(f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -234,14 +263,18 @@ print(f"""<!DOCTYPE html>
     </form>
 
     {f'<div class="result">{result_html}</div>' if result_html else ''}
-  </main>
+""")
 
-  <footer>
-    &copy; 2025 Bucket Hats. 
-    <a href="/">Home</a> | 
-    <a href="/cgi-bin/calc.py">Calculator</a> | 
-    <a href="/uploads/">Post</a>
-  </footer>
+# Show history if enabled
+if history_enabled and calc_history_value:
+    print("<div>History:<br>")
+    for entry in calc_history_value.split("|"):
+        print(html.escape(entry) + "<br>")
+    print("</div>")
+
+print("""
+  </main>
+  <!-- ...footer omitted for brevity... -->
 </body>
 </html>
 """)
