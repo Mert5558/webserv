@@ -729,33 +729,11 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 
 		if (::unlink(absPath.c_str()) != 0)
 		{
-			switch (errno)
-			{
-				case EACCES:
-				case EPERM:
-					renderError(403, "Forbidden", server);
-					return;
-				case ENOENT:
-					renderError(404, "Not Found", server);
-					return;
-				case ENOTDIR:
-					renderError(404, "Not Found", server);
-					return;
-				case EISDIR:
-					renderError(403, "Forbidden", server); // do not allow dlt directory
-					return;
-				case EBUSY:
-				case ETXTBSY:
-				case EROFS:
-					renderError(409, "Conflict", server);
-					return;
-				default:
-					renderError(500, "Internal Server Error", server);
-					return;
-			}
+			renderError(403, "Forbidden", server);
+			return;
 		}
 
-		statusCode = "200 OK";
+		statusCode = "204 OK";
 		contentType = "text/plain; charset=iso-8859-1";
 		body = "Deleted\n";
 		return;
