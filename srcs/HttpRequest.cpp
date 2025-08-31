@@ -6,7 +6,7 @@
 /*   By: cmakario <cmakario@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/28 21:33:30 by kkaratsi          #+#    #+#             */
-/*   Updated: 2025/08/28 16:11:49 by cmakario         ###   ########.fr       */
+/*   Updated: 2025/08/31 20:43:22 by cmakario         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -431,6 +431,12 @@ ParseResult HttpRequest::parse()
                     }
                     
                     parseState = ParseState::BODY;
+                }
+                if (method == Method::INVALID)
+                {
+                    // std::cerr << "Invalid method after parsing headers!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+                    parseState = ParseState::ERROR;
+                    return ParseResult::ERROR;
                 }
             	[[fallthrough]];
 			}

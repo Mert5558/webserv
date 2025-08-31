@@ -187,6 +187,8 @@ static void applyCgiOutputToResponse(const std::string &out, HttpResponse &respo
 
 void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &response)
 {
+	// std::cout << "Parsing HTTP request..." << std::endl;
+	// std::cout << "Request Method: " << request.getMethod() << std::endl;
     if (!srv)
 	{
         response.prepare(request, NULL);
@@ -510,6 +512,17 @@ void ServerLoop::startServer(ParseConfig parse)
 				else if (parseRes == ParseResult::ERROR)
 				{
 					std::cout << "[PARSE] Error on fd=" << fd << ", closing." << std::endl;
+				    // Handle invalid method before cleanup
+    				if (cl.request.getMethod() == "INVALID")
+    				{
+    				    std::cout << "[PARSE] Invalid method detected." << std::endl;
+    				    cl.response.prepare(cl.request, NULL);
+    				    cl.outBuf = cl.response.buildResponse();
+    				    cl.outOff = 0;
+    				    pfd.events = POLLOUT;  // Switch to sending the error response
+    				    ++i;
+    				    continue;  // Don't close the connection yet, send the response first
+    				}
 					clients.erase(fd);
 					clientTimeouts.erase(fd);
 					removeFd(fds, i); // closes fd

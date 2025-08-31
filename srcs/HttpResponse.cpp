@@ -600,6 +600,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 {
 	// Debug
 	// server->print();
+
 	if (req.isTooLarge())
 	{
 		renderError(413, "Payload Too Large", server);
@@ -616,10 +617,11 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	// std::cout << "------PATHHHHHHHHHHHHHHHHHHH----- " << req.getPath() <<std::endl;
 
 	// ============== INVALID METHOD ===================
-	if (req.getMethod() != "GET" && req.getMethod() != "POST" && req.getMethod() != "DELETE")
+	if ((req.getMethod() != "GET" && req.getMethod() != "POST" && req.getMethod() != "DELETE"))
 	{
 		headers["Allow"] = "GET, POST, DELETE";
 		renderError(405, "Method Not Allowed", server);
+
 		return;
 	}
 
