@@ -32,7 +32,10 @@ def compute(a, b, op):
     return "Bad op"
 
 result_html = ""
+
+# Decode history for display
 import urllib.parse
+
 calc_history_value = urllib.parse.unquote(calc_history.value) if calc_history else ""
 if raw_a != "" and raw_b != "" and not show_history:
     try:
@@ -274,7 +277,12 @@ if history_enabled and calc_history_value:
 
 print("""
   </main>
-  <!-- ...footer omitted for brevity... -->
+  <footer>
+    &copy; 2025 Bucket Hats. 
+    <a href="/">Home</a> | 
+    <a href="/cgi-bin/calc.py">Calculator</a> | 
+    <a href="/uploads/">Post</a>
+  </footer>
 </body>
 </html>
 """)

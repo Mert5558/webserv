@@ -345,7 +345,7 @@ bool InitConfig::createAndBindSocket()
 		close(listen_fd);
 		return (false);
 	}
-
+  
 	memset(&socket_address, 0, sizeof(socket_address));
 	socket_address.sin_family = AF_INET;
 	socket_address.sin_port = htons(port);
@@ -360,7 +360,7 @@ bool InitConfig::createAndBindSocket()
 		std::cout << "Error: invalid IP" << std::endl;
 		close(listen_fd);
 		return (false);
-	}
+	} 
 
 	if (bind(listen_fd, (struct sockaddr *) &socket_address, sizeof(socket_address)) == -1)
 	{
