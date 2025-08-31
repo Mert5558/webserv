@@ -126,28 +126,51 @@ static const Location* findLocation(const InitConfig &srv, const std::string &re
 static void applyCgiOutputToResponse(const std::string &out, HttpResponse &response)
 {
     // Try CRLF first, then LF fallback
+	// Separate Headers and body
     std::string::size_type sep = out.find("\r\n\r\n");
     if (sep == std::string::npos) sep = out.find("\n\n");
 
-    std::string head = (sep == std::string::npos) ? std::string() : out.substr(0, sep);
-    std::string body = (sep == std::string::npos) ? out : out.substr(sep + (out.compare(sep, 4, "\r\n\r\n") == 0 ? 4 : 2));
+	std::string head;
+	std::string body;
+	if (sep == std::string::npos) {
+		head = "";
+		body = out;
+	} else {
+		head = out.substr(0, sep);
+		if (out.compare(sep, 4, "\r\n\r\n") == 0)
+			body = out.substr(sep + 4);
+		else
+			body = out.substr(sep + 2);
+	}
 
     std::string status = "200 OK";
     bool hasContentType = false;
 
+	// Parse headers line by line
     std::istringstream hs(head);
     std::string line;
-    while (std::getline(hs, line)) {
-        if (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
-        if (line.empty()) continue;
+    while (std::getline(hs, line))
+	{
+        if (!line.empty() && (line.back() == '\r' || line.back() == '\n'))
+			line.pop_back();
+        if (line.empty())
+			continue;
         std::string::size_type colon = line.find(':');
-        if (colon == std::string::npos) continue;
+        if (colon == std::string::npos)
+			continue;
+
         std::string key = line.substr(0, colon);
         std::string val = line.substr(colon + 1);
-        while (!val.empty() && (val[0] == ' ' || val[0] == '\t')) val.erase(0,1);
-        if (key == "Status") status = val;
-        else {
-            if (key == "Content-Type") hasContentType = true;
+
+        while (!val.empty() && (val[0] == ' ' || val[0] == '\t')) 
+			val.erase(0,1);
+		
+        if (key == "Status")
+			status = val;
+        else
+		{
+            if (key == "Content-Type")
+				hasContentType = true;
             response.addHeader(key, val);
         }
     }
@@ -160,11 +183,8 @@ static void applyCgiOutputToResponse(const std::string &out, HttpResponse &respo
 }
 
 
-
-// void ServerLoop::parseHttp(std::vector<InitConfig> &servers, HttpRequest &request, HttpResponse &response)
 void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &response)
 {
-    // InitConfig *srv = servers.empty() ? NULL : &servers[0];
     if (!srv)
 	{
         response.prepare(request, NULL);
@@ -216,7 +236,7 @@ void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &
 
             // Prepare environment
             Location locCopy = *cgiLoc;
-            Client dummyClient;         // if you later store real client info, pass it
+            Client dummyClient;         // for later to store real client info, pass it
 			std::map<std::string,std::string> env = Cgi::buildEnv(request, locCopy, dummyClient, *srv, cgiRootPath);
 
 			// Read request body (if any) to feed CGI stdin
@@ -233,6 +253,7 @@ void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &
 				}
 			}
 
+			// Execute CGI
             Cgi cgi(cgiRootPath, env);
             auto res = cgi.execute(cgiInput, locCopy);
 			if (res.first == CgiStatus::SUCCESS)
@@ -255,6 +276,7 @@ void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &
     }
 
     // Fallback: normal static handling
+	// std::cout << "Static file handling for path: " << requestPath << std::endl;
     response.prepare(request, srv);
 }
 
@@ -334,7 +356,6 @@ void ServerLoop::startServer(ParseConfig parse)
 		int ret = poll(&fds[0], fds.size(), 100); // 100ms
 		if (ret < 0)
 		{
-			if (errno == EINTR) continue;
 			perror("poll");
 			break;
 		}
@@ -398,8 +419,6 @@ void ServerLoop::startServer(ParseConfig parse)
 						int cfd = accept(fd, NULL, NULL);
 						if (cfd < 0)
 						{
-							if (errno == EAGAIN || errno == EWOULDBLOCK)
-								break;
 							perror("accept");
 							break;
 						}

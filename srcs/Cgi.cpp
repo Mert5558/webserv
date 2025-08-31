@@ -43,8 +43,6 @@ std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData, Loc
 
 
 		auto envp =	makeEnv();
-        // char *argv[] = { const_cast<char*>(scriptPath.c_str()), nullptr };
-        // execve(scriptPath.c_str(), argv, envp.data());
 
 		std::string interpreter = findExtension(scriptPath, loc.getCgiExt(), loc.getCgiPath());
 		char *argv[] = { const_cast<char*>(interpreter.c_str()), const_cast<char*>(scriptPath.c_str()), nullptr };
@@ -121,7 +119,6 @@ std::map<std::string,std::string> Cgi::buildEnv(const HttpRequest &req, Location
     env["SCRIPT_FILENAME"]   	= scriptPath;
 	env["SCRIPT_NAME"]       	= req.getPath();
     
-	
     env["SERVER_NAME"]       	= server.getServerName();
     env["SERVER_PORT"]       	= std::to_string(server.getPort());
 	
@@ -164,6 +161,7 @@ std::map<std::string,std::string> Cgi::buildEnv(const HttpRequest &req, Location
 	return env;
 }
 
+// Find interpreter based on script extension
 std::string	Cgi::findExtension(const std::string &scriptPath,const std::vector<std::string> &cgi_ext,const std::vector<std::string> &cgi_path)
 {
 	size_t dot = scriptPath.rfind('.');

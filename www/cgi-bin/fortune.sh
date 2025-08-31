@@ -1,10 +1,29 @@
+#!/bin/bash
+
+echo "Content-type: text/html"
+echo ""
+
+# List of fortunes/quotes
+fortunes=(
+    "The quieter you become, the more you can hear."
+    "Do one thing every day that scares you."
+    "Simplicity is the ultimate sophistication."
+    "A journey of a thousand miles begins with a single step."
+    "Stay hungry, stay foolish."
+    "Your server is smiling at you 😎"
+)
+
+# Pick a random one
+RANDOM_FORTUNE=${fortunes[$RANDOM % ${#fortunes[@]}]}
+
+# HTML output
+cat <<EOF
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Welcome - Bucket Hats</title>
+  <title>Random Fortune</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any">
   <style>
     /* Global styles */
     body {
@@ -59,30 +78,30 @@
       padding: 2rem;
     }
 
-    main h2 {
-      font-size: 2rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-
-    main p {
-      font-size: 1.1rem;
-      color: #555;
-      margin-bottom: 2rem;
-      max-width: 400px;
+    .fortune {
+      background-color: #fff;
+      padding: 4rem;
+      border-radius: 14px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.07);
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #333;
+      max-width: 550px;
+      width: 100%;
     }
 
     .btn {
-      margin: 0.5rem;
-      padding: 10px 24px;
+      margin-top: 2rem;
+      padding: 12px 24px;
       font-size: 1rem;
       font-weight: 500;
-      background-color: #007BFF;
-      color: #fff;
       border: none;
       border-radius: 6px;
       cursor: pointer;
+      background-color: #007BFF;
+      color: #fff;
       transition: background 0.3s ease;
+      text-decoration: none;
     }
 
     .btn:hover {
@@ -103,6 +122,7 @@
       color: #007BFF;
       margin: 0 0.5rem;
       font-weight: 500;
+      text-decoration: none;
     }
   </style>
 </head>
@@ -119,16 +139,20 @@
   </header>
 
   <main>
-    <h2>Welcome!</h2>
-    <p>This is the homepage for our server.</p>
+    <div class="fortune">
+      $RANDOM_FORTUNE
+    </div>
+    <a href="/cgi-bin/fortune.sh" class="btn">Get another one</a>
   </main>
 
   <footer>
-    &copy; 2025 Bucket Hats. All rights reserved.
-    <br>
-    <a href="/">Home</a> | 
-    <a href="/cgi-bin/calc.py">Calculator</a> | 
-    <a href="/uploads/">Post</a>
+    <p>&copy; 2025 Bucket Hats. All rights reserved.</p>
+    <nav>
+      <a href="/">Home</a> | 
+      <a href="/cgi-bin/calculator.py">Calculator</a> | 
+      <a href="/uploads/">Post</a>
+    </nav>
   </footer>
 </body>
 </html>
+EOF
