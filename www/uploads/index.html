@@ -239,23 +239,40 @@
           const btn = document.createElement("button");
           btn.textContent = "Delete";
           btn.className = "delete-btn";
+          // btn.onclick = async () => {
+          //   if (!confirm(`Are you sure you want to delete ${file}?`)) return;
+          //   try {
+          //     const res = await fetch(`/uploads/${encodeURIComponent(file)}`, { method: "DELETE" });
+          //     if (res.ok)
+          //     {
+          //       console.log(`file deleted ${file}`);
+          //     }
+          //     const msg = await res.text();
+          //     // console.log("MSG: ", msg);
+          //     if (msg.trim() === "Deleted")
+          //       loadFiles();
+          //     else
+          //       alert("Delete failed: " + msg);
+          //   } catch (err) {
+          //     alert("Error during deletion: " + err);
+          //   }
+          // };
           btn.onclick = async () => {
-            if (!confirm(`Are you sure you want to delete ${file}?`)) return;
-            try {
-              const res = await fetch(`/uploads/${encodeURIComponent(file)}`, { method: "DELETE" });
-              if (res.ok)
-              {
-                console.log(`file deleted ${file}`);
-              }
-              const msg = await res.text();
-              // console.log("MSG: ", msg);
-              if (msg.trim() === "Deleted")
-                loadFiles();
-              else
-                alert("Delete failed: " + msg);
-            } catch (err) {
-              alert("Error during deletion: " + err);
+          if (!confirm(`Are you sure you want to delete ${file}?`)) return;
+          try {
+            const res = await fetch(`/uploads/${encodeURIComponent(file)}`, { method: "DELETE" });
+            if (res.ok) {
+              // For 204, just check if response is ok
+              loadFiles();
             }
+            else
+            {
+              const msg = await res.text();
+              alert("Delete failed: " + msg);
+            }
+          } catch (err) {
+            alert("Error during deletion: " + err);
+          }
           };
 
           li.appendChild(btn);

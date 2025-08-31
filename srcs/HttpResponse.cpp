@@ -735,7 +735,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 
 		statusCode = "204 OK";
 		contentType = "text/plain; charset=iso-8859-1";
-		body = "Deleted\n";
+		body = "";
 		return;
 	}
 	// ============================== POST ==============================

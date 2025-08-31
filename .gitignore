@@ -36,3 +36,6 @@ Icon*
 
 # Ignore Uploads
 uploads/
+
+# Ignore uplodaded/posted file
+http_request_body.txt
