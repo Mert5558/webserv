@@ -48,7 +48,11 @@ Location &Location::operator=(const Location &copy)
 }
 
 Location::~Location()
-{}
+{
+	methods.clear();
+	cgi_path.clear();
+	cgi_ext.clear();
+}
 
 void Location::setPath(const std::string &path)
 {
