@@ -47,10 +47,10 @@ private:
 		const std::string &absDir,
 		const std::string &requestPath);
 	// Render error response
-	void				renderError(int code, const std::string &reason, const InitConfig *server);
-
-public:
+	
+	public:
 	//========== OCF ==========
+	void				renderError(int code, const std::string &reason, const InitConfig *server);
 	HttpResponse();
 	~HttpResponse();
 

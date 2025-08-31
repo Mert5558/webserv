@@ -5,12 +5,19 @@ echo ""
 
 # List of fortunes/quotes
 fortunes=(
-    "The quieter you become, the more you can hear."
-    "Do one thing every day that scares you."
-    "Simplicity is the ultimate sophistication."
-    "A journey of a thousand miles begins with a single step."
-    "Stay hungry, stay foolish."
-    "Your server is smiling at you 😎"
+    "The quieter you become, the more you can hear. - Ram Dass"
+    "In the middle of difficulty lies opportunity. - Albert Einstein"
+    "What we think, we become. - Buddha"
+    "Happiness is not something ready made. It comes from your own actions. - Dalai Lama"
+    "The only way to do great work is to love what you do. - Steve Jobs"
+    "Believe you can and you're halfway there. - Theodore Roosevelt"
+    "You miss 100% of the shots you don't take. - Wayne Gretzky"
+    "It does not matter how slowly you go as long as you do not stop. - Confucius"
+    "Do one thing every day that scares you. - Eleanor Roosevelt"
+    "Simplicity is the ultimate sophistication. - Leonardo da Vinci"
+    "A journey of a thousand miles begins with a single step. - Lao Tzu"
+    "Stay hungry, stay foolish. - Steve Jobs"
+    "The server is smiling at you 😎"
 )
 
 # Pick a random one

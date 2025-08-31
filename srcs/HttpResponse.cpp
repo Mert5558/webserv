@@ -733,7 +733,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 			return;
 		}
 
-		statusCode = "204 OK";
+		statusCode = "200 OK";
 		contentType = "text/plain; charset=iso-8859-1";
 		body = "Deleted\n";
 		return;
