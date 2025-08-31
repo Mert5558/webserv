@@ -16,7 +16,10 @@ InitConfig::InitConfig()
 }
 
 InitConfig::~InitConfig()
-{}
+{
+	error_pages.clear();
+	locations.clear();
+}
 
 InitConfig::InitConfig(const InitConfig &copy)
 {

@@ -10,6 +10,8 @@
 #include <cerrno>     // for errno
 #include <signal.h>   // for signal(SIGPIPE, SIG_IGN)
 
+extern std::atomic<bool> g_shutdown_req;
+
 // Set a file descriptor to non-blocking mode.
 static bool setNonBlocking(int fd)
 {
@@ -333,6 +335,29 @@ void ServerLoop::dumpTopology(const std::vector<InitConfig> &servers)
 	std::cout << oss.str() << std::endl;
 }
 
+void ServerLoop::cleanUp()
+{
+	for (auto &it : clients)
+	{
+		int fd = it.first;
+		if (fd >= 0)
+		{
+			close(fd);
+		}
+	}
+	clients.clear();
+
+	for (size_t i = 0; i < fds.size(); i++)
+	{
+		int fd = fds[i].fd;
+		if (fd >= 0)
+		{
+			close(fd);
+		}
+	}
+	fds.clear();
+}
+
 void ServerLoop::startServer(ParseConfig parse)
 {
 	// Prevent process-kill on write to a closed socket
@@ -353,6 +378,14 @@ void ServerLoop::startServer(ParseConfig parse)
 
 	while (true)
 	{
+
+		if (g_shutdown_req)
+		{
+			std::cout << "cleaning Up" << std::endl;
+			cleanUp();
+			break;
+		}
+
 		int ret = poll(&fds[0], fds.size(), 100); // 100ms
 		if (ret < 0)
 		{
