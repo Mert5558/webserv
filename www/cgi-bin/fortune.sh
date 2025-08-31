@@ -150,7 +150,8 @@ cat <<EOF
     <nav>
       <a href="/">Home</a> | 
       <a href="/cgi-bin/calculator.py">Calculator</a> | 
-      <a href="/uploads/">Post</a>
+      <a href="/uploads/">Post</a> |
+      <a href="/cgi-bin/fortune.sh">Fortune</a>
     </nav>
   </footer>
 </body>

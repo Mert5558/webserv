@@ -246,6 +246,7 @@ print(f"""<!DOCTYPE html>
       <a href="/">Home</a>
       <a href="/cgi-bin/calc.py">Calculator</a>
       <a href="/uploads">Post</a>
+      <a href="/cgi-bin/fortune.sh">Fortune</a>
     </nav>
   </header>
 
@@ -281,7 +282,8 @@ print("""
     &copy; 2025 Bucket Hats. 
     <a href="/">Home</a> | 
     <a href="/cgi-bin/calc.py">Calculator</a> | 
-    <a href="/uploads/">Post</a>
+    <a href="/uploads/">Post</a> |
+    <a href="/cgi-bin/fortune.sh">Fortune</a>
   </footer>
 </body>
 </html>
