@@ -16,9 +16,19 @@
 #include "../inc/HttpRequest.hpp"
 #include "../inc/Cgi.hpp"
 
+std::atomic<bool> g_shutdown_req(false);
+
+void handleSignal(int)
+{
+	std::cout << "sigint received. shutting down... " << std::endl;
+	g_shutdown_req = true;
+}
+
 int main(int argc, char **argv)
 {
 	// testCgi();
+
+	signal(SIGINT, handleSignal);
 	
 	if (argc == 1 || argc == 2)
 	{

@@ -28,6 +28,8 @@ class ServerLoop
 		// Helper for debugging
 		void dumpTopology(const std::vector<InitConfig> &servers);
 
+		void cleanUp();
+
 		// State
 		std::vector<pollfd>              fds;
 		std::unordered_map<int, Client>  clients;

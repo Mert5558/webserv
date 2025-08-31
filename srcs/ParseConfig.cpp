@@ -9,7 +9,10 @@ ParseConfig::ParseConfig()
 }
 
 ParseConfig::~ParseConfig()
-{}
+{
+	blocks.clear();
+	servers.clear();
+}
 
 int ParseConfig::parseFile(std::string configfile)
 {

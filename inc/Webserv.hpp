@@ -17,6 +17,8 @@
 #include <unordered_map>
 #include <poll.h>
 #include <fcntl.h>
+#include <csignal>
+#include <atomic>
 
 #define PORT 8080
 #define BACKLOG 10
