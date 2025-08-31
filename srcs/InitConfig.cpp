@@ -223,7 +223,7 @@ void InitConfig::setClientMaxBodsize(const std::string &cmbs)
 
 bool isValidErrorCode(short code)
 {
-	const short validErrorCodes[] = {400, 401, 403, 404, 405, 413, 500, 501, 502, 504};
+	const short validErrorCodes[] = {400, 401, 403, 404, 405, 408, 413, 500, 501, 502, 504};
 
 	for (size_t i = 0; i < sizeof(validErrorCodes)/sizeof(validErrorCodes[0]); i++)
 	{
