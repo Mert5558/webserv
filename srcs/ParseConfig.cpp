@@ -41,7 +41,19 @@ int ParseConfig::parseFile(std::string configfile)
 		std::vector<std::string> lines = splitIntoLines(blocks[i]);
 		InitConfig config;
 		parseServerSettings(lines, config);
-		servers.push_back(config);
+
+		bool blockExists = false;
+		for (size_t j = 0; j < servers.size(); j++)
+		{
+			if (servers[j].getHost() == config.getHost() &&
+				servers[j].getPort() == config.getPort())
+			{
+				blockExists = true;
+				break;
+			}
+		}
+		if (!blockExists)
+			servers.push_back(config);
 	}
 
 	this->validatePaths();
