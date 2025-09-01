@@ -634,6 +634,29 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	//--------------------------
 	Location *loc = server->findLocationForPath(req.getPath());
 
+	std::string redirectTo;
+
+	// Handle redirection if configured in location
+	if (loc && !loc->getReturn().empty())
+	{
+	    std::cout << " REDIRECT TO:       --------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> " << loc->getReturn() << std::endl;
+	    redirectTo = loc->getReturn();
+
+	    // Handle redirect immediately
+	    statusCode = "301 Moved Permanently";
+	    headers["Location"] = redirectTo;
+	    contentType = "text/html; charset=iso-8859-1";
+	    body = "<!DOCTYPE html>\n"
+	           "<html>\n"
+	           "<head><meta charset=\"utf-8\"><title>301 Moved Permanently</title></head>\n"
+	           "<body>\n"
+	           "<h1>301 Moved Permanently</h1>\n"
+	           "<p>The document has moved <a href=\"" + redirectTo + "\">here</a>.</p>\n"
+	           "</body>\n"
+	           "</html>\n";
+	    return; // Exit immediately - don't process further
+	}
+
 	std::string serverRoot;
 	std::string indexName;
 	std::vector<short> allowedMethods;
