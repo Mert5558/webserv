@@ -29,6 +29,7 @@ int main(int argc, char **argv)
 	// testCgi();
 
 	signal(SIGINT, handleSignal);
+	signal(SIGPIPE, SIG_IGN);
 	
 	if (argc == 1 || argc == 2)
 	{
