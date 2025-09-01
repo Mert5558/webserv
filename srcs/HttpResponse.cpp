@@ -632,6 +632,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 
 	std::string serverRoot;
 	std::string indexName;
+	std::string newReturn;
 	std::vector<short> allowedMethods;
 	// std::string allowMethodsServerUniversal;
 	bool autoIndex = false;
@@ -643,6 +644,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		indexName = loc->getIndex();
 		autoIndex = loc->getAutoindex();
 		allowedMethods = loc->getMethods();
+		newReturn = loc->getReturn();
 	}
 	else
 	{
@@ -676,8 +678,18 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	// Map to filesystem under serverRoot
 	std::string fullFSPath = joinUnderRoot(serverRoot, decodedTarget);
 
-	const std::string absRoot = makeAbsolute(serverRoot);
-	const std::string absPath = makeAbsolute(fullFSPath);
+	std::string absRoot = makeAbsolute(serverRoot);
+	std::string absPath = makeAbsolute(fullFSPath);
+	if (!newReturn.empty())
+	{
+		statusCode = "301 Moved Permanently";
+        headers["Location"] = newReturn;
+        contentType = "text/html; charset=iso-8859-1";
+        body = "<!DOCTYPE html>\n"
+               "<html><head><meta charset=\"utf-8\"><title>301 Moved</title></head>"
+               "<body><h1>Moved Permanently</h1><p>Redirecting to " + newReturn + "</p></body></html>";
+        return;
+	}
 
 	std::cout << "[DBG] absRoot=" << absRoot << "\n";
 	std::cout << "[DBG] absPath=" << absPath << "\n";
