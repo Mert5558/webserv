@@ -898,6 +898,11 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 					std::string data = slurpFile(withIndex);
 					if (data.empty() && idxSz > 0)
 					{
+						renderError(403, "Forbidden", server);
+						return;
+					}
+					if (data.empty())
+					{
 						renderError(500, "Internal Server Error", server);
 						return;
 					}
