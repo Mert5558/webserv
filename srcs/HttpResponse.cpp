@@ -417,6 +417,7 @@ std::string HttpResponse::buildAutoindexHtml(const std::string &webRoot,
 	html << "</head>\n<body>\n";
 	html << "<h1>Index of " << escapeHtml(requestPath) << "</h1>\n<hr>\n";
 
+	// Open directory
 	DIR *dir = opendir(absDir.c_str());
 	if (!dir)
 	{
@@ -431,7 +432,7 @@ std::string HttpResponse::buildAutoindexHtml(const std::string &webRoot,
 		baseHref += "/";
 	}
 
-	// Parent directory link if we’re not at root
+	// Parent directory link if we’re not at root then show ../
 	if (absDir != makeAbsolute(webRoot))
 	{
 		// Compute parent URL by stripping one segment
@@ -472,19 +473,22 @@ std::string HttpResponse::buildAutoindexHtml(const std::string &webRoot,
 	}
 	closedir(dir);
 
+	// Sort names
 	std::sort(names.begin(), names.end());
 
 	for (size_t i = 0; i < names.size(); ++i)
 	{
 		const std::string &n = names[i];
 		std::string fullEntry = absDir;
+		// Full Filesystem Path Construction
 		if (!fullEntry.empty() && fullEntry[fullEntry.size() - 1] != '/')
 		{
 			fullEntry += "/";
 		}
 		fullEntry += n;
-
+		// Is Directory?
 		bool isDir = isDirectory(fullEntry);
+		// Link generation
 		std::string link = baseHref + n + (isDir ? "/" : "");
 		html << "<a href=\"" << escapeHtml(link) << "\">" << escapeHtml(n) << (isDir ? "/" : "") << "</a>\n";
 	}
@@ -855,7 +859,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	// ========== GET ==========
 	if (method == "GET")
 	{
-		std::cout << " I AM INSIDE GETTTTTTTTTTTTTT :D " << std::endl;
+		// std::cout << " I AM INSIDE GETTTTTTTTTTTTTT :D " << std::endl;
 		// Respect method policy
 		if (loc && !loc->isMethodAllowed(allowedMethods, GET))
 		{
@@ -865,8 +869,8 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		}
 
 		// If directory, try index.html (or configured index). If still a dir:
-		//    - autoindex off -> 403 (we'll add actual listing later)
-		//    - autoindex on  -> minimal 200 placeholder for now
+		//    - autoindex off -> 403
+		//    - autoindex on  -> 200
 		if (isDirectory(absPath))
 		{
 			std::cout << "[DBG] index configured: " << indexName << "\n";
@@ -884,7 +888,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 				return;
 			}
 
-
+			// Try index file if configured
 			if (!indexName.empty())
 			{
 				std::string withIndex = absPath;
@@ -910,17 +914,20 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 				}
 			}
 
+			// If no index file exists,check if directory listing is allowed:
 			if (!autoIndex)
 			{
 				renderError(403, "Forbidden", server);
 				return;
 			}
+
 			// Ensure requestPath ends with '/'
 			std::string requestPath = rawTarget;
 			if (requestPath.empty() || requestPath[requestPath.size() - 1] != '/')
 			{
 				requestPath += "/";
 			}
+
 			// Build listing HTML relative to request path (not the filesystem path)
 			contentType = "text/html; charset=iso-8859-1";
 			statusCode = "200 OK";
