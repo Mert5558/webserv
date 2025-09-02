@@ -23,7 +23,7 @@ bin/
 .devcontainer
 
 # Ignore Images
-*.png
+# *.png
 
 # Ignore Images
 **/*.pdf
