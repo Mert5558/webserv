@@ -745,6 +745,15 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 			renderError(403, "Forbidden", server); // do not allow deleting root directory
 			return;
 		}
+
+		// Add filename protection for index.html and index.htm
+		std::string filename = absPath.substr(absPath.find_last_of('/') + 1);
+		if (filename == "index.html" || filename == "index.htm")
+		{
+			renderError(403, "Forbidden - Protected file", server);
+			return;
+		}
+
 		// Only regular files can be deleted
 		off_t sizeTmp = 0;
 		if (!isRegular(absPath, sizeTmp))
@@ -792,6 +801,15 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 		
 		std::string fileData;
 		
+		// Add filename protection for index.html and index.htm
+		// filename = absPath.substr(absPath.find_last_of('/') + 1);
+		if (filename == "index.html" || filename == "index.htm")
+		{
+			renderError(403, "Forbidden - Protected file", server);
+			return;
+		}
+
+
 		if (!filename.empty())
 		{
 			if (filename.find('/') != std::string::npos)
