@@ -645,7 +645,10 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	    // Handle redirect immediately
 	    statusCode = "301 Moved Permanently";
 	    headers["Location"] = redirectTo;
+		headers["Cache-Control"] = "no-cache, max-age=0";
+		headers["Pragma"] = "no-cache";
 	    contentType = "text/html; charset=iso-8859-1";
+		
 	    body = "<!DOCTYPE html>\n"
 	           "<html>\n"
 	           "<head><meta charset=\"utf-8\"><title>301 Moved Permanently</title></head>\n"
@@ -654,7 +657,7 @@ void HttpResponse::prepare(const HttpRequest &req, InitConfig *server)
 	           "<p>The document has moved <a href=\"" + redirectTo + "\">here</a>.</p>\n"
 	           "</body>\n"
 	           "</html>\n";
-	    return; // Exit immediately - don't process further
+	    return;
 	}
 
 	std::string serverRoot;
