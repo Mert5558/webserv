@@ -41,15 +41,27 @@ std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData, Loc
 		close(inputPipe[1]);
 		close(outputPipe[0]);
 
+		// Change working directory to script's directory
+		size_t slash = scriptPath.find_last_of('/');
+		const char* scriptFileName = scriptPath.c_str();
+		if (slash != std::string::npos)
+		{
+			std::string scriptDir = scriptPath.substr(0, slash);
+			chdir(scriptDir.c_str());
+			scriptFileName = scriptPath.substr(slash + 1).c_str();
+		}
 
 		auto envp =	makeEnv();
 
 		std::string interpreter = findExtension(scriptPath, loc.getCgiExt(), loc.getCgiPath());
-		char *argv[] = { const_cast<char*>(interpreter.c_str()), const_cast<char*>(scriptPath.c_str()), nullptr };
+		char *argv[] = { const_cast<char*>(interpreter.c_str()), const_cast<char*>(scriptFileName), nullptr };
+
+		alarm(5);
+
 		execve(interpreter.c_str(), argv, envp.data());
 
 		for (char *p : envp) if (p) free(p);
-        exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	close(inputPipe[0]);
@@ -104,8 +116,11 @@ std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData, Loc
 
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
 		return {CgiStatus::SUCCESS, output};
-	else
+	else 
+	{
+		std::cerr << "XXXXXXX CGI script exited XXXXXXXX" << std::endl;
 		return {CgiStatus::EXECUTION_ERROR, ""};
+	}
 }
 
 std::map<std::string,std::string> Cgi::buildEnv(const HttpRequest &req, Location &loc, const Client &client, InitConfig &server, const std::string &scriptPath)

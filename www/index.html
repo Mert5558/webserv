@@ -11,10 +11,27 @@
       margin: 0;
       font-family: 'Inter', sans-serif;
       background-color: #f9f9f9;
-      color: #222;
+      color: #4e0b41;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      position: relative;
+      z-index: 1;
+      background-image: url('/pixel-weave.png');
+      filter: contrast(0.9) brightness(1.2);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo-img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      margin-right: 12px;
+      vertical-align: middle;
     }
 
     a {
@@ -60,14 +77,15 @@
     }
 
     main h2 {
-      font-size: 2rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
+      font-size: 7rem;
+      font-weight: 1000;
+      margin-bottom: 50rem;
+      color: #000000;
     }
 
     main p {
       font-size: 1.1rem;
-      color: #555;
+      color: #555555;
       margin-bottom: 2rem;
       max-width: 400px;
     }
@@ -108,19 +126,22 @@
 </head>
 <body>
   <header>
-    <h1>Bucket Hats</h1>
+    <div class="logo">
+      <a href="/"><h1>Bucket Hats</h1></a>
+    </div>
     <nav>
-      <a href="/">Home</a>
       <a href="/cgi-bin/calc.py">Calculator</a>
       <a href="/uploads/">Post</a>
       <a href="/cgi-bin/fortune.sh">Fortune</a>
-
     </nav>
   </header>
 
   <main>
-    <h2>Welcome!</h2>
-    <p>This is the homepage for our server.</p>
+    <!-- <h1>Welcome!</h1> -->
+    <img src="bh.png" alt="Bucket Hat" style="width:600px; height:auto; margin-bottom:2rem; opacity:0.7;">
+    <div style="font-size:1.2rem; color:#6f6e6e; margin-bottom:6rem; font-weight:bold;">
+      This is the homepage for our server.
+    </div>
   </main>
 
   <footer>

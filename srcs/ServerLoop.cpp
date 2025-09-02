@@ -10,8 +10,6 @@
 #include <cerrno>     // for errno
 #include <signal.h>   // for signal(SIGPIPE, SIG_IGN)
 
-extern std::atomic<bool> g_shutdown_req;
-
 // Set a file descriptor to non-blocking mode.
 static bool setNonBlocking(int fd)
 {
@@ -23,7 +21,7 @@ static bool setNonBlocking(int fd)
 	return true;
 }
 
-// Check if fd matches any server fd.
+// Check if fd matches any server fd.z
 static int findServerIndexByFd(const std::vector<InitConfig> &servers, int fd)
 {
 	for (size_t i = 0; i < servers.size(); ++i)
@@ -229,7 +227,7 @@ void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &
 	{
         try {
             // Build filesystem path: root + remainder after location prefix
-            std::string locPrefix = cgiLoc->getPath();          // "cgi-bin"
+            std::string locPrefix = cgiLoc->getPath();          // "/cgi-bin"
 			std::string relativePath = requestPath.substr(locPrefix.size()); // "/script.py"
             if (!relativePath.empty() && relativePath[0] == '/')
                 relativePath.erase(0,1);
@@ -256,7 +254,7 @@ void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &
 					cgiInput = ss.str();
 				}
 			}
-
+			
 			// Execute CGI
             Cgi cgi(cgiRootPath, env);
             auto res = cgi.execute(cgiInput, locCopy);
@@ -269,6 +267,7 @@ void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &
 			else
 			{
 				std::cerr << "ERROR 500" << std::endl;
+				response.renderError(500, "Internal Server Error", srv);
                 return;
             }
         }
@@ -283,7 +282,6 @@ void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &
 	// std::cout << "Static file handling for path: " << requestPath << std::endl;
     response.prepare(request, srv);
 }
-
 
 
 
@@ -337,29 +335,6 @@ void ServerLoop::dumpTopology(const std::vector<InitConfig> &servers)
 	std::cout << oss.str() << std::endl;
 }
 
-void ServerLoop::cleanUp()
-{
-	for (auto &it : clients)
-	{
-		int fd = it.first;
-		if (fd >= 0)
-		{
-			close(fd);
-		}
-	}
-	clients.clear();
-
-	for (size_t i = 0; i < fds.size(); i++)
-	{
-		int fd = fds[i].fd;
-		if (fd >= 0)
-		{
-			close(fd);
-		}
-	}
-	fds.clear();
-}
-
 void ServerLoop::startServer(ParseConfig parse)
 {
 	// Prevent process-kill on write to a closed socket
@@ -380,14 +355,6 @@ void ServerLoop::startServer(ParseConfig parse)
 
 	while (true)
 	{
-
-		if (g_shutdown_req)
-		{
-			std::cout << "cleaning Up" << std::endl;
-			cleanUp();
-			break;
-		}
-
 		int ret = poll(&fds[0], fds.size(), 100); // 100ms
 		if (ret < 0)
 		{

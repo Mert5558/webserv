@@ -73,6 +73,7 @@
 		"print": "cpp",
 		"queue": "cpp",
 		"variant": "cpp",
-		"filesystem": "cpp"
+		"filesystem": "cpp",
+		"csignal": "cpp"
 	}
 }
