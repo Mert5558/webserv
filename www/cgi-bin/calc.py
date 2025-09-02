@@ -15,11 +15,8 @@ calc_history = cookie.get("calc_history")
 
 # Prepare headers
 headers = ["Status: 200 OK", "Content-Type: text/html; charset=utf-8"]
-
-# If "Show History" button pressed, set cookie
-if show_history:
-    headers.append("Set-Cookie: history=on; Path=/")
-    history_enabled = True
+headers.append("Set-Cookie: history=on; Path=/")
+history_enabled = True
 
 # Calculate result
 def compute(a, b, op):
