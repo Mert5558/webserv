@@ -43,18 +43,18 @@ std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData, Loc
 
 		// Change working directory to script's directory
 		size_t slash = scriptPath.find_last_of('/');
-		const char* scriptFileName = scriptPath.c_str();
+		std::string scriptFileName = scriptPath;
 		if (slash != std::string::npos)
 		{
 			std::string scriptDir = scriptPath.substr(0, slash);
 			chdir(scriptDir.c_str());
-			scriptFileName = scriptPath.substr(slash + 1).c_str();
+			scriptFileName = scriptPath.substr(slash + 1);
 		}
 
 		auto envp =	makeEnv();
 
 		std::string interpreter = findExtension(scriptPath, loc.getCgiExt(), loc.getCgiPath());
-		char *argv[] = { const_cast<char*>(interpreter.c_str()), const_cast<char*>(scriptFileName), nullptr };
+		char *argv[] = { const_cast<char*>(interpreter.c_str()), const_cast<char*>(scriptFileName.c_str()), nullptr };
 
 		alarm(5);
 
@@ -99,7 +99,7 @@ std::pair<CgiStatus, std::string>	Cgi::execute(const std::string &inputData, Loc
 		if (bytesRead > 0)
 		{
 			output.append(buffer, static_cast<size_t>(bytesRead));
-			continue;
+			continue;'+'
 		}
 		if (bytesRead == 0)
 			break;
