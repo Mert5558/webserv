@@ -225,7 +225,7 @@ void ServerLoop::parseHttp(InitConfig *srv, HttpRequest &request, HttpResponse &
 	{
         try {
             // Build filesystem path: root + remainder after location prefix
-            std::string locPrefix = cgiLoc->getPath();          // "cgi-bin"
+            std::string locPrefix = cgiLoc->getPath();          // "/cgi-bin"
 			std::string relativePath = requestPath.substr(locPrefix.size()); // "/script.py"
             if (!relativePath.empty() && relativePath[0] == '/')
                 relativePath.erase(0,1);

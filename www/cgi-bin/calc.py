@@ -79,10 +79,14 @@ print(f"""<!DOCTYPE html>
       margin: 0;
       font-family: 'Inter', sans-serif;
       background-color: #f9f9f9;
-      color: #222;
+      color: #4e0b41;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      position: relative;
+      z-index: 1;
+      filter: contrast(0.9) brightness(1.2);
+      background-image: url('/pixel-weave.png');
     }}
 
     a {{
@@ -241,9 +245,10 @@ print(f"""<!DOCTYPE html>
 </head>
 <body>
   <header>
-    <h1>Bucket Hats</h1>
+    <div class="logo">
+      <a href="/"><h1>Bucket Hats</h1></a>
+    </div>
     <nav>
-      <a href="/">Home</a>
       <a href="/cgi-bin/calc.py">Calculator</a>
       <a href="/uploads">Post</a>
       <a href="/cgi-bin/fortune.sh">Fortune</a>
